@@ -180,6 +180,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       <a href="#s1">지난 사례</a>
       <a href="#s2">갈린 지표</a>
       <a href="#s3">닮은 유형</a>
+      <a href="#s4">기타</a>
       <a href="#about">방법·한계</a>
     </nav>
   </div>
@@ -285,7 +286,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
   <div class="tool" id="s1">
     <p class="eyebrow">01 · 지난 사례</p>
     <h2>입단 전 5년 기록과 KBO 첫해 성적</h2>
-    <p class="sub">선수를 누르면 그래프가 열리고, 머리글을 누르면 정렬됩니다.</p>
+    <p class="sub">선수를 누르면 그래프가 열리고, 머리글을 누르면 정렬됩니다. 재계약 N년 = KBO 연속 시즌 수(+는 2026년 진행 중).</p>
     <div class="tablewrap tall" style="margin-top:12px"><table id="pastTable"></table></div>
     <details style="margin-top:10px"><summary>비교에서 빠진 선수 보기</summary><div class="note" id="excluded"></div></details>
   </div>
@@ -332,6 +333,14 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     </div>
     <div class="tablewrap"><table id="candTable"></table></div>
     <p class="note" id="candNote"></p>
+  </div>
+
+  <div class="tool" id="s4">
+    <p class="eyebrow">04 · 기타</p>
+    <h2>웨이버 공시·방출 사례</h2>
+    <p class="sub">기사에서 직접 확인한 사례만 모았습니다. <b>전체 목록이 아니며</b>, 목록에 없다고 공시되지 않았다는 뜻이 아닙니다. 선수를 누르면 상세가 열립니다.</p>
+    <div class="tablewrap" style="margin-top:10px"><table id="etcTable"></table></div>
+    <p class="note" id="etcNote"></p>
   </div>
 </main>
 
@@ -401,6 +410,17 @@ const BASE = D["후보연도"] || 2026;
 
 let role = "투수", sortKey = null, sortDir = -1;
 $("made").textContent = D["만든날"];
+/* 재계약(N년): KBO에서 첫해부터 연속으로 뛴 시즌 수. 계약 정보가 아니라 시즌 기록에서 추정한 값이며, 2026까지 이어졌으면 "+"(진행 중) */
+for (const r0 of ["투수","타자"]) for (const r of D.past[r0]) {
+  const ys = new Set((r.kbo||[]).map(k=>k.y)); let n = 0;
+  while (ys.has(r["KBO첫해"]+n)) n++;
+  r.stay_n = n; r.stay_plus = ys.has(BASE) && (r["KBO첫해"]+n-1===BASE);
+}
+/* 웨이버 공시·방출 사례(기사에서 확인한 것만, 전체 목록 아님) */
+const WV = {}; (D.waivers||[]).forEach(w=>{ (WV[String(w.mykbo_id)] = WV[String(w.mykbo_id)]||[]).push(w); });
+const wvOf = id => WV[String(id)] || [];
+const wvExplicit = id => wvOf(id).some(w=>w["구분"]==="웨이버 공시");
+const wvText = id => wvOf(id).map(w=>`${w["일자"]} ${w["구분"]==="웨이버 공시"?"웨이버 공시":"방출·퇴출"}(${w["당시구단"]})`).join(", ");
 
 /* ================= 공통 계산 ================= */
 function succFirst(r){
@@ -567,10 +587,10 @@ function renderPast(){
   const cols = role==="투수"
     ? [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","상대 타자",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["hr_pct","홈런%",2],["era","ERA",2],
-       ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["판정","판정",null],["다음해_KBO","다음해",null]]
+       ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["판정","판정",null],["stay_n","재계약",0]]
     : [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","타석",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["iso","ISO",3],["avg","타율",3],
-       ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["판정","판정",null],["다음해_KBO","다음해",null]];
+       ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["판정","판정",null],["stay_n","재계약",0]];
   rows.forEach(r=> r["판정"] = isSuccess(r) ? "성공" : "아님");
   if (sortKey) rows.sort((a,b)=>{ const x=a[sortKey], y=b[sortKey]; if (x==null) return 1; if (y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir; });
   else rows.sort((a,b)=> b["KBO첫해"]-a["KBO첫해"] || String(a["영문명"]).localeCompare(b["영문명"]));
@@ -580,8 +600,9 @@ function renderPast(){
       const k=c[0]; let v=r[k];
       if (k==="팀") v = teamK(v);
       else if (k==="mlb_share") v = fmt(v*100,0);
+      else if (k==="stay_n") v = `${r.stay_n}년${r.stay_plus?"+":""}`;
       else if (k==="판정") v = `<span class="tag ${v==="성공"?"good":"bad"}">${v}</span>`;
-      else if (k==="영문명") v = nameHTML(r) + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
+      else if (k==="영문명") v = nameHTML(r) + (wvOf(r.mykbo_id).length ? ` <span class="tag warn" title="${esc(wvText(r.mykbo_id))}">${wvExplicit(r.mykbo_id)?"웨이버":"방출"}</span>` : "") + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
       else if (c[2]!=null) v = fmt(v,c[2]);
       else if (v==null || v==="") v = "-";
       return `<td class="${c[2]==null?"l":""}">${v}</td>`;
@@ -737,7 +758,7 @@ function openDetail(kind, key){
           <p class="note">${role==="투수"
             ? `첫해 ${fmt(rec.KBO_이닝,1)}이닝, ${rec.KBO_승??"-"}승 ${rec.KBO_패??"-"}패, ERA ${fmt(rec.KBO_ERA,2)}, WHIP ${fmt(rec.KBO_WHIP,2)}, 삼진 ${rec.KBO_삼진??"-"}개, 볼넷 ${rec.KBO_볼넷??"-"}개.`
             : `첫해 ${fmt(rec.KBO_타수,0)}타수, 타율 ${fmt(rec.KBO_타율,3)}, OPS ${fmt(rec.KBO_OPS,3)}, 홈런 ${rec.KBO_홈런??"-"}개, 볼넷 ${rec.KBO_볼넷??"-"}개, 삼진 ${rec.KBO_삼진??"-"}개.`}
-            다음 해 KBO 기록: ${rec["다음해_KBO"]||"아직 모름(2026 입단)"}.</p>`;
+            재계약: KBO 연속 ${rec.stay_n}년${rec.stay_plus?"+(2026년 진행 중)":""}.${wvOf(rec.mykbo_id).length?` 웨이버·방출 기록: ${esc(wvText(rec.mykbo_id))} (기타 구역 참고).`:""}</p>`;
   }
 
   if (rec.sc) h += `<h3>스탯캐스트 보조 지표 <span class="note">— ${rec.sc.y} ${rec.sc.lv}, 공 ${rec.sc.n}개 기준</span></h3>
@@ -801,10 +822,32 @@ function renderLanding(){
   }
 }
 
+/* ================= 4. 기타: 웨이버 공시·방출 ================= */
+function renderEtc(){
+  const all = D.past["투수"].concat(D.past["타자"]), byId = {}; all.forEach(r=>{ byId[String(r.mykbo_id)] = r; });
+  const ev = (D.waivers||[]).slice().sort((a,b)=>String(b["일자"]).localeCompare(String(a["일자"])));
+  let h = `<thead><tr><th class="l">일자</th><th class="l">선수</th><th>역할</th><th class="l">KBO 첫해·팀</th><th class="l">당시 구단</th><th class="l">구분</th><th class="l">일자 정확도</th><th>첫해 판정</th><th>재계약</th><th class="l">출처</th></tr></thead><tbody>`;
+  for (const w of ev){
+    const r = byId[String(w.mykbo_id)];
+    const nm = r ? nameHTML(r) : `${esc(w["한국등록명"]||"")} <span class="en">${esc(w["영문명"])}</span>`;
+    h += `<tr ${r?`class="clickable" data-kind="past" data-role="${r["역할"]}" data-key="${r.mykbo_id}"`:""} title="${esc(w["비고"]||"")}">
+      <td class="l">${esc(w["일자"])}</td><td class="l">${nm}</td><td>${r?r["역할"]:"-"}</td>
+      <td class="l">${r?`${r["KBO첫해"]} ${teamK(r["팀"])}`:"-"}</td><td class="l">${esc(w["당시구단"])}</td>
+      <td class="l">${w["구분"]==="웨이버 공시"?'<span class="tag warn">웨이버 공시</span>':'<span class="tag bad">방출·퇴출</span>'}</td>
+      <td class="l">${esc(w["일자정확도"])}</td><td>${r?tag(r):"-"}</td><td>${r?`${r.stay_n}년${r.stay_plus?"+":""}`:"-"}</td>
+      <td class="l"><a href="${esc(w["출처"])}" target="_blank" rel="noopener noreferrer">기사</a></td></tr>`;
+  }
+  $("etcTable").innerHTML = h + (ev.length?"":`<tr><td colspan="10" class="l note">확인된 사례가 아직 없습니다.</td></tr>`) + "</tbody>";
+  const ex = ev.filter(w=>w["구분"]==="웨이버 공시").length;
+  $("etcNote").innerHTML = `${ev.length}건(선수 ${new Set(ev.map(w=>w.mykbo_id)).size}명, 웨이버 공시 명시 ${ex}건). "방출·퇴출"은 기사에 웨이버 표현이 없던 경우입니다. 줄에 마우스를 올리면 비고가 보입니다. 원 자료는 KBO 공식 사이트(자동 수집 금지)라 쓰지 못했습니다.`;
+}
+
 /* ================= 이벤트 ================= */
-function renderAll(){ renderPast(); renderGap(); renderScatter(); fillRefs(); fillRf(); renderCands(); }
+function renderAll(){ renderPast(); renderGap(); renderScatter(); fillRefs(); fillRf(); renderCands(); renderEtc(); }
 document.addEventListener("click", e=>{
-  const el = e.target.closest("[data-kind]"); if (el && !e.target.closest("th")) openDetail(el.dataset.kind, el.dataset.key);
+  const el = e.target.closest("[data-kind]"); if (!el || e.target.closest("th") || e.target.closest("a")) return;
+  if (el.dataset.role && el.dataset.role!==role) $("roleSeg").querySelector(`button[data-r="${el.dataset.role}"]`).click();
+  openDetail(el.dataset.kind, el.dataset.key);
 });
 $("dlg").addEventListener("click", e=>{ if (e.target===$("dlg")) $("dlg").close(); });
 $("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=>{

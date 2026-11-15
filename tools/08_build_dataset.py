@@ -148,6 +148,9 @@ def main():
     if os.path.exists("data/kbo_korean_names.csv"):
         k = pd.read_csv("data/kbo_korean_names.csv", dtype=str).fillna("")
         kn = dict(zip(k["mykbo_id"], k["한국등록명"]))
+    waivers = []  # 웨이버 공시·방출 사례 (11번이 기사에서 확인한 것만. 전체 목록이 아님)
+    if os.path.exists("data/kbo_waivers.csv"):
+        waivers = pd.read_csv("data/kbo_waivers.csv", dtype=str).fillna("").to_dict("records")
     co["KBO첫해"] = co["KBO첫해"].astype(int)
     hist = pd.read_csv("data/raw/history_long.csv", encoding="utf-8-sig")
     hist_by = {k: g for k, g in hist.groupby(["id", "group"])}
@@ -269,7 +272,7 @@ def main():
         sscale[role] = {f: [float(d[f].mean()), float(d[f].std())] for f in feats}
 
     out = {"만든날": time.strftime("%Y-%m-%d"), "후보연도": POOL_YEAR, "창길이": WINDOW, "feats": TRAD, "scale": scale,
-           "sfeats": SC, "sscale": sscale, "past": {}, "cands": {}, "excluded": {}}
+           "sfeats": SC, "sscale": sscale, "past": {}, "cands": {}, "excluded": {}, "waivers": waivers}
     for role in TRAD:
         out["past"][role] = [r for r in past if r["역할"] == role]
         out["cands"][role] = [c for c in cands if c["역할"] == role]
