@@ -1,7 +1,7 @@
 """13단계: 선수별 부상자 명단(IL) 이력을 MLB 공식 Stats API의 선수 이동 기록에서 뽑는다.
 
 실행:  python -I tools/13_injuries.py
-입력:  data/cohort_profiles.csv (지난 사례 mlbam), data/candidates_profiles.csv (2026 후보 player_id)
+입력:  data/kbo_cohort.csv (07번, 연결된 지난 사례의 mlbam), data/candidates_2026.csv (03번, 2026 후보 player_id)
 결과:  data/raw/transactions/chunk_<n>.json   받은 원본 (git 제외)
        data/il_stints.csv                       부상자 명단 등재 1건당 한 줄: id, 시작, 복귀, 일수, 명단 종류(7/10/15/60일), 부상 내용, 복귀 기록 없음 여부
 
@@ -18,6 +18,7 @@
 
 규칙: 선수 40명씩 묶어 요청하고 사이에 2초 쉰다. 이미 받은 묶음은 다시 받지 않는다.
 """
+import hashlib
 import json
 import os
 import re
@@ -41,8 +42,10 @@ def pdate(s):
     return datetime.strptime(s, "%B %d, %Y").date()
 
 
-def fetch(ids, k):
-    path = os.path.join(OUT, f"chunk_{k}.json")
+def fetch(ids):
+    # 캐시 이름을 "이 묶음의 선수 번호 목록"에서 만든다. 선수 목록이 바뀌어도 낡은 캐시를 잘못 쓰지 않는다.
+    key = hashlib.md5(",".join(map(str, ids)).encode()).hexdigest()[:12]
+    path = os.path.join(OUT, f"chunk_{key}.json")
     if os.path.exists(path):
         return json.load(open(path, encoding="utf-8"))
     r = requests.get("https://statsapi.mlb.com/api/v1/transactions", headers=H, timeout=180,
@@ -92,12 +95,14 @@ def stints_of(pid, tx):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    ids = set(pd.read_csv("data/cohort_profiles.csv")["mlbam"].dropna().astype(int)) | set(pd.read_csv("data/candidates_profiles.csv")["player_id"].astype(int))
+    # 입력은 08번의 결과가 아니라 앞 단계 파일(07번 명단, 03번 후보 풀)에서 읽는다 (08번이 이 단계의 결과를 읽으므로 순환을 피하기 위해)
+    co = pd.read_csv("data/kbo_cohort.csv", dtype=str).fillna("")
+    ids = set(co[co["연결"] == "연결됨"]["mlbam"].astype(int)) | set(pd.read_csv("data/candidates_2026.csv")["player_id"].astype(int))
     ids = sorted(ids)
     print("선수", len(ids), "명")
     tx = []
     for k in range(0, len(ids), 40):
-        tx += fetch(ids[k:k + 40], k // 40)
+        tx += fetch(ids[k:k + 40])
         print(f"{min(k + 40, len(ids))}/{len(ids)}명 처리", flush=True)
     rows = []
     for pid in ids:

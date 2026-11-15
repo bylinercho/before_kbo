@@ -195,6 +195,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     <nav aria-label="주 메뉴">
       <a href="#s1">지난 사례</a>
       <a href="#s2">갈린 지표</a>
+      <a href="#s6">구단별</a>
       <a href="#s3">닮은 유형</a>
       <a href="#s4">검증</a>
       <a href="#s5">기타</a>
@@ -334,6 +335,15 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     <h3>유형별 성공 비율</h3>
     <div id="typPanel"></div>
     <p class="note" id="typNote"></p>
+  </div>
+
+  <div class="tool" id="s6">
+    <p class="eyebrow">구단별 성향</p>
+    <h2>구단은 어떤 외국인을 데려왔나</h2>
+    <p class="sub">KBO 첫해 소속 구단별로 입단 전 5년 프로필의 평균을 비교합니다. 구단을 누르면 그 구단만 봅니다.</p>
+    <div class="tablewrap" style="margin-top:10px"><table id="teamTable"></table></div>
+    <div class="legend" id="teamLegend" style="margin-top:6px"></div>
+    <p class="note" id="teamNote"></p>
   </div>
 
   <div class="tool" id="s3">
@@ -496,8 +506,8 @@ function isSuccess(r){
 const typList = r0 => D.types[ADJ?"adj":"raw"][r0||role] || [];
 const typOf = r => ADJ ? r.typA : r.typ;
 const typName = r => { const t = typList(r["역할"])[typOf(r)]; return t ? t.name : "-"; };
-function pastRows(r0, ignoreType){
-  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role, tm = $("teamSel").value, needNext = $("critMode").value!=="first", ty = ignoreType ? "" : $("typSel").value;
+function pastRows(r0, ignoreType, ignoreTeam){
+  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role, tm = ignoreTeam ? "" : $("teamSel").value, needNext = $("critMode").value!=="first", ty = ignoreType ? "" : $("typSel").value;
   return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b && (!tm || FR[r["팀"]]===tm) && (!needNext || r["KBO첫해"]<BASE) && (ty==="" || typOf(r)===+ty));
 }
 const zf = (f,x)=>{ const [m,s]=D.scale[role][f]; return (x-m)/s; };
@@ -1015,6 +1025,38 @@ function applyState(s){
   renderAll(); renderFav();
 }
 
+/* ================= 구단별 스카우팅 성향 ================= */
+const meanOf = a => { const v = a.filter(x=>x!=null && !isNaN(x)); return v.length ? v.reduce((s,x)=>s+x,0)/v.length : null; };
+const sdOf = a => { const v = a.filter(x=>x!=null && !isNaN(x)); if (v.length<2) return null; const m = meanOf(v); return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/(v.length-1)); };
+function renderTeams(){
+  const rows = pastRows(role, true, true), feats = D.feats[role], types = typList();
+  const ageOf = r => r["출생연도"]!=null ? r["KBO첫해"]-r["출생연도"] : null;
+  const M = [["age","입단 때 나이",ageOf,1],["mlb","MLB 비중%",r=>r.mlb_share*100,0]]
+    .concat(feats.map(f=>[f, labelFor(role,f), r=>r[f], decOf(f)])).concat([["il","5년 IL 일수",r=>r.il?r.il.days:0,0]]);
+  const allV = {}; M.forEach(([k,,g])=>{ const v = rows.map(g).filter(x=>x!=null); allV[k] = {m:meanOf(v), s:sdOf(v)}; });
+  const teams = FR_LIST.map(([k,l])=>({k, l, rs: rows.filter(r=>FR[r["팀"]]===k)})).filter(t=>t.rs.length).sort((a,b)=>b.rs.length-a.rs.length);
+  let hl = 0, cells = 0;
+  let h = `<thead><tr><th class="l">구단</th><th>사례</th>${M.map(m=>`<th>${esc(m[1])}</th>`).join("")}<th>성공</th><th class="l">유형 구성</th></tr></thead><tbody>`;
+  for (const t of teams){
+    const n = t.rs.length;
+    h += `<tr class="clickable" data-team="${t.k}" title="누르면 이 구단만 보기${n<8?" (표본 "+n+"명 — 매우 작음)":""}"><td class="l">${esc(t.l)}</td><td>${n}</td>`;
+    for (const [k,,g,d] of M){
+      const v = meanOf(t.rs.map(g)), A = allV[k]; cells++;
+      let mark = "";
+      if (v!=null && A.s && n>=5){ const z = (v-A.m)/(A.s/Math.sqrt(n)); if (Math.abs(z)>=2){ hl++; mark = ` <span style="color:${z>0?"var(--accent)":"var(--bad)"}" title="전체 평균보다 ${z>0?"높음":"낮음"} (표준오차 ${z.toFixed(1)}배)">${z>0?"▲":"▼"}</span>`; } }
+      h += `<td>${v==null?"-":fmt(v,d)}${mark}</td>`;
+    }
+    const sc = t.rs.filter(isSuccess).length;
+    let x = 0, bar = `<svg viewBox="0 0 160 14" width="160" height="14" role="img" aria-label="유형 구성">`;
+    types.forEach((ty,i)=>{ const c = t.rs.filter(r=>typOf(r)===ty.id).length, w = c/n*160; if (c){ bar += `<rect x="${x.toFixed(1)}" y="1" width="${w.toFixed(1)}" height="12" fill="${ARS_COL[i%ARS_COL.length]}"><title>${esc(ty.name)} ${c}명</title></rect>`; x += w; } });
+    h += `<td>${sc}/${n} <span class="note">(${(sc/n*100).toFixed(0)}%)</span></td><td class="l">${bar}</svg></td></tr>`;
+  }
+  const allRow = `<tr style="font-weight:600"><td class="l">전체</td><td>${rows.length}</td>${M.map(([k,,,d])=>`<td>${allV[k].m==null?"-":fmt(allV[k].m,d)}</td>`).join("")}<td>${rows.filter(isSuccess).length}/${rows.length}</td><td></td></tr>`;
+  $("teamTable").innerHTML = h + allRow + "</tbody>";
+  $("teamLegend").innerHTML = types.map((ty,i)=>`<span><i style="background:${ARS_COL[i%ARS_COL.length]}"></i>${esc(ty.name)}</span>`).join("");
+  $("teamNote").innerHTML = `구단별 표본이 ${teams.length?Math.min(...teams.map(t=>t.rs.length)):0}~${teams.length?Math.max(...teams.map(t=>t.rs.length)):0}명이라 <b>차이는 우연일 수 있습니다.</b> ▲▼는 구단 평균이 전체 평균과 표준오차 2배 이상 다른 칸(표본 5명 이상)인데, 비교하는 칸이 ${cells}개라 우연으로도 몇 개는 나옵니다(이번에는 ${hl}개). 구단은 KBO 첫해 소속 기준이고 넥센→키움, SK→SSG는 묶었습니다.`;
+}
+
 /* ================= 유형 선택·유형별 성공 비율 ================= */
 let lastTypKey = "";
 function fillTypeSel(){
@@ -1067,8 +1109,10 @@ function renderVal(){
 }
 
 /* ================= 이벤트 ================= */
-function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); }
+function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); }
 document.addEventListener("click", e=>{
+  const tr = e.target.closest("tr[data-team]");
+  if (tr){ $("teamSel").value = tr.dataset.team; renderAll(); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"}); return; }
   const r = e.target.closest(".typrow"); if (!r) return;
   $("typSel").value = r.dataset.typ; renderAll();
   document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"});
