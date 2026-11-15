@@ -115,6 +115,10 @@ table{border-collapse:collapse;width:100%;font-size:13.5px}
 th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th{color:var(--muted);font-weight:600;background:var(--card);cursor:pointer;position:sticky;top:0;z-index:1;font-size:12.5px;letter-spacing:.04em}
 th:first-child,td:first-child,th.l,td.l{text-align:left}
+/* 가로로 스크롤해도 첫 열(선수 이름)이 보이도록 고정. 머리글(위쪽 고정)과 만나는 칸은 가장 위에 둔다 */
+.tablewrap td:first-child{position:sticky;left:0;z-index:1;background:var(--card);box-shadow:1px 0 0 var(--line)}
+.tablewrap th:first-child{position:sticky;left:0;z-index:3;box-shadow:1px 0 0 var(--line)}
+.tablewrap tr.clickable:hover td:first-child{background:var(--band)}
 tr.clickable{cursor:pointer}
 tr.clickable:hover td{background:var(--band)}
 .tag{display:inline-block;padding:0 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
