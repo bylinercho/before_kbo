@@ -131,12 +131,6 @@ svg .axis{stroke:var(--muted);fill:none}
 .proof .box2{background:var(--card);border:1px solid var(--line);padding:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:26px;font-size:14px}
 .proof .box2 h3{margin:0 0 6px;font-size:13px;letter-spacing:.12em}
 .proof .box2 p{margin:0;color:var(--muted)}
-.extras{padding:52px 0 40px}
-.extras h2{text-align:center;margin-bottom:20px}
-.extras details{border-top:1px solid var(--line);padding:12px 4px}
-.extras details:last-of-type{border-bottom:1px solid var(--line)}
-.extras summary{cursor:pointer;font-weight:600}
-.extras details p{margin:8px 0 2px;color:var(--muted);font-size:14px}
 footer{background:var(--band2);padding:34px 0 40px;font-size:13px}
 footer .cols{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center}
 footer .cols div:nth-child(1) a,footer .cols div:nth-child(3) a{display:block;color:var(--muted);text-decoration:none;margin:2px 0}
@@ -313,7 +307,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
   <div class="tool" id="s3">
     <p class="eyebrow">03 · 닮은 유형</p>
     <h2>지금 닮은 유형은? (2026 MLB·트리플A 선수 중)</h2>
-    <p class="sub">기준 선수와 최근 5시즌 기록 모양이 비슷한 2026년 미국 선수를 찾습니다.</p>
+    <p class="sub">기준 선수와 최근 5시즌 기록 모양이 비슷한 2026년 미국 선수를 찾습니다(MLB·트리플A 합쳐 공 500개/200타석 이상, 미국 밖 선수 제외).</p>
     <div class="row">
       <label>기준 <select id="refSel"></select></label>
       <label>소속 <select id="lvSel"><option value="">전체</option><option value="AAA·MLB 오감">트리플A·MLB 오가는 선수</option><option value="AAA만">트리플A만</option><option value="MLB만">MLB만</option></select></label>
@@ -347,19 +341,6 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       <div><h3>연결 검증</h3><p>첫해 외국인 <span id="pfTotal">-</span>명 중 <span id="pfLinked">-</span>명을 미국 기록과 연결했습니다. 이름이 비슷한 선수는 표에 ⓘ로 표시했습니다.</p></div>
       <div><h3>아직 못 한 것</h3><p>2010~2014년 입단자, 일본·대만 출신 선수, 레벨·연도 환경 보정은 하지 못했습니다.</p></div>
     </div>
-  </div>
-</section>
-
-<!-- ========== 부가 정보 ========== -->
-<section class="extras">
-  <div class="wrap" style="max-width:760px">
-    <h2>더 알아보기</h2>
-    <details><summary>왜 스탯캐스트가 아니라 삼진%·볼넷% 같은 전통 기록인가요?</summary><p>스탯캐스트는 MLB 2015년, 트리플A 2023년부터만 있어 옛 입단자의 마이너 기록이 없습니다. 전 선수를 같은 기준으로 보려고 전통 기록을 쓰고, 스탯캐스트는 있는 선수만 보조로 보여 줍니다.</p></details>
-    <details><summary>왜 2015년 입단자부터인가요?</summary><p>KBO 성적 출처(MyKBO Stats)의 외국인 목록이 2014년부터만 완전해서 첫해를 알 수 있는 2015년부터 넣었습니다.</p></details>
-    <details><summary>"성공"은 어떻게 정했나요?</summary><p>임시 기준입니다. 투수는 첫해 100이닝 이상·ERA 4.00 이하, 타자는 300타수 이상·OPS .800 이상이며 화면에서 바꿀 수 있습니다. WAR은 쓰지 않았습니다.</p></details>
-    <details><summary>후보는 어떻게 고르나요?</summary><p>2026년에 MLB·트리플A를 합쳐 공 500개(투수)·200타석(타자) 이상 뛴 선수입니다. 미국 밖에서 뛴 선수는 없고, 후보라고 KBO에 온다는 뜻이 아닙니다. 계약·나이·부상·샐러리캡은 반영하지 않았습니다.</p></details>
-    <details><summary>미국 기록이 없는 선수는 왜 빠졌나요?</summary><p>일본·대만·호주 출신과 아시아쿼터 선수는 미국 기록이 없어 이 방식으로 비교할 수 없습니다. 그래서 "미국 기록이 충분한 외국인 선수" 이야기입니다.</p></details>
-    <details><summary>기록 수준은 보정했나요?</summary><p>아니요. MLB와 트리플A를 그냥 합쳤고(MLB 비중은 표시), 연도별 리그 환경도 보정하지 않았습니다.</p></details>
   </div>
 </section>
 
