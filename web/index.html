@@ -51,6 +51,15 @@ nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
 .btn.ghost{border-color:var(--line);color:var(--muted);margin-left:8px}
 .btn.mini{padding:4px 12px;font-size:12px;letter-spacing:.02em}
 .en{color:var(--muted);font-size:12px;margin-left:3px}
+.rd-c{fill:color-mix(in srgb,var(--mlb) 22%,transparent);stroke:var(--mlb);stroke-width:2}
+#cmpBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:30;background:var(--card);border:1px solid var(--ink);padding:8px 14px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 4px 18px rgba(0,0,0,.25);max-width:96vw;flex-wrap:wrap}
+#cmpBar[hidden]{display:none}
+.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);padding:2px 8px;margin:2px 6px 2px 0;font-size:13px;cursor:pointer;background:var(--bg)}
+.chip:hover{border-color:var(--ink)}
+.chip .x{border:0;background:transparent;color:var(--muted);cursor:pointer;font:inherit;padding:0 2px}
+.cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.cmpcol h4{margin:6px 0 0;font-size:13px}
+.dlgbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .typrow{display:grid;grid-template-columns:230px 1fr 110px 90px;align-items:center;gap:10px;margin:4px 0;font-size:13.5px;cursor:pointer;padding:2px 4px}
 .typrow:hover{background:var(--band)}
 @media (max-width:700px){ .typrow{grid-template-columns:130px 1fr 80px} .typrow span:last-child{display:none} }
@@ -287,6 +296,11 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       </span>
     </div>
     <p class="note" id="critNote"></p>
+    <div class="row">
+      <button class="btn mini" id="shareBtn" type="button" title="현재 설정과 선택(필터·기준 선수·관심 선수)을 담은 주소를 복사합니다">현재 보기 링크 복사</button>
+      <input type="text" id="shareUrl" readonly hidden style="width:min(560px,100%)">
+      <span class="note" id="shareMsg"></span>
+    </div>
   </div>
 
   <div class="tool" id="s1">
@@ -343,6 +357,8 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     </div>
     <div class="tablewrap"><table id="candTable"></table></div>
     <p class="note" id="candNote"></p>
+    <h3>관심 선수 <span class="note">— 상세 창의 ☆로 담습니다. 이 브라우저에만 저장됩니다.</span></h3>
+    <div id="favBox"></div>
   </div>
 
   <div class="tool" id="s4">
@@ -387,6 +403,8 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 </footer>
 
 <dialog id="dlg"><div class="dlgin" id="dlgBody"></div></dialog>
+<dialog id="cmpDlg"><div class="dlgin" id="cmpBody"></div></dialog>
+<div id="cmpBar" hidden>비교: <span id="cmpItems"></span> <button class="btn mini" id="cmpGo" type="button">비교 보기</button> <button class="btn mini" id="cmpClear" type="button">비우기</button></div>
 
 <script src="data.js"></script>
 <script>
@@ -760,7 +778,9 @@ function openDetail(kind, key){
   const head = isPast
     ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
     : `${role} · 2026 ${({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]]||rec["소속"]} (스탯캐스트 합산 ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"}) · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
-  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p><p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b></p></div><button class="close" id="dlgClose">닫기</button></div>`;
+  const fid = isPast ? rec.mykbo_id : rec.player_id;
+  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p><p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b></p></div>
+    <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="dlgClose">닫기</button></div></div>`;
   /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
   const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
   const vq = role==="투수" ? ["pitching","피칭"] : ["batting highlights","타격"];
@@ -809,6 +829,8 @@ function openDetail(kind, key){
   if (rec.sc) drawSc();
   $("cmpSel").onchange = drawRadar;
   $("dlgClose").onclick = ()=> $("dlg").close();
+  $("favBtn").onclick = ()=>{ favToggle(role,kind,fid); $("favBtn").textContent = favHas(role,kind,fid)?"★":"☆"; };
+  $("cmpAdd").onclick = ()=>{ cmpToggle(role,kind,fid); $("cmpAdd").textContent = cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"; };
   if (!$("dlg").open) $("dlg").showModal();
   $("dlg").scrollTop = 0;
 }
@@ -869,6 +891,88 @@ function renderEtc(){
   $("etcTable").innerHTML = h + (ev.length?"":`<tr><td colspan="10" class="l note">확인된 사례가 아직 없습니다.</td></tr>`) + "</tbody>";
   const ex = ev.filter(w=>w["구분"]==="웨이버 공시").length;
   $("etcNote").innerHTML = `${ev.length}건(선수 ${new Set(ev.map(w=>w.mykbo_id)).size}명, 웨이버 공시 명시 ${ex}건). "방출·퇴출"은 기사에 웨이버 표현이 없던 경우입니다. 줄에 마우스를 올리면 비고가 보입니다. 원 자료는 KBO 공식 사이트(자동 수집 금지)라 쓰지 못했습니다.`;
+}
+
+/* ================= 관심 선수 (localStorage, 이 브라우저에만 저장) ================= */
+let FAV = [];
+try { FAV = JSON.parse(localStorage.getItem("bk_fav")||"[]"); } catch(e){ FAV = []; }
+const favSave = ()=>{ try { localStorage.setItem("bk_fav", JSON.stringify(FAV)); } catch(e){} };
+const fk = (r0,k,id)=> `${r0}|${k}|${id}`;
+const favHas = (r0,k,id)=> FAV.some(f=>fk(f.r,f.k,f.id)===fk(r0,k,id));
+const recOf = (r0,k,id)=> k==="past" ? D.past[r0].find(x=>String(x.mykbo_id)===String(id)) : D.cands[r0].find(x=>String(x.player_id)===String(id));
+function favToggle(r0,k,id){
+  const i = FAV.findIndex(f=>fk(f.r,f.k,f.id)===fk(r0,k,id));
+  if (i>=0) FAV.splice(i,1); else FAV.push({r:r0,k:k,id:String(id)});
+  favSave(); renderFav();
+}
+function renderFav(){
+  const h = FAV.map(f=>{ const rec = recOf(f.r,f.k,f.id); if (!rec) return "";
+    return `<span class="chip" data-open="${esc(fk(f.r,f.k,f.id))}" title="누르면 상세가 열립니다">★ ${esc(nameTxt(rec))} <span class="note">${f.r}·${f.k==="past"?"지난 사례":"2026 후보"}</span><button class="x" data-unfav="${esc(fk(f.r,f.k,f.id))}" title="빼기">×</button></span>`; }).join("");
+  $("favBox").innerHTML = h || "<p class='note'>아직 없습니다.</p>";
+}
+
+/* ================= 두 선수 비교 ================= */
+let CMP = [];
+const cmpHas = (r0,k,id)=> CMP.some(c=>fk(c.r,c.k,c.id)===fk(r0,k,id));
+function cmpToggle(r0,k,id){
+  const i = CMP.findIndex(c=>fk(c.r,c.k,c.id)===fk(r0,k,id));
+  if (i>=0) CMP.splice(i,1);
+  else { if (CMP.length && CMP[0].r!==r0) CMP = []; if (CMP.length>=2) CMP.shift(); CMP.push({r:r0,k:k,id:String(id)}); }
+  renderCmpBar();
+}
+function renderCmpBar(){
+  $("cmpBar").hidden = !CMP.length;
+  $("cmpItems").innerHTML = CMP.map((c,i)=>{ const rec = recOf(c.r,c.k,c.id); return rec ? `<b style="color:${i?"var(--mlb)":"var(--accent)"}">${i?"B":"A"}</b> ${esc(nameTxt(rec))}` : ""; }).join(" vs ") + (CMP.length===1?' <span class="note">(한 명 더 담으면 비교할 수 있습니다. 같은 투수/타자끼리만 가능)</span>':"");
+  $("cmpGo").disabled = CMP.length<2;
+}
+function openCompare(){
+  if (CMP.length<2) return;
+  const r0 = CMP[0].r; if (role!==r0) setRole(r0);
+  const A = recOf(r0,CMP[0].k,CMP[0].id), B = recOf(r0,CMP[1].k,CMP[1].id); if (!A || !B) return;
+  const feats = D.feats[r0], d = distance(A,B), isP = x=>x["KBO첫해"]!=null;
+  const yr = x => isP(x) ? [x["KBO첫해"]-5, x["KBO첫해"]-1, x["KBO첫해"]] : [BASE-4, BASE, null];
+  let h = `<div class="dlghead"><div><h2><span style="color:var(--accent)">${nameHTML(A)}</span> vs <span style="color:var(--mlb)">${nameHTML(B)}</span></h2>
+    <p class="sub">${r0} · 기록 모양의 거리 ${d?d.dist.toFixed(2):"-"} (작을수록 닮음)${ADJ?" · 환경 보정 지수 기준":""}</p></div><button class="close" id="cmpClose">닫기</button></div>`;
+  h += `<div class="two"><div id="cmpRadar"></div><div><table><thead><tr><th class="l">지표</th><th style="color:var(--accent)">A</th><th style="color:var(--mlb)">B</th><th>차이(편차)</th></tr></thead><tbody>` +
+    feats.map(f=>`<tr><td class="l">${esc(labelFor(r0,f))}</td><td>${A[f]!=null?fF(f,A[f]):"-"}</td><td>${B[f]!=null?fF(f,B[f]):"-"}</td><td>${d&&d.dz[f]!=null?(d.dz[f]>=0?"+":"")+d.dz[f].toFixed(2):"-"}</td></tr>`).join("") +
+    `</tbody></table><p class="note">차이 = (A − B)를 전체 표준편차로 나눈 값</p></div></div>`;
+  const feat4 = r0==="투수" ? ["k_pct","bb_pct","hr_pct","era"] : ["k_pct","bb_pct","iso","avg"];
+  h += `<h3>시즌별 추이</h3><div class="cmpgrid"><div class="cmpcol"><h4 style="color:var(--accent)">A · ${esc(nameTxt(A))}</h4></div><div class="cmpcol"><h4 style="color:var(--mlb)">B · ${esc(nameTxt(B))}</h4></div>`;
+  for (const f of feat4){ const [a0,a1,ak]=yr(A), [b0,b1,bk]=yr(B);
+    h += `<div>${trendSVG(f, A.hist||[], a0, a1, ak)}</div><div>${trendSVG(f, B.hist||[], b0, b1, bk)}</div>`; }
+  h += `</div>`;
+  const kboLine = x => isP(x) ? (r0==="투수" ? `첫해 ${fmt(x.KBO_이닝,1)}이닝 ERA ${fmt(x.KBO_ERA,2)}` : `첫해 ${fmt(x.KBO_타수,0)}타수 OPS ${fmt(x.KBO_OPS,3)}`) + ` · 재계약 ${x.stay_n}년${x.stay_plus?"+":""} · ${tag(x).replace(/<[^>]+>/g,"")}` : "2026 MLB·트리플A 후보 (KBO 기록 없음)";
+  h += `<p class="note">A: ${kboLine(A)}<br>B: ${kboLine(B)}</p>`;
+  $("cmpBody").innerHTML = h;
+  $("cmpRadar").innerHTML = radarSVG([{name:"A", vec:A, cls:"rd-a"},{name:"B", vec:B, cls:"rd-c"}], feats, zf, f=>labelFor(r0,f));
+  $("cmpClose").onclick = ()=> $("cmpDlg").close();
+  if ($("dlg").open) $("dlg").close();
+  if (!$("cmpDlg").open) $("cmpDlg").showModal();
+  $("cmpDlg").scrollTop = 0;
+}
+
+/* ================= 링크 공유 (현재 보기 상태를 주소에 담기) ================= */
+const SIMPLE_IDS = ["yFrom","yTo","teamSel","critMode","pIP","pERA","bAB","bOPS","ageMax","lvSel"];
+function getState(){
+  const s = {r:role, adj:ADJ?1:0, nk:$("noKbo").checked?1:0, typ:$("typSel").value, ref:$("refSel").value, q:$("q").value,
+             rf:[1,2].map(n=>[$("rf"+n+"Sel").value,$("rf"+n+"Min").value,$("rf"+n+"Max").value]), fav:FAV};
+  SIMPLE_IDS.forEach(id=>{ s[id] = $(id).value; });
+  return s;
+}
+const shareLink = ()=> location.href.split("#")[0] + "#s=" + encodeURIComponent(JSON.stringify(getState()));
+function applyState(s){
+  if (!s || typeof s!=="object") return;
+  if (s.adj){ $("adjOn").checked = true; applyAdj(true); }
+  SIMPLE_IDS.forEach(id=>{ if (s[id]!=null) $(id).value = s[id]; });
+  $("noKbo").checked = !!s.nk;
+  setRole(s.r==="타자" ? "타자" : "투수");
+  if (s.typ!=null) $("typSel").value = s.typ;
+  if (s.ref) $("refSel").value = s.ref;
+  (s.rf||[]).forEach((x,i)=>{ if (!x) return; $("rf"+(i+1)+"Sel").value = x[0]||""; $("rf"+(i+1)+"Min").value = x[1]||""; $("rf"+(i+1)+"Max").value = x[2]||""; });
+  $("q").value = s.q||"";
+  (s.fav||[]).forEach(f=>{ if (f && f.r && f.k && f.id && !favHas(f.r,f.k,f.id)) FAV.push({r:f.r,k:f.k,id:String(f.id)}); });
+  favSave();
+  renderAll(); renderFav();
 }
 
 /* ================= 유형 선택·유형별 성공 비율 ================= */
@@ -935,12 +1039,13 @@ document.addEventListener("click", e=>{
   openDetail(el.dataset.kind, el.dataset.key);
 });
 $("dlg").addEventListener("click", e=>{ if (e.target===$("dlg")) $("dlg").close(); });
-$("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=>{
-  $("roleSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
-  role = b.dataset.r; sortKey = null; $("q").value = "";
+function setRole(r0){
+  $("roleSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on", x.dataset.r===r0));
+  role = r0; sortKey = null; $("q").value = "";
   $("critP").hidden = role!=="투수"; $("critB").hidden = role!=="타자";
   fillScatterSel(); renderAll();
-});
+}
+$("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=> setRole(b.dataset.r));
 $("teamSel").innerHTML = `<option value="">전체 팀</option>` + FR_LIST.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
 ["pIP","pERA","bAB","bOPS","yFrom","yTo","teamSel","critMode","typSel"].forEach(id=> $(id).oninput = renderAll);
 ["xSel","ySel","enough"].forEach(id=> $(id).oninput = renderScatter);
@@ -971,6 +1076,25 @@ $("adjOn").oninput = ()=>{
   sortKey = null; fillScatterSel(); renderAll();
 };
 fillScatterSel(); renderAll(); renderLanding();
+
+/* 관심 선수 · 비교 · 링크 공유 연결 */
+renderFav(); renderCmpBar();
+$("cmpGo").onclick = openCompare;
+$("cmpClear").onclick = ()=>{ CMP = []; renderCmpBar(); };
+$("shareBtn").onclick = async ()=>{
+  const u = shareLink(), inp = $("shareUrl"); inp.value = u; inp.hidden = false; $("shareMsg").textContent = "링크를 만들었습니다.";
+  let ok = false;
+  try { await Promise.race([navigator.clipboard.writeText(u), new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),1500))]); ok = true; } catch(e){}
+  $("shareMsg").textContent = ok ? "복사했습니다. 이 주소를 열면 같은 설정으로 보입니다." : "자동 복사가 안 되어 아래 주소를 직접 복사해 주세요.";
+  if (!ok){ inp.focus(); inp.select(); }
+};
+document.addEventListener("click", e=>{
+  const un = e.target.closest("[data-unfav]");
+  if (un){ const [r0,k,id] = un.dataset.unfav.split("|"); favToggle(r0,k,id); e.stopPropagation(); return; }
+  const op = e.target.closest("[data-open]");
+  if (op){ const [r0,k,id] = op.dataset.open.split("|"); if (r0!==role) setRole(r0); openDetail(k,id); }
+});
+if (location.hash.startsWith("#s=")) { try { applyState(JSON.parse(decodeURIComponent(location.hash.slice(3)))); } catch(e){} }
 </script>
 </body>
 </html>
