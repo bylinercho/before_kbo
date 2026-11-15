@@ -1,7 +1,7 @@
 """7단계: KBO 첫해 외국인 선수(2015~2026 입단)의 "입단 전 5년" 미국 기록을 받는다.
 
 실행:  python -I tools/07_fetch_history.py
-입력:  data/kbo_foreign_seasons.csv (05번), data/kbo_foreign_pre2014.csv (05번), data/candidates_2026.csv (06번, 후보 풀)
+입력:  data/kbo_foreign_seasons.csv (05번), data/kbo_foreign_pre2014.csv (05번), data/candidates_2026.csv (03번, 후보 풀)
        체드윅 선수 명부(없으면 02번 도구가 data/raw/chadwick/ 에 받는다. 약 65MB)
 결과:  data/raw/history_long.csv   선수·시즌·레벨별 기록 (MLB 공식 Stats API, 전통 기록)
        data/kbo_cohort.csv         첫해 선수 명단 + 선수 번호 연결 결과

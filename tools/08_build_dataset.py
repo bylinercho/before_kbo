@@ -2,7 +2,7 @@
 
 실행:  python -I tools/08_build_dataset.py
 입력:  data/kbo_cohort.csv, data/raw/history_long.csv (07번), data/kbo_foreign_seasons.csv (05번),
-       data/raw/seasons/*.csv (스탯캐스트, 03번), data/candidates_2026.csv (06번이 만든 2026 트리플A 후보 풀)
+       data/raw/seasons/*.csv (스탯캐스트, 03번), data/candidates_2026.csv (03번이 만든 2026 후보 풀: 트리플A·MLB 합산)
 결과:  data/cohort_profiles.csv       지난 사례(2015~2026 KBO 첫해 외국인) 프로필 + KBO 첫해 성적
        data/candidates_profiles.csv   2026 후보 프로필
        web/data.js                    화면용 자료
@@ -229,11 +229,12 @@ def main():
         name_flag = norm(" ".join(reversed(str(c["player_name"]).split(", ")))) in kbo_names
         rec = {"player_id": int(c["player_id"]), "player_name": c["player_name"], "역할": role, "창": prof.pop("years"),
                **{k: clean(v) for k, v in prof.items()}, "total_pitches": int(c["total_pitches"]), "pa26": int(c["pa"]),
-               "MLB_공수": int(c["MLB_공수"]), "KBO경력": 1 if (name_flag or int(c["player_id"]) in cand_ids) else 0, "주의": note}
+               "MLB_공수": int(c["MLB_공수"]), "소속": c["소속"],
+               "KBO경력": 1 if (name_flag or int(c["player_id"]) in cand_ids) else 0, "주의": note}
         rec["hist"] = hist_rows(role, h, POOL_YEAR - WINDOW + 1, POOL_YEAR)
         sc = {f: clean(c[f]) for f in SC[role]}
         if all(v is not None for v in sc.values()):
-            rec["sc"] = {"y": POOL_YEAR, "lv": "AAA", "n": int(c["total_pitches"]), **sc}
+            rec["sc"] = {"y": POOL_YEAR, "lv": c["sc_level"], "n": int(c["sc_n"]), **sc}
         cands.append(rec)
 
     # ---------- 출생연도

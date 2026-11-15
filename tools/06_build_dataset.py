@@ -3,7 +3,7 @@
 실행:  python tools/06_build_dataset.py
 입력:  data/kbo_foreign_seasons.csv (05번), data/raw/seasons/*.csv (03번)
 결과:  data/analysis_players.csv   2024~2026년 KBO 첫해 외국인 선수: 오기 전 기록 + KBO 첫해 성적
-       data/candidates_2026.csv    2026 트리플A 선수(후보 풀)
+       data/candidates_2026_v1.csv 2026 트리플A 선수(구버전 후보 풀. 지금 후보 풀은 03번이 data/candidates_2026.csv 로 만든다)
        data/raw/people.csv         선수 출생연도 (MLB 공개 Stats API, 한 번 받아 둠)
        web/data.js                 화면용 자료
 
@@ -205,7 +205,7 @@ def main():
         c["출생연도"] = [birth_year(i) for i in c["player_id"]]
         cand_frames.append(c)
     cands = pd.concat(cand_frames, ignore_index=True)
-    cands.to_csv("data/candidates_2026.csv", index=False, encoding="utf-8-sig")
+    cands.to_csv("data/candidates_2026_v1.csv", index=False, encoding="utf-8-sig")  # 후보 풀은 이제 03번이 만든다(MLB 포함)
 
     # ---- 화면용 자료
     def clean(v):
