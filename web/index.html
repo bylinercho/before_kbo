@@ -267,12 +267,15 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
       <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
     <label title="KBO 첫해 소속 팀 기준">팀 <select id="teamSel"></select></label>
+      <label title="2026 입단자는 다음 해 기록이 없어 '첫해 성적' 외의 방식에서는 제외됩니다">성공 방식 <select id="critMode">
+        <option value="first">첫해 성적</option><option value="stay">다음 해 잔류</option>
+        <option value="first+stay">첫해 성적 + 잔류</option><option value="two">첫 2시즌 합산 성적</option></select></label>
       <span id="critP">
-        <label>성공 기준: 이닝 ≥ <input type="number" id="pIP" value="100"></label>
+        <label>기준: 이닝 ≥ <input type="number" id="pIP" value="100"></label>
         <label>그리고 ERA ≤ <input type="number" id="pERA" value="4.00" step="0.05"></label>
       </span>
       <span id="critB" hidden>
-        <label>성공 기준: 타수 ≥ <input type="number" id="bAB" value="300"></label>
+        <label>기준: 타수 ≥ <input type="number" id="bAB" value="300"></label>
         <label>그리고 OPS ≥ <input type="number" id="bOPS" value="0.800" step="0.01"></label>
       </span>
     </div>
@@ -400,13 +403,34 @@ let role = "투수", sortKey = null, sortDir = -1;
 $("made").textContent = D["만든날"];
 
 /* ================= 공통 계산 ================= */
-function isSuccess(r){
+function succFirst(r){
   if (r["역할"]==="투수") return r.KBO_이닝!=null && r.KBO_ERA!=null && r.KBO_이닝 >= +$("pIP").value && r.KBO_ERA <= +$("pERA").value;
   return r.KBO_타수!=null && r.KBO_OPS!=null && r.KBO_타수 >= +$("bAB").value && r.KBO_OPS >= +$("bOPS").value;
 }
+/* 첫 2시즌 합산: 두 해 모두 KBO 기록이 있고, 합산 이닝/타수가 기준의 2배 이상 + 합산 ERA/OPS(이닝·타수 가중 평균, OPS는 근사)가 기준을 만족 */
+function succTwo(r){
+  const k = r.kbo||[], y = r["KBO첫해"], a = k.find(x=>x.y===y), b = k.find(x=>x.y===y+1);
+  if (!a || !b) return false;
+  if (r["역할"]==="투수"){
+    const ip=(a.IP||0)+(b.IP||0); if (!ip) return false;
+    const era=((a.ERA||0)*(a.IP||0)+(b.ERA||0)*(b.IP||0))/ip;
+    return ip >= 2*(+$("pIP").value) && era <= +$("pERA").value;
+  }
+  const ab=(a.AB||0)+(b.AB||0); if (!ab) return false;
+  const ops=((a.OPS||0)*(a.AB||0)+(b.OPS||0)*(b.AB||0))/ab;
+  return ab >= 2*(+$("bAB").value) && ops >= +$("bOPS").value;
+}
+const MODE_NOTE = {first:"첫해 성적", stay:"다음 해에도 KBO 잔류", "first+stay":"첫해 성적 + 다음 해 잔류", two:"첫 2시즌 합산 성적"};
+function isSuccess(r){
+  const m = $("critMode").value;
+  if (m==="stay") return r["다음해_KBO"]==="있음";
+  if (m==="first+stay") return succFirst(r) && r["다음해_KBO"]==="있음";
+  if (m==="two") return succTwo(r);
+  return succFirst(r);
+}
 function pastRows(r0){
-  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role, tm = $("teamSel").value;
-  return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b && (!tm || FR[r["팀"]]===tm));
+  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role, tm = $("teamSel").value, needNext = $("critMode").value!=="first";
+  return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b && (!tm || FR[r["팀"]]===tm) && (!needNext || r["KBO첫해"]<BASE));
 }
 const zf = (f,x)=>{ const [m,s]=D.scale[role][f]; return (x-m)/s; };
 function distance(a,b){
@@ -566,7 +590,7 @@ function renderPast(){
   $("pastTable").innerHTML = h + "</tbody>";
   $("pastTable").querySelectorAll("th").forEach(th=> th.onclick = ()=>{ const k=th.dataset.k; if (sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} renderPast(); });
   const ok = rows.filter(r=>r["판정"]==="성공").length;
-  $("critNote").textContent = `${role} ${rows.length}명 중 ${ok}명이 성공 기준을 넘었습니다. ⓘ는 주의 사항, MLB%는 5년 중 MLB 비중입니다.`;
+  $("critNote").textContent = `${role} ${rows.length}명 중 ${ok}명이 "${MODE_NOTE[$("critMode").value]}" 기준을 넘었습니다.${$("critMode").value!=="first"?" (2026 입단자는 제외)":""} ⓘ는 주의 사항, MLB%는 5년 중 MLB 비중입니다.`;
   const a=+$("yFrom").value, b=+$("yTo").value;
   const tm = $("teamSel").value;
   const ex = D.excluded[role].filter(e=>e["KBO첫해"]>=a && e["KBO첫해"]<=b && (!tm || FR[e["팀"]]===tm));
@@ -687,6 +711,10 @@ function openDetail(kind, key){
     ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
     : `${role} · 2026 ${({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]]||rec["소속"]} (스탯캐스트 합산 ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"}) · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
   let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p></div><button class="close" id="dlgClose">닫기</button></div>`;
+  /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
+  const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+  const vq = role==="투수" ? ["pitching","피칭"] : ["batting highlights","타격"];
+  h += `<p class="note">영상 찾기: <a href="${yt(enName(rec)+" "+vq[0]+(isPast?"":" 2026"))}" target="_blank" rel="noopener noreferrer">YouTube(영문)</a>${rec["한글명"]?` · <a href="${yt(rec["한글명"]+" "+vq[1])}" target="_blank" rel="noopener noreferrer">YouTube(한글)</a>`:""} — 검색 결과로 이동하며, 같은 이름의 다른 선수가 나올 수 있습니다.</p>`;
   if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
   if (!isPast && rec["KBO경력"]) h += `<div class="box note">이름이 KBO 외국인 명단과 같아 경력자로 의심됩니다(동명이인일 수 있음).</div>`;
   if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
@@ -786,7 +814,7 @@ $("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=>{
   fillScatterSel(); renderAll();
 });
 $("teamSel").innerHTML = `<option value="">전체 팀</option>` + FR_LIST.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
-["pIP","pERA","bAB","bOPS","yFrom","yTo","teamSel"].forEach(id=> $(id).oninput = renderAll);
+["pIP","pERA","bAB","bOPS","yFrom","yTo","teamSel","critMode"].forEach(id=> $(id).oninput = renderAll);
 ["xSel","ySel","enough"].forEach(id=> $(id).oninput = renderScatter);
 ["refSel","lvSel","ageMax","noKbo","q","rf1Min","rf1Max","rf2Min","rf2Max"].forEach(id=> $(id).oninput = renderCands);
 [1,2].forEach(n=>{
