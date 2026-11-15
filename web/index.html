@@ -272,6 +272,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     <div class="row">
       <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
       <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
+    <label title="KBO 첫해 소속 팀 기준">팀 <select id="teamSel"></select></label>
       <span id="critP">
         <label>성공 기준: 이닝 ≥ <input type="number" id="pIP" value="100"></label>
         <label>그리고 ERA ≤ <input type="number" id="pERA" value="4.00" step="0.05"></label>
@@ -395,7 +396,10 @@ const labelFor = (role,f)=>{
   if (role==="투수" && f==="hr_pct") return "홈런%(허용)";
   return LABEL[f]||f;
 };
-const TEAM = {"Doosan Bears":"두산","Hanwha Eagles":"한화","Kia Tigers":"KIA","Kiwoom Heroes":"키움","KT Wiz":"KT","LG Twins":"LG","Lotte Giants":"롯데","NC Dinos":"NC","Samsung Lions":"삼성","SSG Landers":"SSG","Nexen Heroes":"넥센","Lotte":"롯데"};
+const TEAM = {"Doosan Bears":"두산","Hanwha Eagles":"한화","Kia Tigers":"KIA","Kiwoom Heroes":"키움","KT Wiz":"KT","LG Twins":"LG","Lotte Giants":"롯데","NC Dinos":"NC","Samsung Lions":"삼성","SSG Landers":"SSG","SK Wyverns":"SK","Nexen Heroes":"넥센","Lotte":"롯데"};
+/* 팀 필터: 구단명이 바뀐 팀은 같은 구단으로 묶는다 (넥센→키움 2019, SK→SSG 2021) */
+const FR = {"Doosan Bears":"두산","Hanwha Eagles":"한화","Kia Tigers":"KIA","Kiwoom Heroes":"키움","Nexen Heroes":"키움","KT Wiz":"KT","LG Twins":"LG","Lotte Giants":"롯데","NC Dinos":"NC","Samsung Lions":"삼성","SSG Landers":"SSG","SK Wyverns":"SSG"};
+const FR_LIST = [["두산","두산"],["롯데","롯데"],["삼성","삼성"],["키움","키움 (넥센 포함)"],["한화","한화"],["KIA","KIA"],["KT","KT"],["LG","LG"],["NC","NC"],["SSG","SSG (SK 포함)"]];
 const LVCOL = {MLB:"var(--mlb)", AAA:"var(--accent)", AA:"var(--aa)", "A+":"var(--ap)", A:"var(--a)", MEX:"var(--mex)"};
 const $ = id => document.getElementById(id);
 const fmt = (v,d=1)=> v==null ? "-" : Number(v).toFixed(d);
@@ -420,8 +424,8 @@ function isSuccess(r){
   return r.KBO_타수!=null && r.KBO_OPS!=null && r.KBO_타수 >= +$("bAB").value && r.KBO_OPS >= +$("bOPS").value;
 }
 function pastRows(r0){
-  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role;
-  return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b);
+  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role, tm = $("teamSel").value;
+  return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b && (!tm || FR[r["팀"]]===tm));
 }
 const zf = (f,x)=>{ const [m,s]=D.scale[role][f]; return (x-m)/s; };
 function distance(a,b){
@@ -583,7 +587,8 @@ function renderPast(){
   const ok = rows.filter(r=>r["판정"]==="성공").length;
   $("critNote").textContent = `${role} ${rows.length}명 중 ${ok}명이 성공 기준을 넘었습니다. ⓘ는 주의 사항, MLB%는 5년 중 MLB 비중입니다.`;
   const a=+$("yFrom").value, b=+$("yTo").value;
-  const ex = D.excluded[role].filter(e=>e["KBO첫해"]>=a && e["KBO첫해"]<=b);
+  const tm = $("teamSel").value;
+  const ex = D.excluded[role].filter(e=>e["KBO첫해"]>=a && e["KBO첫해"]<=b && (!tm || FR[e["팀"]]===tm));
   const reasons = {}; ex.forEach(e=>{ (reasons[e["이유"]] = reasons[e["이유"]]||[]).push(e); });
   $("excluded").innerHTML = `<p>${role} ${ex.length}명이 빠졌습니다(대부분 미국 밖 출신으로 보이나 개별 확인은 안 했습니다).</p>` +
     Object.entries(reasons).map(([k,v])=>`<p><b>${esc(k)}</b> (${v.length}명)<br>${v.sort((x,y)=>x["KBO첫해"]-y["KBO첫해"]).map(e=>`${e["KBO첫해"]} ${e["한글명"]?esc(e["한글명"])+" ":""}${esc(e["영문명"])}`).join(" · ")}</p>`).join("");
@@ -799,7 +804,8 @@ $("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=>{
   $("critP").hidden = role!=="투수"; $("critB").hidden = role!=="타자";
   fillScatterSel(); renderAll();
 });
-["pIP","pERA","bAB","bOPS","yFrom","yTo"].forEach(id=> $(id).oninput = renderAll);
+$("teamSel").innerHTML = `<option value="">전체 팀</option>` + FR_LIST.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+["pIP","pERA","bAB","bOPS","yFrom","yTo","teamSel"].forEach(id=> $(id).oninput = renderAll);
 ["xSel","ySel","enough"].forEach(id=> $(id).oninput = renderScatter);
 ["refSel","lvSel","ageMax","noKbo","q","rf1Min","rf1Max","rf2Min","rf2Max"].forEach(id=> $(id).oninput = renderCands);
 [1,2].forEach(n=>{
