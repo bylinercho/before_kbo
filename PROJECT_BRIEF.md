@@ -99,7 +99,12 @@ kbo_scout/
    ├─ 06_build_dataset.py       # (구버전) 스탯캐스트 기준 2024~2026 표본. 후보 풀(data/candidates_2026.csv)은 아직 이 도구가 만듦
    ├─ 07_fetch_history.py       # 이름→선수 번호 연결 + MLB Stats API 레벨별 시즌 기록 (python -I 로 실행)
    ├─ 08_build_dataset.py       # 입단 전 5년 프로필 + web/data.js 생성 (python -I 로 실행)
-   └─ 09_korean_names.py        # MyKBO 선수 페이지에서 한국 등록명 수집 (python -I 로 실행, 이미 받은 쪽은 건너뜀)
+   ├─ 09_korean_names.py        # MyKBO 선수 페이지에서 한국 등록명 수집 (python -I 로 실행, 이미 받은 쪽은 건너뜀)
+   ├─ 10_league_context.py      # 연도·레벨별 리그 평균(환경 보정 기준) → data/league_rates.csv
+   ├─ 11_waivers.py             # 기사에서 확인한 웨이버 공시·방출 사례 → data/kbo_waivers.csv (부분 자료)
+   ├─ 12_pitch_arsenal.py       # MLB 투수 구종 사용 비율 → data/pitch_arsenal.csv
+   └─ 13_injuries.py            # MLB 선수 이동 기록에서 부상자 명단(IL) 이력 → data/il_stints.csv
+   (실행 순서: 03 → 05 → 07 → 09 → 10 → 11 → 12 → 13 → 08. 08이 모든 자료를 합쳐 web/data.js를 만든다. 08은 교차검증 때문에 몇 분 걸림)
 web/
 ├─ index.html                   # 초안 화면 (data.js를 읽음, 서버 없이 더블클릭으로 열림)
 └─ data.js                      # 06번이 만든 화면용 자료. 직접 고치지 않는다

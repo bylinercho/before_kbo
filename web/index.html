@@ -412,7 +412,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 const D = window.DATA;
 const LABEL = {
   k_pct:"삼진%", bb_pct:"볼넷%", hr_pct:"홈런%", era:"ERA", gs_pct:"선발 비율%", iso:"ISO(장타력)", avg:"타율",
-  mlb_share:"MLB 비중%", age:"입단 때 나이",
+  mlb_share:"MLB 비중%", age:"입단 때 나이", il_days:"5년 IL 일수", il_n:"5년 IL 등재 횟수",
   velocity:"평균 구속(mph)", k_percent:"삼진%", bb_percent:"볼넷%", swing_miss_percent:"헛스윙%",
   hardhit_percent:"강한 타구%", xwoba:"xwOBA", launch_angle:"평균 발사각", release_extension:"익스텐션(ft)",
   arm_angle:"팔 각도", launch_speed:"평균 타구속도", barrels_per_bbe_percent:"배럴%"
@@ -589,9 +589,9 @@ const YM = {
            "K9":["9이닝당 삼진",r=>r.KBO_이닝? r.KBO_삼진/r.KBO_이닝*9:null,1],"BB9":["9이닝당 볼넷",r=>r.KBO_이닝? r.KBO_볼넷/r.KBO_이닝*9:null,1],"IP":["이닝",r=>r.KBO_이닝,0]},
   "타자": {"OPS":["OPS",r=>r.KBO_OPS,3],"HR":["홈런",r=>r.KBO_홈런,0],"KR":["삼진/타수",r=>r.KBO_타수? r.KBO_삼진/r.KBO_타수:null,3],"AB":["타수",r=>r.KBO_타수,0]}
 };
-const xval = (r,f)=> f==="age" ? (r["출생연도"]!=null ? r["KBO첫해"]-r["출생연도"] : null) : (f==="mlb_share" ? r.mlb_share*100 : r[f]);
+const xval = (r,f)=> f==="il_days" ? (r.il?r.il.days:null) : f==="age" ? (r["출생연도"]!=null ? r["KBO첫해"]-r["출생연도"] : null) : (f==="mlb_share" ? r.mlb_share*100 : r[f]);
 function fillScatterSel(){
-  $("xSel").innerHTML = D.feats[role].concat(["mlb_share","age"]).map(f=>`<option value="${f}">${esc(labelFor(role,f))}</option>`).join("");
+  $("xSel").innerHTML = D.feats[role].concat(["mlb_share","age","il_days"]).map(f=>`<option value="${f}">${esc(labelFor(role,f))}</option>`).join("");
   $("ySel").innerHTML = Object.entries(YM[role]).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("");
   $("enoughTxt").textContent = role==="투수" ? "표본 충분한 선수만 (KBO 첫해 50이닝 이상)" : "표본 충분한 선수만 (KBO 첫해 150타수 이상)";
 }
@@ -677,15 +677,24 @@ function renderGap(){
       <div class="gapbar"><i class="${d<0?"neg":""}" style="${d>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div>
       <span>${d>=0?"+":""}${d.toFixed(2)} <span class="note">(${fF(f,ms[f])} vs ${fF(f,mn[f])})</span></span></div>`;
   }
+  /* 부상 이력(5년 IL 일수): 지난 사례+후보 전체의 표준편차로 같은 눈금에 올린다 */
+  if (S.length && N.length){
+    const all = D.past[role].concat(D.cands[role]).map(r=>r.il?r.il.days:0), mu = all.reduce((a,b)=>a+b,0)/all.length;
+    const sd = Math.sqrt(all.reduce((a,b)=>a+(b-mu)**2,0)/(all.length-1)) || 1, av = a=>a.reduce((s,x)=>s+x,0)/a.length;
+    const ms2 = av(S.map(r=>r.il?r.il.days:0)), mn2 = av(N.map(r=>r.il?r.il.days:0)), d2 = (ms2-mn2)/sd, w2 = Math.min(Math.abs(d2),1)*50;
+    h += `<div class="gap" title="입단 전 5년 동안 부상자 명단에 있던 일수(MLB 이동 기록 기준)"><span>5년 IL 일수</span>
+      <div class="gapbar"><i class="${d2<0?"neg":""}" style="${d2>=0?`left:50%;width:${w2}%`:`right:50%;width:${w2}%`}"></i></div>
+      <span>${d2>=0?"+":""}${d2.toFixed(2)} <span class="note">(${ms2.toFixed(0)}일 vs ${mn2.toFixed(0)}일)</span></span></div>`;
+  }
   $("gap").innerHTML = h || "<p class='note'>성공 또는 비성공 선수가 없어 비교할 수 없습니다. 기준을 바꿔 보세요.</p>";
   $("gapNote").innerHTML = `성공 ${S.length}명 vs 그 외 ${N.length}명. <b>±0.3~0.5 정도의 차이는 우연으로도 흔합니다.</b>`;
 }
 
 /* ================= 3-1. 범위 필터 (기록 수준 하한·상한) ================= */
-const METRICS = r0 => D.feats[r0].concat(["mlb_share","vol"], r0==="투수" ? ["kmbb"] : []);
+const METRICS = r0 => D.feats[r0].concat(["mlb_share","vol","il_days","il_n"], r0==="투수" ? ["kmbb"] : []);
 const mLabel = f => f==="vol" ? (role==="투수"?"최근 5년 상대 타자 수":"최근 5년 타석 수") : f==="kmbb" ? (ADJ?"삼진−볼넷 (지수 차)":"삼진−볼넷%") : f==="mlb_share" ? "MLB 비중%" : labelFor(role,f);
-const mVal = (r,f) => f==="mlb_share" ? (r.mlb_share==null?null:r.mlb_share*100) : f==="kmbb" ? (r.k_pct==null||r.bb_pct==null?null:r.k_pct-r.bb_pct) : r[f];
-const mDec = f => f==="vol" ? 0 : (f==="mlb_share"||f==="kmbb") ? 1 : decOf(f);
+const mVal = (r,f) => f==="il_days" ? (r.il?r.il.days:null) : f==="il_n" ? (r.il?r.il.n:null) : f==="mlb_share" ? (r.mlb_share==null?null:r.mlb_share*100) : f==="kmbb" ? (r.k_pct==null||r.bb_pct==null?null:r.k_pct-r.bb_pct) : r[f];
+const mDec = f => (f==="vol"||f==="il_days"||f==="il_n") ? 0 : (f==="mlb_share"||f==="kmbb") ? 1 : decOf(f);
 function pct(arr,p){ const a=arr.slice().sort((x,y)=>x-y), i=(a.length-1)*p, lo=Math.floor(i), hi=Math.ceil(i); return a[lo]+(a[hi]-a[lo])*(i-lo); }
 function fillRf(){
   for (const n of [1,2]){
@@ -810,6 +819,8 @@ function openDetail(kind, key){
             재계약: KBO 연속 ${rec.stay_n}년${rec.stay_plus?"+(2026년 진행 중)":""}.${wvOf(rec.mykbo_id).length?` 웨이버·방출 기록: ${esc(wvText(rec.mykbo_id))} (기타 구역 참고).`:""}</p>`;
   }
 
+  h += ilSection(rec, y0, y1);
+  if (rec.ars) h += arsSection(rec);
   if (rec.sc) h += `<h3>스탯캐스트 보조 지표 <span class="note">— ${rec.sc.y} ${rec.sc.lv}, 공 ${rec.sc.n}개 기준</span></h3>
         <div class="two"><div id="scBox"></div><div id="scTbl"></div></div>
         <p class="note">보조 지표입니다(유사도 계산에는 쓰지 않음).</p>`;
@@ -893,6 +904,30 @@ function renderEtc(){
   $("etcNote").innerHTML = `${ev.length}건(선수 ${new Set(ev.map(w=>w.mykbo_id)).size}명, 웨이버 공시 명시 ${ex}건). "방출·퇴출"은 기사에 웨이버 표현이 없던 경우입니다. 줄에 마우스를 올리면 비고가 보입니다. 원 자료는 KBO 공식 사이트(자동 수집 금지)라 쓰지 못했습니다.`;
 }
 
+/* ================= 부상자 명단(IL) 이력 · 구종 구성 (상세 창) ================= */
+function ilSection(rec, y0, y1){
+  const il = rec.il || {n:0,days:0,max:0,tj:0,stints:[]};
+  let h = `<h3>부상자 명단(IL) 이력 <span class="note">— MLB 공식 선수 이동 기록, ${y0}~${y1}</span></h3>`;
+  if (!il.n) return h + `<p class="note">기록된 등재가 없습니다. 부상이 없었다는 뜻이 아니라, 마이너 기록 누락이나 API에 없는 경우일 수 있습니다.</p>`;
+  h += `<p style="margin:4px 0"><b>${il.n}회</b> · 합계 <b>${il.days}일</b> · 최장 ${il.max}일${il.tj?` · <span class="tag warn">토미존 수술 기록</span>`:""}</p>
+    <div class="tablewrap"><table><thead><tr><th class="l">등재~복귀</th><th>일수</th><th>명단</th><th class="l">부상 내용(기록된 것)</th></tr></thead><tbody>` +
+    il.stints.map(s=>`<tr><td class="l">${esc(s.s)} ~ ${esc(s.e)}${s.o?' <span class="note" title="복귀 기록이 없어 시즌 말로 보았습니다">(복귀 미기록)</span>':""}</td><td>${s.d}</td><td>${s.k}일</td><td class="l">${esc(s.t||"내용 없음(마이너 등)")}</td></tr>`).join("") +
+    `</tbody></table></div><p class="note">일수는 등재~복귀 기간이라 비시즌이 포함돼 실제 결장보다 길 수 있습니다. 마이너 부상은 빠졌을 수 있습니다.</p>`;
+  return h;
+}
+const ARS_NAME = {ff:"포심", si:"싱커", fc:"커터", sl:"슬라이더", ch:"체인지업", cu:"커브", fs:"스플리터", kn:"너클볼", st:"스위퍼", sv:"슬러브"};
+const ARS_COL = ["var(--accent)","var(--mlb)","var(--aa)","var(--ap)","var(--mex)","var(--a)","#6a8fa8","#b08a5a","#8a6a9a","#5a9a8a"];
+function arsSection(rec){
+  const a = rec.ars, keys = Object.keys(a.use).sort((x,y)=>a.use[y]-a.use[x]), tot = keys.reduce((s,k)=>s+a.use[k],0) || 1;
+  const grp = (ks)=> ks.reduce((s,k)=>s+(a.use[k]||0),0);
+  let x = 0, bar = `<svg viewBox="0 0 600 30" role="img" aria-label="구종 구성">`;
+  keys.forEach((k,i)=>{ const w = a.use[k]/tot*600; bar += `<rect x="${x.toFixed(1)}" y="2" width="${w.toFixed(1)}" height="26" fill="${ARS_COL[i%ARS_COL.length]}"><title>${ARS_NAME[k]||k} ${a.use[k]}%</title></rect>`; x += w; });
+  bar += `</svg>`;
+  return `<h3>구종 구성 <span class="note">— ${a.y}년 MLB, 구종별 사용 비율</span></h3>${bar}
+    <div class="legend" style="margin-top:6px">${keys.map((k,i)=>`<span><i style="background:${ARS_COL[i%ARS_COL.length]}"></i>${ARS_NAME[k]||k} ${a.use[k]}%</span>`).join("")}</div>
+    <p class="note">패스트볼 계열(포심·싱커·커터) ${grp(["ff","si","fc"]).toFixed(0)}% · 브레이킹볼(슬라이더·커브·스위퍼·슬러브) ${grp(["sl","cu","st","sv"]).toFixed(0)}% · 오프스피드(체인지업·스플리터·너클볼) ${grp(["ch","fs","kn"]).toFixed(0)}%. MLB 기록이 있는 시즌만 나옵니다(트리플A 구종 자료는 없음). 유사도 계산에는 쓰지 않습니다.</p>`;
+}
+
 /* ================= 관심 선수 (localStorage, 이 브라우저에만 저장) ================= */
 let FAV = [];
 try { FAV = JSON.parse(localStorage.getItem("bk_fav")||"[]"); } catch(e){ FAV = []; }
@@ -941,7 +976,8 @@ function openCompare(){
   for (const f of feat4){ const [a0,a1,ak]=yr(A), [b0,b1,bk]=yr(B);
     h += `<div>${trendSVG(f, A.hist||[], a0, a1, ak)}</div><div>${trendSVG(f, B.hist||[], b0, b1, bk)}</div>`; }
   h += `</div>`;
-  const kboLine = x => isP(x) ? (r0==="투수" ? `첫해 ${fmt(x.KBO_이닝,1)}이닝 ERA ${fmt(x.KBO_ERA,2)}` : `첫해 ${fmt(x.KBO_타수,0)}타수 OPS ${fmt(x.KBO_OPS,3)}`) + ` · 재계약 ${x.stay_n}년${x.stay_plus?"+":""} · ${tag(x).replace(/<[^>]+>/g,"")}` : "2026 MLB·트리플A 후보 (KBO 기록 없음)";
+  const ilLine = x => x.il ? ` · IL ${x.il.n}회 ${x.il.days}일${x.il.tj?"(토미존)":""}` : "";
+  const kboLine = x => (isP(x) ? (r0==="투수" ? `첫해 ${fmt(x.KBO_이닝,1)}이닝 ERA ${fmt(x.KBO_ERA,2)}` : `첫해 ${fmt(x.KBO_타수,0)}타수 OPS ${fmt(x.KBO_OPS,3)}`) + ` · 재계약 ${x.stay_n}년${x.stay_plus?"+":""} · ${tag(x).replace(/<[^>]+>/g,"")}` : "2026 MLB·트리플A 후보 (KBO 기록 없음)") + ilLine(x);
   h += `<p class="note">A: ${kboLine(A)}<br>B: ${kboLine(B)}</p>`;
   $("cmpBody").innerHTML = h;
   $("cmpRadar").innerHTML = radarSVG([{name:"A", vec:A, cls:"rd-a"},{name:"B", vec:B, cls:"rd-c"}], feats, zf, f=>labelFor(r0,f));

@@ -81,6 +81,37 @@ def rates(role, d):
 
 
 LG = {}  # (시즌, 레벨) -> 리그 평균 비율 (10번이 만든 data/league_rates.csv)
+IL = {}  # 선수 번호 -> 부상자 명단 등재 기록 (13번이 만든 data/il_stints.csv)
+ARS = None  # 구종 사용 비율 (12번이 만든 data/pitch_arsenal.csv, MLB 투수만)
+
+
+def il_summary(pid, y0, y1):
+    """y0~y1년에 시작된 부상자 명단 등재를 요약. 기록이 없으면 0건(부상이 없었거나 API에 기록이 없는 것 — 구분할 수 없다)."""
+    g = IL.get(int(pid))
+    empty = {"n": 0, "days": 0, "max": 0, "tj": 0, "by": {}, "stints": []}
+    if g is None:
+        return empty
+    w = g[(g["start"] >= f"{y0}-01-01") & (g["start"] <= f"{y1}-12-31")].sort_values("start", ascending=False)
+    if w.empty:
+        return empty
+    txt = w["text"].fillna("")
+    by = w.groupby(w["start"].str[:4])["days"].sum()
+    return {"n": int(len(w)), "days": int(w["days"].sum()), "max": int(w["days"].max()),
+            "tj": int(txt.str.contains("tommy john", case=False).any()), "by": {k: int(v) for k, v in by.items()},
+            "stints": [{"s": r["start"], "e": r["end"], "d": int(r["days"]), "k": int(r["kind"]), "t": str(r["text"])[:90] if isinstance(r["text"], str) else "", "o": int(r["open"])}
+                       for _, r in w.head(12).iterrows()]}
+
+
+def arsenal_of(pid, y0, y1):
+    """y0~y1년 중 가장 최근 MLB 시즌의 구종 사용 비율(%). 없으면 None."""
+    if ARS is None:
+        return None
+    a = ARS[(ARS["player_id"] == int(pid)) & (ARS["year"] >= y0) & (ARS["year"] <= y1)].sort_values("year")
+    if a.empty:
+        return None
+    r = a.iloc[-1]
+    use = {c[2:]: round(float(r[c]), 1) for c in ARS.columns if c.startswith("n_") and pd.notna(r[c]) and r[c] > 0}
+    return {"y": int(r["year"]), "use": use} if use else None
 
 
 def adj_rates(role, d):
@@ -393,6 +424,12 @@ def run_validation(past, scale, scale_adj):
 
 def main():
     co = pd.read_csv("data/kbo_cohort.csv", dtype=str).fillna("")
+    global ARS
+    if os.path.exists("data/il_stints.csv"):
+        ilf = pd.read_csv("data/il_stints.csv")
+        IL.update({int(k): g for k, g in ilf.groupby("id")})
+    if os.path.exists("data/pitch_arsenal.csv"):
+        ARS = pd.read_csv("data/pitch_arsenal.csv")
     lgdf = pd.read_csv("data/league_rates.csv")
     for _, x in lgdf.iterrows():
         LG[(int(x["season"]), x["level"])] = x
@@ -439,6 +476,11 @@ def main():
             flags.append("MLB 비중이 낮음(트리플A 위주)")
         rec["주의"] = " / ".join(flags)
         rec["hist"] = hist_rows(role, h, debut - WINDOW, debut - 1)
+        rec["il"] = il_summary(r["mlbam"], debut - WINDOW, debut - 1)
+        if role == "투수":
+            a = arsenal_of(r["mlbam"], debut - WINDOW, debut - 1)
+            if a:
+                rec["ars"] = a
         # KBO 첫해 성적과 이후 기록
         k = kbo[(kbo["mykbo_id"] == r["mykbo_id"]) & (kbo["역할"] == role)]
         yrs = set(k["연도"])
@@ -497,6 +539,11 @@ def main():
                "MLB_공수": int(c["MLB_공수"]), "소속": c["소속"],
                "KBO경력": 1 if (name_flag or int(c["player_id"]) in cand_ids) else 0, "주의": note}
         rec["hist"] = hist_rows(role, h, POOL_YEAR - WINDOW + 1, POOL_YEAR)
+        rec["il"] = il_summary(c["player_id"], POOL_YEAR - WINDOW + 1, POOL_YEAR)
+        if role == "투수":
+            a = arsenal_of(c["player_id"], POOL_YEAR - WINDOW + 1, POOL_YEAR)
+            if a:
+                rec["ars"] = a
         sc = {f: clean(c[f]) for f in SC[role]}
         if all(v is not None for v in sc.values()):
             rec["sc"] = {"y": POOL_YEAR, "lv": c["sc_level"], "n": int(c["sc_n"]), **sc}
