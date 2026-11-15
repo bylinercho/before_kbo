@@ -75,6 +75,46 @@ def rates(role, d):
             "hr_pct": d["hr"].sum() / pa * 100, "iso": (tb - h) / ab, "avg": h / ab}
 
 
+LG = {}  # (시즌, 레벨) -> 리그 평균 비율 (10번이 만든 data/league_rates.csv)
+
+
+def adj_rates(role, d):
+    """환경 보정 지수: 같은 해·같은 레벨 리그 평균 대비 (관측 합계 ÷ 리그 평균으로 기대한 합계 × 100). 100 = 리그 평균.
+    투수: 삼진%, 볼넷%, 홈런%, ERA(낮을수록 좋음). 타자: 삼진%, 볼넷%, 홈런%, ISO, 타율. 선발 비율은 보정하지 않는다.
+    리그 평균이 없는 레벨(멕시칸 리그 등)의 행은 분자·분모에서 함께 뺀다."""
+    out = {}
+    if role == "투수":
+        o = dict(k=0.0, bb=0.0, hr=0.0, er=0.0)
+        e = dict(k=0.0, bb=0.0, hr=0.0, er=0.0)
+        for _, s in d.iterrows():
+            L = LG.get((int(s["season"]), s["level"]))
+            if L is None:
+                continue
+            o["k"] += s["so"]; e["k"] += s["bf"] * L["p_k"] / 100
+            o["bb"] += s["bb"]; e["bb"] += s["bf"] * L["p_bb"] / 100
+            o["hr"] += s["hr"]; e["hr"] += s["bf"] * L["p_hr"] / 100
+            o["er"] += s["er"]; e["er"] += s["outs"] * L["p_era"] / 27
+        for key, name in (("k", "k_pct"), ("bb", "bb_pct"), ("hr", "hr_pct"), ("er", "era")):
+            out[name] = o[key] / e[key] * 100 if e[key] > 0 else None
+        out["gs_pct"] = d["gs"].sum() / max(d["g"].sum(), 1) * 100
+    else:
+        o = dict(k=0.0, bb=0.0, hr=0.0, xb=0.0, h=0.0)
+        e = dict(k=0.0, bb=0.0, hr=0.0, xb=0.0, h=0.0)
+        for _, s in d.iterrows():
+            L = LG.get((int(s["season"]), s["level"]))
+            if L is None:
+                continue
+            tb = s["h"] + s["doubles"] + 2 * s["triples"] + 3 * s["hr"]
+            o["k"] += s["so"]; e["k"] += s["pa"] * L["h_k"] / 100
+            o["bb"] += s["bb"]; e["bb"] += s["pa"] * L["h_bb"] / 100
+            o["hr"] += s["hr"]; e["hr"] += s["pa"] * L["h_hr"] / 100
+            o["xb"] += tb - s["h"]; e["xb"] += s["ab"] * L["h_iso"]
+            o["h"] += s["h"]; e["h"] += s["ab"] * L["h_avg"]
+        for key, name in (("k", "k_pct"), ("bb", "bb_pct"), ("hr", "hr_pct"), ("xb", "iso"), ("h", "avg")):
+            out[name] = o[key] / e[key] * 100 if e[key] > 0 else None
+    return out
+
+
 def profile(role, h, y0, y1):
     """h: 선수 한 명의 기록. 반환: (프로필 dict 또는 None, 주의 문구, 사유)"""
     w = h[(h["season"] >= y0) & (h["season"] <= y1)]
@@ -88,6 +128,7 @@ def profile(role, h, y0, y1):
         else:
             return None, "", "5년 합계 표본 부족(MLB·AAA 기준)"
     v = VOLCOL[role]
+    r["adj"] = adj_rates(role, top)
     r["mlb_share"] = float(top[top["level"] == "MLB"][v].sum() / max(top[v].sum(), 1))
     r["years"] = f"{int(w['season'].min())}~{int(w['season'].max())}"
     if y1 not in set(w["season"]):
@@ -102,7 +143,9 @@ def hist_rows(role, h, y0, y1):
     for (season, level), d in w.groupby(["season", "level"]):
         r = rates(role, d)
         if r:
-            out.append({"y": int(season), "lv": level, **{k: clean(v) for k, v in r.items()}})
+            a = adj_rates(role, d) if (int(season), level) in LG else None
+            out.append({"y": int(season), "lv": level, **{k: clean(v) for k, v in r.items()},
+                        "adj": {k: clean(v) for k, v in a.items()} if a else None})
     return out
 
 
@@ -144,6 +187,9 @@ def num(x):
 
 def main():
     co = pd.read_csv("data/kbo_cohort.csv", dtype=str).fillna("")
+    lgdf = pd.read_csv("data/league_rates.csv")
+    for _, x in lgdf.iterrows():
+        LG[(int(x["season"]), x["level"])] = x
     kn = {}  # mykbo_id -> 한국 등록명 (09번이 MyKBO 선수 페이지에서 받음. 없으면 빈 칸)
     if os.path.exists("data/kbo_korean_names.csv"):
         k = pd.read_csv("data/kbo_korean_names.csv", dtype=str).fillna("")
@@ -176,8 +222,10 @@ def main():
         if prof is None:
             excluded.append({"KBO첫해": debut, "영문명": r["영문명"], "한글명": kn.get(r["mykbo_id"], ""), "팀": r["팀"], "역할": role, "이유": why})
             continue
+        adjp = prof.pop("adj")
         rec = {"KBO첫해": debut, "mykbo_id": r["mykbo_id"], "영문명": r["영문명"], "한글명": kn.get(r["mykbo_id"], ""), "팀": r["팀"], "역할": role,
-               "mlbam": int(r["mlbam"]), "창": prof.pop("years"), **{k: clean(v) for k, v in prof.items()}}
+               "mlbam": int(r["mlbam"]), "창": prof.pop("years"), **{k: clean(v) for k, v in prof.items()},
+               "adj": {k: clean(v) for k, v in adjp.items()}}
         flags = [note] if note else []
         if "확인 필요" in r["연결방법"]:
             flags.append("이름 연결: " + r["연결방법"])
@@ -236,9 +284,10 @@ def main():
             dropped += 1
             continue
         name_flag = norm(" ".join(reversed(str(c["player_name"]).split(", ")))) in kbo_names
+        adjp = prof.pop("adj")
         rec = {"player_id": int(c["player_id"]), "player_name": c["player_name"], "한글명": mlb_ko.get(int(c["player_id"]), ""),
                "역할": role, "창": prof.pop("years"),
-               **{k: clean(v) for k, v in prof.items()}, "total_pitches": int(c["total_pitches"]), "pa26": int(c["pa"]),
+               **{k: clean(v) for k, v in prof.items()}, "adj": {k: clean(v) for k, v in adjp.items()}, "total_pitches": int(c["total_pitches"]), "pa26": int(c["pa"]),
                "MLB_공수": int(c["MLB_공수"]), "소속": c["소속"],
                "KBO경력": 1 if (name_flag or int(c["player_id"]) in cand_ids) else 0, "주의": note}
         rec["hist"] = hist_rows(role, h, POOL_YEAR - WINDOW + 1, POOL_YEAR)
@@ -264,6 +313,13 @@ def main():
     for role, feats in TRAD.items():
         allp = [r for r in past + cands if r["역할"] == role]
         scale[role] = {f: [float(np.mean([r[f] for r in allp])), float(np.std([r[f] for r in allp], ddof=1))] for f in feats}
+    scale_adj = {}
+    for role, feats in TRAD.items():
+        allp = [r["adj"] for r in past + cands if r["역할"] == role]
+        scale_adj[role] = {}
+        for f in feats:
+            v = [a[f] for a in allp if a.get(f) is not None]
+            scale_adj[role][f] = [float(np.mean(v)), float(np.std(v, ddof=1))]
     sdf = sav[(sav["레벨"] == "AAA")]
     sscale = {}
     for role, feats in SC.items():
@@ -271,7 +327,7 @@ def main():
         d = d[d["total_pitches"] >= 500] if role == "투수" else d[d["pa"] >= 150]
         sscale[role] = {f: [float(d[f].mean()), float(d[f].std())] for f in feats}
 
-    out = {"만든날": time.strftime("%Y-%m-%d"), "후보연도": POOL_YEAR, "창길이": WINDOW, "feats": TRAD, "scale": scale,
+    out = {"만든날": time.strftime("%Y-%m-%d"), "후보연도": POOL_YEAR, "창길이": WINDOW, "feats": TRAD, "scale": scale, "scaleAdj": scale_adj,
            "sfeats": SC, "sscale": sscale, "past": {}, "cands": {}, "excluded": {}, "waivers": waivers}
     for role in TRAD:
         out["past"][role] = [r for r in past if r["역할"] == role]

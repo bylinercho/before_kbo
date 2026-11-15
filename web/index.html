@@ -268,6 +268,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
       <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
     <label title="KBO 첫해 소속 팀 기준">팀 <select id="teamSel"></select></label>
+      <label title="삼진%·볼넷%·홈런%·ERA·ISO·타율을 '같은 해·같은 레벨 리그 평균=100' 지수로 바꿔 비교합니다. MLB와 트리플A 사이의 실력 차는 보정하지 않습니다"><input type="checkbox" id="adjOn"> 환경 보정</label>
       <label title="2026 입단자는 다음 해 기록이 없어 '첫해 성적' 외의 방식에서는 제외됩니다">성공 방식 <select id="critMode">
         <option value="first">첫해 성적</option><option value="stay">다음 해 잔류</option>
         <option value="first+stay">첫해 성적 + 잔류</option><option value="two">첫 2시즌 합산 성적</option></select></label>
@@ -382,13 +383,17 @@ const LABEL = {
   arm_angle:"팔 각도", launch_speed:"평균 타구속도", barrels_per_bbe_percent:"배럴%"
 };
 const HINT = {k_pct:"투수는 상대 타자 중, 타자는 타석 중 비율. 높을수록 삼진이 많음", hr_pct:"투수는 허용한 홈런 비율, 타자는 친 홈런 비율", gs_pct:"등판 중 선발 비율. 100에 가까울수록 선발"};
-const labelFor = (role,f)=>{
+/* 환경 보정 모드: 켜면 삼진%·볼넷%·홈런%·ERA·ISO·타율이 "같은 해·같은 레벨 리그 평균=100" 지수로 바뀐다 */
+let ADJ = false;
+const ADJF = new Set(["k_pct","bb_pct","hr_pct","era","iso","avg"]);
+const labelBase = (role,f)=>{
   if (f==="hardhit_percent") return role==="투수"?"강한 타구 허용%":"강한 타구%";
   if (f==="xwoba") return role==="투수"?"xwOBA(허용)":"xwOBA";
   if (role==="투수" && f==="bb_pct") return "볼넷%(허용)";
   if (role==="투수" && f==="hr_pct") return "홈런%(허용)";
   return LABEL[f]||f;
 };
+const labelFor = (role,f)=> labelBase(role,f) + (ADJ && ADJF.has(f) ? " 지수" : "");
 const TEAM = {"Doosan Bears":"두산","Hanwha Eagles":"한화","Kia Tigers":"KIA","Kiwoom Heroes":"키움","KT Wiz":"KT","LG Twins":"LG","Lotte Giants":"롯데","NC Dinos":"NC","Samsung Lions":"삼성","SSG Landers":"SSG","SK Wyverns":"SK","Nexen Heroes":"넥센","Lotte":"롯데"};
 /* 팀 필터: 구단명이 바뀐 팀은 같은 구단으로 묶는다 (넥센→키움 2019, SK→SSG 2021) */
 const FR = {"Doosan Bears":"두산","Hanwha Eagles":"한화","Kia Tigers":"KIA","Kiwoom Heroes":"키움","Nexen Heroes":"키움","KT Wiz":"KT","LG Twins":"LG","Lotte Giants":"롯데","NC Dinos":"NC","Samsung Lions":"삼성","SSG Landers":"SSG","SK Wyverns":"SSG"};
@@ -396,7 +401,7 @@ const FR_LIST = [["두산","두산"],["롯데","롯데"],["삼성","삼성"],["�
 const LVCOL = {MLB:"var(--mlb)", AAA:"var(--accent)", AA:"var(--aa)", "A+":"var(--ap)", A:"var(--a)", MEX:"var(--mex)"};
 const $ = id => document.getElementById(id);
 const fmt = (v,d=1)=> v==null ? "-" : Number(v).toFixed(d);
-const decOf = f => (f==="xwoba"||f==="iso"||f==="avg") ? 3 : (f==="era" ? 2 : 1);
+const decOf = f => (ADJ && ADJF.has(f)) ? 0 : ((f==="xwoba"||f==="iso"||f==="avg") ? 3 : (f==="era" ? 2 : 1));
 const fF = (f,v)=> fmt(v,decOf(f));
 const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const flip = n => { const p = String(n).split(", "); return p.length===2 ? p[1]+" "+p[0] : n; };
@@ -591,6 +596,7 @@ function renderPast(){
     : [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","타석",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["iso","ISO",3],["avg","타율",3],
        ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["판정","판정",null],["stay_n","재계약",0]];
+  if (ADJ) cols.forEach(c=>{ if (ADJF.has(c[0])) { c[1] += " 지수"; c[2] = 0; } });
   rows.forEach(r=> r["판정"] = isSuccess(r) ? "성공" : "아님");
   if (sortKey) rows.sort((a,b)=>{ const x=a[sortKey], y=b[sortKey]; if (x==null) return 1; if (y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir; });
   else rows.sort((a,b)=> b["KBO첫해"]-a["KBO첫해"] || String(a["영문명"]).localeCompare(b["영문명"]));
@@ -637,7 +643,7 @@ function renderGap(){
 
 /* ================= 3-1. 범위 필터 (기록 수준 하한·상한) ================= */
 const METRICS = r0 => D.feats[r0].concat(["mlb_share","vol"], r0==="투수" ? ["kmbb"] : []);
-const mLabel = f => f==="vol" ? (role==="투수"?"최근 5년 상대 타자 수":"최근 5년 타석 수") : f==="kmbb" ? "삼진−볼넷%" : f==="mlb_share" ? "MLB 비중%" : labelFor(role,f);
+const mLabel = f => f==="vol" ? (role==="투수"?"최근 5년 상대 타자 수":"최근 5년 타석 수") : f==="kmbb" ? (ADJ?"삼진−볼넷 (지수 차)":"삼진−볼넷%") : f==="mlb_share" ? "MLB 비중%" : labelFor(role,f);
 const mVal = (r,f) => f==="mlb_share" ? (r.mlb_share==null?null:r.mlb_share*100) : f==="kmbb" ? (r.k_pct==null||r.bb_pct==null?null:r.k_pct-r.bb_pct) : r[f];
 const mDec = f => f==="vol" ? 0 : (f==="mlb_share"||f==="kmbb") ? 1 : decOf(f);
 function pct(arr,p){ const a=arr.slice().sort((x,y)=>x-y), i=(a.length-1)*p, lo=Math.floor(i), hi=Math.ceil(i); return a[lo]+(a[hi]-a[lo])*(i-lo); }
@@ -740,7 +746,7 @@ function openDetail(kind, key){
   if (!isPast && rec["KBO경력"]) h += `<div class="box note">이름이 KBO 외국인 명단과 같아 경력자로 의심됩니다(동명이인일 수 있음).</div>`;
   if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
 
-  h += `<h3>입단 전 5년 기록의 모양 <span class="note">— 평균 대비 편차</span></h3>
+  h += `<h3>입단 전 5년 기록의 모양 <span class="note">— 평균 대비 편차${ADJ?" (환경 보정: 같은 해·같은 레벨 리그 평균=100)":""}</span></h3>
         <div class="row"><label>비교 대상 <select id="cmpSel"><option value="succ">성공 사례 평균</option><option value="avg">전체 평균</option></select></label></div>
         <div class="two"><div id="radarBox"></div><div id="radarTbl"></div></div>
         <p class="note">바깥쪽일수록 평균보다 높다는 뜻이며 좋고 나쁨이 아닙니다.</p>`;
@@ -864,6 +870,27 @@ $("teamSel").innerHTML = `<option value="">전체 팀</option>` + FR_LIST.map(([
   $("rf"+n+"Sel").oninput = ()=>{ $("rf"+n+"Min").value=""; $("rf"+n+"Max").value=""; rfHint(n); renderCands(); };
   $("rf"+n+"Fit").onclick = ()=> rfFit(n);
 });
+/* 환경 보정 토글: 원래 값을 보관해 두고 켜고 끌 때 선수·시즌별 값과 표준화 기준을 통째로 바꾼다 */
+D.scaleRaw = D.scale;
+(function snapshotRaw(){
+  for (const r0 of ["투수","타자"]) for (const rec of D.past[r0].concat(D.cands[r0])) {
+    rec._raw = {}; D.feats[r0].forEach(f=>{ rec._raw[f] = rec[f]; });
+    for (const h of rec.hist||[]) { h._raw = {}; D.feats[r0].forEach(f=>{ h._raw[f] = h[f]; }); }
+  }
+})();
+function applyAdj(on){
+  ADJ = on;
+  for (const r0 of ["투수","타자"]) for (const rec of D.past[r0].concat(D.cands[r0])) {
+    D.feats[r0].forEach(f=>{ rec[f] = on ? ((rec.adj && rec.adj[f]!=null) ? rec.adj[f] : null) : rec._raw[f]; });
+    for (const h of rec.hist||[]) D.feats[r0].forEach(f=>{ h[f] = on ? ((h.adj && h.adj[f]!=null) ? h.adj[f] : null) : h._raw[f]; });
+  }
+  D.scale = on ? D.scaleAdj : D.scaleRaw;
+}
+$("adjOn").oninput = ()=>{
+  applyAdj($("adjOn").checked);
+  [1,2].forEach(n=>{ $("rf"+n+"Sel").value=""; $("rf"+n+"Min").value=""; $("rf"+n+"Max").value=""; });
+  sortKey = null; fillScatterSel(); renderAll();
+};
 fillScatterSel(); renderAll(); renderLanding();
 </script>
 </body>
