@@ -3,58 +3,112 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KBO 외국인 선수 닮은 유형 찾기 (초안)</title>
+<title>Before KBO — 입단 전 5년으로 보는 KBO 외국인 선수</title>
 <style>
 :root{
-  --bg:#f6f7f9; --card:#ffffff; --ink:#1b2430; --muted:#5d6b7b; --line:#dfe4ea;
-  --accent:#1f5fbf; --mlb:#c7791f; --aa:#2f8f5b; --ap:#8a55c2; --a:#7b8794; --mex:#b4402f;
-  --good:#1c7c4d; --bad:#b4402f; --warn-bg:#fff6df; --warn-line:#e6c978;
-  --bar:#9db7de; --bar2:#e3a59a;
+  --bg:#f3f0ea; --band:#e4dfd5; --band2:#d9d3c7; --card:#fbfaf7; --ink:#2b2a27; --muted:#6b675f; --line:#d8d2c6;
+  --accent:#3f5f8a; --mlb:#b8742b; --aa:#3f8a62; --ap:#7e5aa8; --a:#7a8088; --mex:#a8452f;
+  --good:#2f7a52; --bad:#a8452f; --warn-bg:#f7ecce; --warn-line:#d9bf72;
+  --bar:#a9b9d3; --bar2:#d9a79c;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#12171d; --card:#1a212a; --ink:#e7ecf2; --muted:#9aa8b8; --line:#2c3643;
-    --accent:#6ea2ee; --mlb:#e0a050; --aa:#5fc994; --ap:#b48be6; --a:#9aa8b8; --mex:#ee8a78;
-    --good:#5fc994; --bad:#ee8a78; --warn-bg:#2b2616; --warn-line:#6b5a22;
-    --bar:#4a6c9e; --bar2:#a8564a;
+    --bg:#1a1916; --band:#25231f; --band2:#2e2b26; --card:#211f1c; --ink:#ece8df; --muted:#a29d92; --line:#3a362f;
+    --accent:#8fb0e0; --mlb:#e0a050; --aa:#6fcf9c; --ap:#b48be6; --a:#a0a6ae; --mex:#ee8a78;
+    --good:#6fcf9c; --bad:#ee8a78; --warn-bg:#2f2915; --warn-line:#6b5a22;
+    --bar:#566f99; --bar2:#a8564a;
   }
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
-.wrap{max-width:1080px;margin:0 auto;padding:0 16px 64px}
-header{padding:32px 0 8px}
-h1{font-size:26px;margin:0 0 6px}
-h2{font-size:19px;margin:0 0 4px}
-h3{font-size:15px;margin:18px 0 6px}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.3}
+h2{font-size:22px;margin:0 0 4px}
+h3{font-size:15px;margin:20px 0 6px}
 .sub{color:var(--muted);margin:0}
-section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin:18px 0}
-.warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:14px}
+.note{font-size:12.5px;color:var(--muted)}
+
+/* ---------- 헤더 ---------- */
+.top{position:sticky;top:0;z-index:20;background:var(--band);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
+.logo{font-weight:800;letter-spacing:.12em;font-size:17px;text-decoration:none}
+.logo b{font-weight:300;letter-spacing:.12em}
+nav{display:flex;gap:26px;font-size:13px;letter-spacing:.04em}
+nav a{text-decoration:none;color:var(--muted);padding:4px 0;border-bottom:1px solid transparent}
+nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* ---------- 히어로 ---------- */
+.hero{position:relative;background:var(--band);overflow:hidden;text-align:center;padding:76px 0 84px}
+.hero svg.wave{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}
+.hero .wrap{position:relative}
+.eyebrow{font-size:12px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:0 0 14px}
+.hero h1{font-size:36px;letter-spacing:.01em;margin:0 auto 16px;max-width:760px}
+.hero p.lead{max-width:620px;margin:0 auto 26px;color:var(--muted);font-size:15px}
+.btn{display:inline-block;font:inherit;font-size:13px;letter-spacing:.08em;padding:11px 28px;border:1px solid var(--ink);background:transparent;color:var(--ink);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.ghost{border-color:var(--line);color:var(--muted);margin-left:8px}
+.stats{display:flex;justify-content:center;gap:44px;margin-top:40px;flex-wrap:wrap}
+.stats div{min-width:110px}
+.stats b{display:block;font-size:30px;font-weight:300;letter-spacing:.02em}
+.stats span{font-size:12px;color:var(--muted);letter-spacing:.06em}
+
+/* ---------- 폴드 아래 소제목 ---------- */
+.pitch{text-align:center;padding:64px 0 52px}
+.pitch h2{font-size:24px;max-width:700px;margin:0 auto 14px}
+.pitch p{max-width:680px;margin:0 auto;color:var(--muted)}
+
+/* ---------- 소개 ---------- */
+.intro{background:var(--band);padding:52px 0}
+.intro .grid{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:44px;align-items:center}
+.intro .viz{background:var(--card);border:1px solid var(--line);padding:14px}
+.intro h2{font-size:20px;letter-spacing:.04em;margin-bottom:10px}
+.intro ul{padding-left:18px;margin:10px 0 18px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%}
+
+/* ---------- 메뉴 카드 ---------- */
+.offer{padding:60px 0}
+.offer h2{text-align:center;margin-bottom:28px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.card{display:block;text-decoration:none;text-align:center}
+.card .img{aspect-ratio:1/1;background:var(--band);display:flex;align-items:center;justify-content:center;border:1px solid transparent;transition:border-color .15s}
+.card:hover .img{border-color:var(--ink)}
+.card .img svg{width:62%;height:auto}
+.card b{display:block;margin-top:14px;font-size:13px;letter-spacing:.14em}
+.card span{display:block;margin-top:4px;font-size:13px;color:var(--muted)}
+
+/* ---------- 도구 영역 ---------- */
+.tools{padding:20px 0 8px}
+.tool{background:var(--card);border:1px solid var(--line);padding:26px;margin:22px 0}
+.tool .eyebrow{margin-bottom:6px}
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);padding:12px 16px;margin:0 0 6px;font-size:14px}
 .warn ul{margin:6px 0 0;padding-left:18px}
-.row{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin:10px 0}
+.row{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin:12px 0}
 label{font-size:14px;color:var(--muted)}
-select,input[type=number],input[type=search]{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+select,input[type=number],input[type=search]{font:inherit;padding:5px 8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:0}
 input[type=number]{width:84px}
 input[type=search]{width:200px}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg button{font:inherit;border:0;background:var(--card);color:var(--ink);padding:6px 16px;cursor:pointer}
-.seg button.on{background:var(--accent);color:#fff}
+.seg{display:inline-flex;border:1px solid var(--ink)}
+.seg button{font:inherit;font-size:13px;letter-spacing:.08em;border:0;background:transparent;color:var(--ink);padding:7px 20px;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--bg)}
 .tablewrap{overflow-x:auto}
 .tall{max-height:560px;overflow:auto}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
-th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
-th{color:var(--muted);font-weight:600;background:var(--card);cursor:pointer;position:sticky;top:0;z-index:1}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:600;background:var(--card);cursor:pointer;position:sticky;top:0;z-index:1;font-size:12.5px;letter-spacing:.04em}
 th:first-child,td:first-child,th.l,td.l{text-align:left}
 tr.clickable{cursor:pointer}
-tr.clickable:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)}
-.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+tr.clickable:hover td{background:var(--band)}
+.tag{display:inline-block;padding:0 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
 .tag.good{color:var(--good);border-color:var(--good)}
 .tag.bad{color:var(--muted)}
 .tag.warn{color:var(--mlb);border-color:var(--mlb)}
-.note{font-size:12.5px;color:var(--muted)}
 .gap{display:grid;grid-template-columns:130px 1fr 170px;align-items:center;gap:8px;margin:4px 0;font-size:13.5px}
-.gapbar{position:relative;height:16px;background:color-mix(in srgb,var(--line) 50%,transparent);border-radius:3px}
+.gapbar{position:relative;height:14px;background:var(--band)}
 .gapbar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
-.gapbar i{position:absolute;top:2px;bottom:2px;background:var(--bar);border-radius:2px}
+.gapbar i{position:absolute;top:2px;bottom:2px;background:var(--bar)}
 .gapbar i.neg{background:var(--bar2)}
 svg{max-width:100%;height:auto;display:block}
 svg text{fill:var(--ink);font-family:inherit}
@@ -66,102 +120,246 @@ svg .axis{stroke:var(--muted);fill:none}
 .rd-zero{stroke:var(--muted);fill:none;stroke-dasharray:2 3}
 .pt{cursor:pointer}
 .pt:hover{stroke:var(--ink);stroke-width:2}
-dialog{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);width:min(940px,96vw);max-height:92vh;padding:0}
-dialog::backdrop{background:rgba(0,0,0,.45)}
-.dlgin{padding:18px 20px 24px}
+
+/* ---------- 근거 / 부가 / 푸터 ---------- */
+.proof{background:var(--band);padding:48px 0}
+.proof h2{text-align:center;margin-bottom:22px}
+.proof .box2{background:var(--card);border:1px solid var(--line);padding:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:26px;font-size:14px}
+.proof .box2 h3{margin:0 0 6px;font-size:13px;letter-spacing:.12em}
+.proof .box2 p{margin:0;color:var(--muted)}
+.extras{padding:52px 0 40px}
+.extras h2{text-align:center;margin-bottom:20px}
+.extras details{border-top:1px solid var(--line);padding:12px 4px}
+.extras details:last-of-type{border-bottom:1px solid var(--line)}
+.extras summary{cursor:pointer;font-weight:600}
+.extras details p{margin:8px 0 2px;color:var(--muted);font-size:14px}
+footer{background:var(--band2);padding:34px 0 40px;font-size:13px}
+footer .cols{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center}
+footer .cols div:nth-child(1) a,footer .cols div:nth-child(3) a{display:block;color:var(--muted);text-decoration:none;margin:2px 0}
+footer .cols div:nth-child(1) a:hover,footer .cols div:nth-child(3) a:hover{color:var(--ink)}
+footer .cols div:nth-child(3){text-align:right}
+footer .fine{margin-top:20px;font-size:12px;color:var(--muted);text-align:center}
+
+/* ---------- 상세 창 ---------- */
+dialog{border:1px solid var(--ink);background:var(--card);color:var(--ink);width:min(940px,96vw);max-height:92vh;padding:0}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.dlgin{padding:20px 22px 26px}
 .dlghead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
 .dlghead h2{font-size:22px}
-.close{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:4px 12px;cursor:pointer}
+.close{font:inherit;font-size:13px;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:5px 14px;cursor:pointer}
+.close:hover{background:var(--ink);color:var(--bg)}
 .two{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start}
 .trgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px 14px}
 .trt{font-size:13px;font-weight:600;margin-top:6px}
-.box{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:14px}
-.legend span{display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12.5px;color:var(--muted)}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:50%}
-footer{color:var(--muted);font-size:12.5px;margin-top:28px}
-@media (max-width:700px){
+.box{border:1px solid var(--line);padding:10px 12px;margin:10px 0;font-size:14px}
+
+@media (max-width:820px){
+  nav{gap:14px;font-size:12px}
+  .top .wrap{height:auto;padding-top:10px;padding-bottom:10px;flex-direction:column;gap:6px}
+  .hero{padding:52px 0 60px}
+  .hero h1{font-size:27px}
+  .intro .grid{grid-template-columns:1fr;gap:24px}
+  .cards{grid-template-columns:1fr;gap:20px}
+  .card .img{aspect-ratio:16/9}
+  .card .img svg{width:34%}
+  .proof .box2{grid-template-columns:1fr}
   .gap{grid-template-columns:96px 1fr 120px}
   .two{grid-template-columns:1fr}
   input[type=search]{width:140px}
+  footer .cols{grid-template-columns:1fr;text-align:center}
+  footer .cols div:nth-child(3){text-align:center}
+  .tool{padding:18px}
 }
 </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-  <h1>KBO 외국인 선수, 오기 전 5년은 어떤 기록이었나</h1>
-  <p class="sub">KBO에 처음 온 외국인 선수들의 <b>입단 전 5시즌 미국 기록</b>과 KBO 첫해 성적을 모아, 지금 비슷한 유형의 선수를 찾아 봅니다. <b>초안</b>이며 영입 예측이 아닙니다. 표나 그래프의 선수를 누르면 상세 그래프가 열립니다.</p>
+
+<!-- ========== 헤더 ========== -->
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#top">BEFORE <b>KBO</b></a>
+    <nav aria-label="주 메뉴">
+      <a href="#s1">지난 사례</a>
+      <a href="#s2">갈린 지표</a>
+      <a href="#s3">닮은 유형</a>
+      <a href="#about">방법·한계</a>
+    </nav>
+  </div>
 </header>
 
-<div class="warn">
-  <b>이 화면을 볼 때 꼭 알아 둘 점</b>
-  <ul>
-    <li><b>표본이 작고 고르지 않습니다.</b> 지금 비교 가능한 지난 사례는 <span id="nPast"></span>명입니다. 일본·대만·호주 등 미국 기록이 없는 선수(아시아쿼터 포함)와 미국 기록이 부족한 선수는 빠져 있어, <b>KBO 외국인 전체가 아니라 "미국 기록이 충분한 선수"</b>의 이야기입니다.</li>
-    <li><b>2015~2026년 입단자만 포함</b>합니다. 2010~2014년 입단자는 KBO 성적을 가져올 수 있는 출처가 아직 없어 넣지 못했습니다.</li>
-    <li>미국 기록은 MLB와 트리플A를 <b>레벨 보정 없이 합쳐서</b> 계산했고(MLB 비중을 함께 표시), 멕시칸 리그는 뺐습니다. 연도별 리그 환경(공, 득점 수준) 차이도 보정하지 않았습니다.</li>
-    <li>계약 여부, 나이, 샐러리캡, 구단 사정, 부상은 들어 있지 않습니다. 후보에 올랐다고 KBO에 온다는 뜻이 아닙니다.</li>
-    <li>"성공" 기준은 <b>임시로 정한 것</b>이며 아래에서 직접 바꿀 수 있습니다. WAR은 쓰지 않았습니다. 선수 사진·구단 로고는 쓰지 않았습니다.</li>
-  </ul>
-</div>
-
-<section id="s0">
-  <h2>보기 설정</h2>
-  <div class="row">
-    <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
-    <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
-    <span id="critP">
-      <label>성공 기준: 이닝 ≥ <input type="number" id="pIP" value="100"></label>
-      <label>그리고 ERA ≤ <input type="number" id="pERA" value="4.00" step="0.05"></label>
-    </span>
-    <span id="critB" hidden>
-      <label>성공 기준: 타수 ≥ <input type="number" id="bAB" value="300"></label>
-      <label>그리고 OPS ≥ <input type="number" id="bOPS" value="0.800" step="0.01"></label>
-    </span>
+<!-- ========== 히어로 ========== -->
+<section class="hero" id="top">
+  <svg class="wave" viewBox="0 0 1200 380" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 250 C200 170 380 330 620 240 S1000 150 1200 230 L1200 380 L0 380Z" fill="var(--band2)" opacity=".55"/>
+    <path d="M0 300 C240 230 420 360 680 290 S1020 230 1200 290 L1200 380 L0 380Z" fill="var(--band2)" opacity=".7"/>
+  </svg>
+  <div class="wrap">
+    <p class="eyebrow">KBO 외국인 선수 · 입단 전 5시즌 미국 기록</p>
+    <h1>KBO에 오기 전, 이 선수들은 어떤 기록이었을까</h1>
+    <p class="lead">MLB·트리플A 기록으로 지난 외국인 선수들의 "오기 전 모습"을 모으고, 지금 비슷한 유형의 선수를 찾아 봅니다. 영입 예측이 아니라 <b>닮은 유형 찾기</b>입니다.</p>
+    <a class="btn" href="#s3">닮은 유형 찾아보기</a><a class="btn ghost" href="#about">방법과 한계 보기</a>
+    <div class="stats">
+      <div><b id="statPast">-</b><span>비교 가능한 지난 사례</span></div>
+      <div><b id="statYears">-</b><span>입단 연도(시즌) 수</span></div>
+      <div><b id="statCand">-</b><span>2026 후보 풀</span></div>
+    </div>
   </div>
-  <p class="note" id="critNote"></p>
 </section>
 
-<section id="s1">
-  <h2>1. 지난 사례: 입단 전 5년 기록과 KBO 첫해 성적</h2>
-  <p class="sub">입단 전 기록은 MLB 공식 Stats API(입단 해 바로 앞 5시즌, MLB+트리플A 합산), KBO 성적은 MyKBO Stats입니다. 머리글을 누르면 정렬됩니다.</p>
-  <div class="tablewrap tall"><table id="pastTable"></table></div>
-  <details style="margin-top:10px"><summary>비교에서 빠진 선수 보기</summary><div class="note" id="excluded"></div></details>
-</section>
-
-<section id="s2">
-  <h2>2. 성공한 선수와 아닌 선수는 어디서 갈렸나</h2>
-  <p class="sub">입단 전 5년 기록의 평균 차이를 "비교 대상 전체의 흔한 편차" 단위로 나타냈습니다. 오른쪽(파랑)이 성공 쪽이 더 높음.</p>
-  <div id="gap"></div>
-  <p class="note" id="gapNote"></p>
-
-  <h3>지표 하나를 골라 KBO 성적과 비교해 보기</h3>
-  <div class="row">
-    <label>입단 전 지표(가로) <select id="xSel"></select></label>
-    <label>KBO 첫해 성적(세로) <select id="ySel"></select></label>
-    <label><input type="checkbox" id="enough" checked> <span id="enoughTxt"></span></label>
+<!-- ========== 폴드 아래: 소제목 ========== -->
+<section class="pitch">
+  <div class="wrap">
+    <h2>외국인 선수 영입, 기록으로는 어디까지 말할 수 있을까?</h2>
+    <p>새 외국인 선수가 올 때마다 "이 선수 성공할까?"라는 질문이 나옵니다. 이 페이지는 답을 단정하지 않습니다. 대신 <b>지난 사례들이 입단 전 5년 동안 어떤 기록이었는지</b> 투명하게 보여 주고, 지금 미국 트리플A에서 뛰는 선수 중 <b>비슷한 모양의 기록</b>을 가진 이를 찾아 줍니다. 얼마나 믿을 만한지는 숫자와 한계를 함께 보여 드립니다.</p>
   </div>
-  <div id="scatter"></div>
-  <p class="note" id="scatNote"></p>
 </section>
 
-<section id="s3">
-  <h2>3. 지금 닮은 유형은? (2026 트리플A 선수 중)</h2>
-  <p class="sub">기준 선수를 고르면, 최근 5시즌(2022~2026) 기록 모양이 비슷한 2026년 트리플A 선수를 찾아 줍니다. 이름으로 직접 찾을 수도 있습니다.</p>
-  <div class="row">
-    <label>기준 <select id="refSel"></select></label>
-    <label>나이 상한 <input type="number" id="ageMax" value="40" min="20" max="45"></label>
-    <label title="번호로 확인된 선수 + MyKBO 외국인 명단(2010~)과 이름이 같은 선수. 이름만 같은 다른 사람이 빠질 수 있음"><input type="checkbox" id="noKbo" checked> KBO 경력(이름 기준 의심 포함) 선수 빼기</label>
-    <label>이름 검색 <input type="search" id="q" placeholder="예: Sabato"></label>
+<!-- ========== 소개 (이미지 자리 = 실제 데이터 레이더) ========== -->
+<section class="intro">
+  <div class="wrap grid">
+    <div class="viz">
+      <div id="introViz"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>성공 사례 평균</span><span><i style="border:1.5px solid var(--muted)"></i>전체 평균</span></div>
+      <p class="note" style="margin:6px 0 0">투수 · 입단 전 5년 · 편차 단위</p>
+    </div>
+    <div>
+      <p class="eyebrow">이 분석이 하는 일</p>
+      <h2>기록의 "모양"으로 유형을 찾습니다</h2>
+      <p class="sub">삼진, 볼넷, 홈런 허용, ERA, 선발 비율 같은 지표를 같은 눈금으로 맞춰 모양을 비교합니다. 위 그래프는 성공 기준을 넘은 투수들의 평균 모양입니다.</p>
+      <ul>
+        <li>하는 일: 지난 사례와의 닮음 정도, 사례별 5년 추이 보기</li>
+        <li>하지 않는 일: 누가 올지 맞히기, 계약·나이·부상 반영, 선수 평가</li>
+      </ul>
+      <a class="btn" href="#about">방법과 한계 보기</a>
+    </div>
   </div>
-  <div class="tablewrap"><table id="candTable"></table></div>
-  <p class="note" id="candNote"></p>
 </section>
 
+<!-- ========== 메뉴 카드 ========== -->
+<section class="offer">
+  <div class="wrap">
+    <h2>세 가지로 둘러보기</h2>
+    <div class="cards">
+      <a class="card" href="#s1">
+        <div class="img"><svg viewBox="0 0 120 100" aria-hidden="true"><line x1="10" y1="88" x2="110" y2="88" stroke="var(--muted)"/><rect x="20" y="40" width="20" height="48" fill="var(--bar)"/><rect x="50" y="22" width="20" height="66" fill="var(--bar)"/><rect x="80" y="55" width="20" height="33" fill="var(--bar)"/><line x1="10" y1="44" x2="110" y2="44" stroke="var(--good)" stroke-dasharray="4 3"/></svg></div>
+        <b>지난 사례</b><span>입단 전 5년과 KBO 첫해 성적</span>
+      </a>
+      <a class="card" href="#s2">
+        <div class="img"><svg viewBox="0 0 120 100" aria-hidden="true"><line x1="60" y1="10" x2="60" y2="90" stroke="var(--muted)"/><rect x="60" y="18" width="38" height="12" fill="var(--bar)"/><rect x="28" y="40" width="32" height="12" fill="var(--bar2)"/><rect x="60" y="62" width="14" height="12" fill="var(--bar)"/><rect x="40" y="82" width="20" height="8" fill="var(--bar2)"/></svg></div>
+        <b>갈린 지표</b><span>성공과 그렇지 않은 쪽의 차이, 산점도</span>
+      </a>
+      <a class="card" href="#s3">
+        <div class="img"><svg viewBox="0 0 120 100" aria-hidden="true"><polygon points="60,10 100,32 100,68 60,90 20,68 20,32" fill="none" stroke="var(--line)"/><polygon points="60,28 90,40 82,66 60,76 34,62 30,38" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="var(--accent)" stroke-width="2"/><polygon points="60,36 82,44 78,62 60,70 40,60 38,44" fill="none" stroke="var(--muted)" stroke-dasharray="4 3"/></svg></div>
+        <b>닮은 유형</b><span>2026 트리플A에서 비슷한 모양 찾기</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 도구 영역 ========== -->
+<main class="wrap tools">
+  <div class="warn">
+    <b>읽기 전에</b>
+    <ul>
+      <li><b>표본이 작고 고르지 않습니다.</b> 지금 비교 가능한 지난 사례는 <span id="nPast"></span>명이며, 일본·대만·호주 등 미국 기록이 없는 선수(아시아쿼터 포함)는 빠져 있습니다. <b>KBO 외국인 전체가 아니라 "미국 기록이 충분한 선수"</b>의 이야기입니다.</li>
+      <li>후보에 올랐다고 KBO에 온다는 뜻이 아닙니다. 계약, 나이, 샐러리캡, 구단 사정, 부상은 들어 있지 않습니다.</li>
+      <li>"성공" 기준은 <b>임시로 정한 것</b>이며 직접 바꿀 수 있습니다. 자세한 한계는 아래 <a href="#about">방법·한계</a>를 보세요.</li>
+    </ul>
+  </div>
+
+  <div class="tool" id="s0">
+    <p class="eyebrow">설정</p>
+    <h2>보기 설정</h2>
+    <div class="row">
+      <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
+      <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
+      <span id="critP">
+        <label>성공 기준: 이닝 ≥ <input type="number" id="pIP" value="100"></label>
+        <label>그리고 ERA ≤ <input type="number" id="pERA" value="4.00" step="0.05"></label>
+      </span>
+      <span id="critB" hidden>
+        <label>성공 기준: 타수 ≥ <input type="number" id="bAB" value="300"></label>
+        <label>그리고 OPS ≥ <input type="number" id="bOPS" value="0.800" step="0.01"></label>
+      </span>
+    </div>
+    <p class="note" id="critNote"></p>
+  </div>
+
+  <div class="tool" id="s1">
+    <p class="eyebrow">01 · 지난 사례</p>
+    <h2>입단 전 5년 기록과 KBO 첫해 성적</h2>
+    <p class="sub">입단 전 기록은 MLB 공식 Stats API(입단 해 바로 앞 5시즌, MLB+트리플A 합산), KBO 성적은 MyKBO Stats입니다. 머리글을 누르면 정렬되고, 선수를 누르면 그래프가 열립니다.</p>
+    <div class="tablewrap tall" style="margin-top:12px"><table id="pastTable"></table></div>
+    <details style="margin-top:10px"><summary>비교에서 빠진 선수 보기</summary><div class="note" id="excluded"></div></details>
+  </div>
+
+  <div class="tool" id="s2">
+    <p class="eyebrow">02 · 갈린 지표</p>
+    <h2>성공한 선수와 아닌 선수는 어디서 갈렸나</h2>
+    <p class="sub">입단 전 5년 기록의 평균 차이를 "비교 대상 전체의 흔한 편차" 단위로 나타냈습니다. 오른쪽(파랑)이 성공 쪽이 더 높음.</p>
+    <div id="gap" style="margin-top:12px"></div>
+    <p class="note" id="gapNote"></p>
+
+    <h3>지표 하나를 골라 KBO 성적과 비교해 보기</h3>
+    <div class="row">
+      <label>입단 전 지표(가로) <select id="xSel"></select></label>
+      <label>KBO 첫해 성적(세로) <select id="ySel"></select></label>
+      <label><input type="checkbox" id="enough" checked> <span id="enoughTxt"></span></label>
+    </div>
+    <div id="scatter"></div>
+    <p class="note" id="scatNote"></p>
+  </div>
+
+  <div class="tool" id="s3">
+    <p class="eyebrow">03 · 닮은 유형</p>
+    <h2>지금 닮은 유형은? (2026 트리플A 선수 중)</h2>
+    <p class="sub">기준 선수를 고르면, 최근 5시즌(2022~2026) 기록 모양이 비슷한 2026년 트리플A 선수를 찾아 줍니다. 이름으로 직접 찾을 수도 있습니다.</p>
+    <div class="row">
+      <label>기준 <select id="refSel"></select></label>
+      <label>나이 상한 <input type="number" id="ageMax" value="40" min="20" max="45"></label>
+      <label title="번호로 확인된 선수 + MyKBO 외국인 명단(2010~)과 이름이 같은 선수. 이름만 같은 다른 사람이 빠질 수 있음"><input type="checkbox" id="noKbo" checked> KBO 경력(이름 기준 의심 포함) 선수 빼기</label>
+      <label>이름 검색 <input type="search" id="q" placeholder="예: Sabato"></label>
+    </div>
+    <div class="tablewrap"><table id="candTable"></table></div>
+    <p class="note" id="candNote"></p>
+  </div>
+</main>
+
+<!-- ========== 근거 (신뢰) ========== -->
+<section class="proof" id="about">
+  <div class="wrap">
+    <h2>얼마나 믿을 수 있나: 자료와 검증 현황</h2>
+    <div class="box2">
+      <div><h3>자료 출처</h3><p>미국 시즌 기록·출생연도: MLB Stats API. 스탯캐스트(보조): Baseball Savant. KBO 성적: MyKBO Stats. 이름-번호 연결: Chadwick Bureau 선수 명부. 사이트 약관과 robots.txt를 확인하고 요청 간격을 두어 수집했습니다.</p></div>
+      <div><h3>연결 검증</h3><p>첫해 외국인 <span id="pfTotal">-</span>명 중 <span id="pfLinked">-</span>명을 미국 기록과 연결했습니다. 별명·비슷한 이름으로 연결한 선수는 표에 ⓘ로 "확인 필요"를 표시했고, 동명이인은 입단 전 5년 기록이 있는 한 명일 때만 확정했습니다.</p></div>
+      <div><h3>아직 못 한 것</h3><p>2010~2014년 입단자(KBO 성적 출처 없음), 일본·대만 출신 선수, 레벨·연도별 환경 보정, 연결된 선수 전원에 대한 개별 대조는 아직 하지 못했습니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 부가 정보 ========== -->
+<section class="extras">
+  <div class="wrap" style="max-width:760px">
+    <h2>더 알아보기</h2>
+    <details><summary>왜 스탯캐스트가 아니라 전통 기록(삼진%, 볼넷% 등)으로 비교하나요?</summary><p>스탯캐스트 지표는 MLB가 2015년, 트리플A가 2023년부터만 있어 옛 입단자의 마이너 기록이 없습니다. 입단 전 5년을 모든 선수에게 같은 기준으로 보려고 전통 기록을 중심에 두었고, 스탯캐스트는 있는 선수만 보조 그래프로 보여 줍니다.</p></details>
+    <details><summary>왜 2015년 입단자부터인가요?</summary><p>KBO 외국인 선수 성적을 가져온 MyKBO Stats의 목록이 2014년부터만 완전합니다. 2014년 목록에 처음 나온 선수는 첫해를 알 수 없어 뺐고, 2010~2013년은 일부 선수만 있어 표본이 치우칠 수 있어 쓰지 않았습니다.</p></details>
+    <details><summary>"성공"은 어떻게 정했나요?</summary><p>임시 기준입니다. 투수는 KBO 첫해 100이닝 이상에 ERA 4.00 이하, 타자는 300타수 이상에 OPS .800 이상이며 화면에서 바꿀 수 있습니다. WAR은 쓰지 않았습니다. 최종 기준은 아직 정하지 않았습니다.</p></details>
+    <details><summary>후보에 오른 선수가 KBO에 온다는 뜻인가요?</summary><p>아닙니다. 지난 사례와 기록의 모양이 닮았다는 뜻일 뿐이며, 계약 여부·나이·샐러리캡·구단 사정은 이 자료 밖입니다.</p></details>
+    <details><summary>미국 기록이 없는 선수는 왜 빠졌나요?</summary><p>일본, 대만, 호주 등에서 온 선수와 아시아쿼터 선수는 MLB·마이너 기록이 없어 이 방식으로 비교할 수 없습니다. 그래서 이 화면은 "미국 기록이 충분한 외국인 선수"에 대한 이야기입니다.</p></details>
+  </div>
+</section>
+
+<!-- ========== 푸터 ========== -->
 <footer>
-  출처: MLB Stats API(미국 시즌별 기록, 출생연도), Baseball Savant(스탯캐스트 보조 지표), MyKBO Stats(KBO 외국인 선수 성적), Chadwick Bureau 선수 명부(이름-번호 연결).
-  원본 수집일 <span id="made"></span>. 이 페이지는 <code>tools/08_build_dataset.py</code>가 만든 <code>web/data.js</code>를 읽습니다.
+  <div class="wrap">
+    <div class="cols">
+      <div><a href="#s1">지난 사례</a><a href="#s2">갈린 지표</a><a href="#s3">닮은 유형</a></div>
+      <div class="logo">BEFORE <b>KBO</b></div>
+      <div><a href="https://baseballsavant.mlb.com/" rel="noopener">Baseball Savant</a><a href="https://mykbostats.com/" rel="noopener">MyKBO Stats</a><a href="https://github.com/chadwickbureau/register" rel="noopener">Chadwick Register</a></div>
+    </div>
+    <p class="fine">KBO, MLB, 각 구단·선수와 관계없는 개인 분석입니다. 선수 사진·구단 로고는 사용하지 않았습니다. 원본 수집일 <span id="made"></span>. 이 페이지는 <code>tools/08_build_dataset.py</code>가 만든 <code>web/data.js</code>를 읽습니다.</p>
+  </div>
 </footer>
-</div>
 
 <dialog id="dlg"><div class="dlgin" id="dlgBody"></div></dialog>
 
@@ -510,6 +708,22 @@ function drawSc(){
     feats.map(f=>`<tr><td class="l">${esc(labelFor(role,f))}</td><td>${fF(f,sc[f])}</td><td>${(zs(f,sc[f])>=0?"+":"")+zs(f,sc[f]).toFixed(2)}</td></tr>`).join("") + `</tbody></table>`;
 }
 
+/* ================= 랜딩(히어로·소개·근거) ================= */
+function renderLanding(){
+  const all = D.past["투수"].concat(D.past["타자"]), ys = all.map(r=>r["KBO첫해"]);
+  $("statPast").textContent = all.length;
+  $("statYears").textContent = Math.max(...ys) - Math.min(...ys) + 1;
+  $("statCand").textContent = D.cands["투수"].length + D.cands["타자"].length;
+  const ex = D.excluded["투수"].length + D.excluded["타자"].length;
+  $("pfLinked").textContent = all.length; $("pfTotal").textContent = all.length + ex;
+  // 소개 영역: 투수 성공 사례 평균 vs 전체 평균 (이 함수는 role이 "투수"일 때 호출)
+  const S = pastRows().filter(isSuccess), feats = D.feats[role];
+  if (S.length){
+    const avg = {}; feats.forEach(f=> avg[f]=D.scale[role][f][0]);
+    $("introViz").innerHTML = radarSVG([{name:"성공 사례 평균", vec:meanVec(S), cls:"rd-a"},{name:"전체 평균", vec:avg, cls:"rd-b"}], feats, zf, f=>labelFor(role,f));
+  }
+}
+
 /* ================= 이벤트 ================= */
 function renderAll(){ renderPast(); renderGap(); renderScatter(); fillRefs(); renderCands(); }
 document.addEventListener("click", e=>{
@@ -525,7 +739,7 @@ $("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=>{
 ["pIP","pERA","bAB","bOPS","yFrom","yTo"].forEach(id=> $(id).oninput = renderAll);
 ["xSel","ySel","enough"].forEach(id=> $(id).oninput = renderScatter);
 ["refSel","ageMax","noKbo","q"].forEach(id=> $(id).oninput = renderCands);
-fillScatterSel(); renderAll();
+fillScatterSel(); renderAll(); renderLanding();
 </script>
 </body>
 </html>
