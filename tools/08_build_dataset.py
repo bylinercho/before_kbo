@@ -26,6 +26,11 @@ import unicodedata
 import numpy as np
 import pandas as pd
 import requests
+from scipy.stats import mannwhitneyu
+from sklearn.cluster import KMeans
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score, silhouette_score
+from sklearn.model_selection import RepeatedStratifiedKFold
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -185,6 +190,207 @@ def num(x):
     return pd.to_numeric(x, errors="coerce")
 
 
+# ---------------------------------------------------------------- 유형 군집
+CL_FEATS = {"투수": ["k_pct", "bb_pct", "hr_pct", "gs_pct"], "타자": ["k_pct", "bb_pct", "hr_pct", "iso", "avg"]}
+
+
+def _src(rec, use_adj):
+    return rec["adj"] if use_adj else rec
+
+
+def _zvec(rec, role, use_adj, sc):
+    s = _src(rec, use_adj)
+    return [((s.get(f) if s.get(f) is not None else sc[f][0]) - sc[f][0]) / sc[f][1] for f in CL_FEATS[role]]
+
+
+def _type_name(role, z, gs_raw):
+    """중심점(표준화 값 z)에서 눈에 띄는 특징 2개와 역할로 이름을 만든다. 기준은 |z| >= 0.4."""
+    zz = dict(zip(CL_FEATS[role], z))
+    cand = []
+    if role == "투수":
+        if zz["k_pct"] >= .4: cand.append((abs(zz["k_pct"]), "삼진 많은"))
+        if zz["k_pct"] <= -.4: cand.append((abs(zz["k_pct"]), "맞혀 잡는"))
+        if zz["bb_pct"] <= -.4: cand.append((abs(zz["bb_pct"]), "제구 좋은"))
+        if zz["bb_pct"] >= .4: cand.append((abs(zz["bb_pct"]), "볼넷 많은"))
+        if zz["hr_pct"] >= .4: cand.append((abs(zz["hr_pct"]), "홈런 맞는"))
+        if zz["hr_pct"] <= -.4: cand.append((abs(zz["hr_pct"]), "홈런 억제"))
+        tail = "선발형" if gs_raw >= 65 else ("불펜형" if gs_raw <= 25 else "선발·불펜 혼합형")
+    else:
+        power = (zz["hr_pct"] + zz["iso"]) / 2
+        if power >= .4: cand.append((abs(power), "장타력 좋은"))
+        if power <= -.4: cand.append((abs(power), "장타력 약한"))
+        if zz["k_pct"] <= -.4: cand.append((abs(zz["k_pct"]), "삼진 적은"))
+        if zz["k_pct"] >= .4: cand.append((abs(zz["k_pct"]), "삼진 많은"))
+        if zz["bb_pct"] >= .4: cand.append((abs(zz["bb_pct"]), "볼넷 많은"))
+        if zz["bb_pct"] <= -.4: cand.append((abs(zz["bb_pct"]), "적극적인"))
+        if zz["avg"] >= .4: cand.append((abs(zz["avg"]), "타율 높은"))
+        if zz["avg"] <= -.4: cand.append((abs(zz["avg"]), "타율 낮은"))
+        tail = "타자"
+    cand.sort(reverse=True)
+    traits = "·".join(t for _, t in cand[:2])
+    return (traits + " " + tail) if traits else ("평균적인 " + tail)
+
+
+def make_types_pitcher(recs, use_adj):
+    """투수: 선발(등판 중 선발 비율 50% 이상)과 불펜을 먼저 나누고, 각 그룹 안에서 삼진%·볼넷%·홈런%의 모양으로 3개씩 묶는다.
+    z 값과 이름은 같은 그룹 안에서의 상대 위치(예: '선발 중에서 삼진이 많은')다."""
+    F = ["k_pct", "bb_pct", "hr_pct"]
+    labels, types, used = [None] * len(recs), [], {}
+    for gname, cond, gs_raw in (("선발", lambda g: g >= 50, 100.0), ("불펜", lambda g: g < 50, 0.0)):
+        idx = [i for i, r in enumerate(recs) if cond(_src(r, use_adj).get("gs_pct") or 0)]
+        M = np.array([[(_src(recs[i], use_adj).get(f) if _src(recs[i], use_adj).get(f) is not None else np.nan) for f in F] for i in idx], dtype=float)
+        M = np.where(np.isnan(M), np.nanmean(M, axis=0), M)
+        mu, sd = M.mean(axis=0), M.std(axis=0, ddof=1)
+        Z = (M - mu) / sd
+        km = KMeans(n_clusters=3, n_init=10, random_state=0).fit(Z)
+        sil = silhouette_score(Z, km.labels_)
+        order = np.argsort(-np.bincount(km.labels_))
+        for rank, old in enumerate(order):
+            tid = len(types)
+            members = [idx[j] for j, l in enumerate(km.labels_) if l == old]
+            for i in members:
+                labels[i] = tid
+            z = list(km.cluster_centers_[old]) + [0.0]
+            name = _type_name("투수", z, gs_raw)
+            used[name] = used.get(name, 0) + 1
+            if used[name] > 1:
+                name += f" ({chr(64 + used[name])})"
+            types.append({"id": tid, "name": name, "size": len(members), "group": gname, "sil": round(float(sil), 2),
+                          "z": {f: round(float(v), 2) for f, v in zip(F + ["gs_pct"], z)},
+                          "mean": {f: round(float(np.mean([(_src(recs[i], use_adj).get(f) if _src(recs[i], use_adj).get(f) is not None else mu[F.index(f)]) for i in members])), 2) for f in F}
+                                  | {"gs_pct": round(float(np.mean([_src(recs[i], use_adj).get("gs_pct") or 0 for i in members])), 1)}})
+        print(f"  유형 투수 {'보정' if use_adj else '원본'} {gname}: {len(idx)}명, 실루엣 {sil:.2f}", [t["name"] + f"({t['size']})" for t in types if t["group"] == gname])
+    return types, labels
+
+
+def make_types(role, recs, use_adj, sc):
+    """타자: 같은 역할 전체(지난 사례 + 후보)를 K-평균으로 묶는다. k는 3~6 중 실루엣 점수가 가장 높은 값. 투수는 선발/불펜을 먼저 나눈다.
+    반환: (유형 목록, 선수별 유형 번호)"""
+    if role == "투수":
+        return make_types_pitcher(recs, use_adj)
+    X = np.array([_zvec(r, role, use_adj, sc) for r in recs])
+    best = None
+    for k in range(3, 7):
+        km = KMeans(n_clusters=k, n_init=10, random_state=0).fit(X)
+        s = silhouette_score(X, km.labels_)
+        if min(np.bincount(km.labels_)) >= max(15, 0.04 * len(X)) and (best is None or s > best[0] + 1e-9):
+            best = (s, k, km)
+    s, k, km = best
+    order = np.argsort(-np.bincount(km.labels_))  # 큰 유형부터 0,1,2...
+    remap = {int(old): new for new, old in enumerate(order)}
+    labels = [remap[int(l)] for l in km.labels_]
+    types, used = [], {}
+    for new, old in enumerate(order):
+        z = km.cluster_centers_[old]
+        members = [r for r, l in zip(recs, labels) if l == new]
+        gs_raw = float(np.mean([(_src(r, use_adj).get("gs_pct") or 0) for r in members])) if role == "투수" else 0
+        name = _type_name(role, z, gs_raw)
+        used[name] = used.get(name, 0) + 1
+        if used[name] > 1:
+            name += f" ({chr(64 + used[name])})"
+        mean = {f: float(np.mean([(_src(r, use_adj).get(f) if _src(r, use_adj).get(f) is not None else sc[f][0]) for r in members])) for f in CL_FEATS[role]}
+        types.append({"id": new, "name": name, "size": len(members), "sil": round(float(s), 2), "z": {f: round(float(v), 2) for f, v in zip(CL_FEATS[role], z)},
+                      "mean": {f: round(v, 2) for f, v in mean.items()}})
+    print(f"  유형 {role} {'보정' if use_adj else '원본'}: k={k}, 실루엣 {s:.2f}", [t["name"] + f"({t['size']})" for t in types])
+    return types, labels
+
+
+# ---------------------------------------------------------------- 검증 (교차검증)
+def _succ(rec, crit, p_ip=100, p_era=4.0, b_ab=300, b_ops=0.8):
+    role, y = rec["역할"], rec["KBO첫해"]
+    def first(r):
+        if role == "투수":
+            return r.get("KBO_이닝") is not None and r.get("KBO_ERA") is not None and r["KBO_이닝"] >= p_ip and r["KBO_ERA"] <= p_era
+        return r.get("KBO_타수") is not None and r.get("KBO_OPS") is not None and r["KBO_타수"] >= b_ab and r["KBO_OPS"] >= b_ops
+    if crit == "first":
+        return first(rec)
+    if y >= POOL_YEAR:
+        return None  # 2026 입단자는 다음 해 기록이 없어 제외
+    if crit == "stay":
+        return rec.get("다음해_KBO") == "있음"
+    if crit == "first+stay":
+        return first(rec) and rec.get("다음해_KBO") == "있음"
+    k = rec.get("kbo") or []
+    a = next((x for x in k if x["y"] == y), None)
+    b = next((x for x in k if x["y"] == y + 1), None)
+    if not a or not b:
+        return False
+    if role == "투수":
+        ip = (a["IP"] or 0) + (b["IP"] or 0)
+        if not ip:
+            return False
+        era = ((a["ERA"] or 0) * (a["IP"] or 0) + (b["ERA"] or 0) * (b["IP"] or 0)) / ip
+        return ip >= 2 * p_ip and era <= p_era
+    ab = (a["AB"] or 0) + (b["AB"] or 0)
+    if not ab:
+        return False
+    ops = ((a["OPS"] or 0) * (a["AB"] or 0) + (b["OPS"] or 0) * (b["AB"] or 0)) / ab
+    return ab >= 2 * b_ab and ops >= b_ops
+
+
+N_PERM = 100
+
+
+def _oof_auc(X, y):
+    """교차검증으로 예측한 값의 AUC (로지스틱 회귀, 5-최근접)"""
+    pr, knn = oof_predictions(X, y)
+    return roc_auc_score(y, pr), roc_auc_score(y, knn)
+
+
+def oof_predictions(X, y):
+    """5-겹 층화 교차검증을 10번 반복해, 선수마다 '그 선수를 학습에서 뺀 모델'의 예측 평균을 만든다.
+    (한 명씩 빼는 LOO는 신호가 없을 때 AUC가 0.5보다 훨씬 낮게 나오는 착시가 있어 쓰지 않는다.)
+    pr: 로지스틱 회귀, knn: 학습 쪽에서 가장 가까운 5명의 성공 비율(화면의 '닮은 사례 5명'과 같은 방식)"""
+    n = len(y)
+    pr, knn, cnt = np.zeros(n), np.zeros(n), np.zeros(n)
+    for tr, te in RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=0).split(X, y):
+        clf = LogisticRegression(C=1.0, max_iter=2000).fit(X[tr], y[tr])
+        pr[te] += clf.predict_proba(X[te])[:, 1]
+        d2 = ((X[te][:, None, :] - X[tr][None, :, :]) ** 2).sum(-1)
+        knn[te] += y[tr][np.argsort(d2, axis=1)[:, :5]].mean(axis=1)
+        cnt[te] += 1
+    return pr / cnt, knn / cnt
+
+
+def run_validation(past, scale, scale_adj):
+    """입단 전 5년 지표(5개)로 KBO 성공 여부를 얼마나 가릴 수 있는지: 로지스틱 회귀와 5-최근접(화면에서 쓰는 방식)을
+    5-겹 교차검증 10회 반복으로 예측한 뒤 AUC(1=완벽). 교차검증 AUC는 신호가 없어도 0.5보다 낮게 나오는 편향이 있어서,
+    라벨을 섞은 자료로 같은 절차를 100번 돌린 AUC 분포(null)와 비교한다. p값 = 섞은 자료에서 관측값 이상이 나온 비율.
+    uni = 지표 하나씩의 AUC(0.5=무관)와 맨-휘트니 검정 p값(교차검증 편향 없음)."""
+    rng = np.random.default_rng(0)
+    res = []
+    for role in ("투수", "타자"):
+        feats = TRAD[role]
+        for mode in ("raw", "adj"):
+            sc = scale_adj[role] if mode == "adj" else scale[role]
+            recs = [r for r in past if r["역할"] == role]
+            for crit in ("first", "stay", "first+stay", "two"):
+                rows = [(r, _succ(r, crit)) for r in recs]
+                rows = [(r, int(bool(s))) for r, s in rows if s is not None]
+                y = np.array([s for _, s in rows])
+                n, pos = len(y), int(y.sum())
+                if pos < 6 or n - pos < 6:
+                    res.append({"role": role, "feat": mode, "crit": crit, "n": n, "pos": pos})
+                    continue
+                X = np.array([[((_src(r, mode == "adj").get(f) if _src(r, mode == "adj").get(f) is not None else sc[f][0]) - sc[f][0]) / sc[f][1] for f in feats] for r, _ in rows])
+                a1, a2 = _oof_auc(X, y)
+                # 같은 절차를 라벨을 섞어서 N_PERM번 돌려 "아무 관계도 없을 때 이 절차가 내는 AUC"의 분포를 만든다
+                null = np.array([_oof_auc(X, rng.permutation(y)) for _ in range(N_PERM)])
+                uni = {}
+                for i, f in enumerate(feats):
+                    u = roc_auc_score(y, X[:, i])
+                    uni[f] = [round(float(u), 3), round(float(mannwhitneyu(X[y == 1, i], X[y == 0, i]).pvalue), 3)]
+                res.append({"role": role, "feat": mode, "crit": crit, "n": n, "pos": pos,
+                            "lr": round(a1, 3), "lr_null": round(float(null[:, 0].mean()), 3),
+                            "lr_lo": round(float(np.percentile(null[:, 0], 2.5)), 3), "lr_hi": round(float(np.percentile(null[:, 0], 97.5)), 3),
+                            "lr_p": round((1 + int((null[:, 0] >= a1).sum())) / (1 + N_PERM), 3),
+                            "knn": round(a2, 3), "knn_null": round(float(null[:, 1].mean()), 3),
+                            "knn_lo": round(float(np.percentile(null[:, 1], 2.5)), 3), "knn_hi": round(float(np.percentile(null[:, 1], 97.5)), 3),
+                            "knn_p": round((1 + int((null[:, 1] >= a2).sum())) / (1 + N_PERM), 3),
+                            "uni": uni})
+    return res
+
+
 def main():
     co = pd.read_csv("data/kbo_cohort.csv", dtype=str).fillna("")
     lgdf = pd.read_csv("data/league_rates.csv")
@@ -320,6 +526,18 @@ def main():
         for f in feats:
             v = [a[f] for a in allp if a.get(f) is not None]
             scale_adj[role][f] = [float(np.mean(v)), float(np.std(v, ddof=1))]
+    # ---------- 유형 군집 (원본 지표 기준 / 환경 보정 지표 기준 각각)
+    types = {"raw": {}, "adj": {}}
+    for role in TRAD:
+        recs = [r for r in past + cands if r["역할"] == role]
+        for mode, use_adj, sc in (("raw", False, scale[role]), ("adj", True, scale_adj[role])):
+            tl, labels = make_types(role, recs, use_adj, sc)
+            types[mode][role] = tl
+            for r, l in zip(recs, labels):
+                r["typ" if mode == "raw" else "typA"] = int(l)
+    # ---------- 교차검증
+    print("교차검증 계산 중...", flush=True)
+    validation = run_validation(past, scale, scale_adj)
     sdf = sav[(sav["레벨"] == "AAA")]
     sscale = {}
     for role, feats in SC.items():
@@ -328,7 +546,8 @@ def main():
         sscale[role] = {f: [float(d[f].mean()), float(d[f].std())] for f in feats}
 
     out = {"만든날": time.strftime("%Y-%m-%d"), "후보연도": POOL_YEAR, "창길이": WINDOW, "feats": TRAD, "scale": scale, "scaleAdj": scale_adj,
-           "sfeats": SC, "sscale": sscale, "past": {}, "cands": {}, "excluded": {}, "waivers": waivers}
+           "sfeats": SC, "sscale": sscale, "past": {}, "cands": {}, "excluded": {}, "waivers": waivers,
+           "types": types, "validation": validation}
     for role in TRAD:
         out["past"][role] = [r for r in past if r["역할"] == role]
         out["cands"][role] = [c for c in cands if c["역할"] == role]

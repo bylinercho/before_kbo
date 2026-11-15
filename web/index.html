@@ -51,6 +51,9 @@ nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
 .btn.ghost{border-color:var(--line);color:var(--muted);margin-left:8px}
 .btn.mini{padding:4px 12px;font-size:12px;letter-spacing:.02em}
 .en{color:var(--muted);font-size:12px;margin-left:3px}
+.typrow{display:grid;grid-template-columns:230px 1fr 110px 90px;align-items:center;gap:10px;margin:4px 0;font-size:13.5px;cursor:pointer;padding:2px 4px}
+.typrow:hover{background:var(--band)}
+@media (max-width:700px){ .typrow{grid-template-columns:130px 1fr 80px} .typrow span:last-child{display:none} }
 .row.rf{margin:4px 0}
 .row.rf input[type=number]{width:78px}
 .stats{display:flex;justify-content:center;gap:44px;margin-top:40px;flex-wrap:wrap}
@@ -180,7 +183,8 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       <a href="#s1">지난 사례</a>
       <a href="#s2">갈린 지표</a>
       <a href="#s3">닮은 유형</a>
-      <a href="#s4">기타</a>
+      <a href="#s4">검증</a>
+      <a href="#s5">기타</a>
       <a href="#about">방법·한계</a>
     </nav>
   </div>
@@ -268,6 +272,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
       <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
     <label title="KBO 첫해 소속 팀 기준">팀 <select id="teamSel"></select></label>
+      <label title="기록 모양이 비슷한 선수끼리 묶은 유형(08번 군집). 지난 사례와 후보 모두에 적용됩니다">유형 <select id="typSel"></select></label>
       <label title="삼진%·볼넷%·홈런%·ERA·ISO·타율을 '같은 해·같은 레벨 리그 평균=100' 지수로 바꿔 비교합니다. MLB와 트리플A 사이의 실력 차는 보정하지 않습니다"><input type="checkbox" id="adjOn"> 환경 보정</label>
       <label title="2026 입단자는 다음 해 기록이 없어 '첫해 성적' 외의 방식에서는 제외됩니다">성공 방식 <select id="critMode">
         <option value="first">첫해 성적</option><option value="stay">다음 해 잔류</option>
@@ -307,6 +312,10 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     </div>
     <div id="scatter"></div>
     <p class="note" id="scatNote"></p>
+
+    <h3>유형별 성공 비율</h3>
+    <div id="typPanel"></div>
+    <p class="note" id="typNote"></p>
   </div>
 
   <div class="tool" id="s3">
@@ -337,7 +346,15 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
   </div>
 
   <div class="tool" id="s4">
-    <p class="eyebrow">04 · 기타</p>
+    <p class="eyebrow">04 · 검증</p>
+    <h2>이 지표로 성공을 가려낼 수 있을까?</h2>
+    <p class="sub">입단 전 5년 지표 5개로 성공 여부를 교차검증으로 예측해 봤습니다. 회색 띠는 "성공·실패를 무작위로 섞었을 때" 같은 방법이 내는 값의 범위라서, <b>점이 띠 안이면 우연과 구별되지 않습니다.</b></p>
+    <div class="tablewrap" style="margin-top:10px"><table id="valTable"></table></div>
+    <p class="note" id="valNote"></p>
+  </div>
+
+  <div class="tool" id="s5">
+    <p class="eyebrow">05 · 기타</p>
     <h2>웨이버 공시·방출 사례</h2>
     <p class="sub">기사에서 직접 확인한 사례만 모았습니다. <b>전체 목록이 아니며</b>, 목록에 없다고 공시되지 않았다는 뜻이 아닙니다. 선수를 누르면 상세가 열립니다.</p>
     <div class="tablewrap" style="margin-top:10px"><table id="etcTable"></table></div>
@@ -453,9 +470,13 @@ function isSuccess(r){
   if (m==="two") return succTwo(r);
   return succFirst(r);
 }
-function pastRows(r0){
-  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role, tm = $("teamSel").value, needNext = $("critMode").value!=="first";
-  return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b && (!tm || FR[r["팀"]]===tm) && (!needNext || r["KBO첫해"]<BASE));
+/* 유형(군집): 08번이 기록 모양으로 묶은 것. 환경 보정 모드에서는 보정 지표로 묶은 유형(typA)을 쓴다 */
+const typList = r0 => D.types[ADJ?"adj":"raw"][r0||role] || [];
+const typOf = r => ADJ ? r.typA : r.typ;
+const typName = r => { const t = typList(r["역할"])[typOf(r)]; return t ? t.name : "-"; };
+function pastRows(r0, ignoreType){
+  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role, tm = $("teamSel").value, needNext = $("critMode").value!=="first", ty = ignoreType ? "" : $("typSel").value;
+  return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b && (!tm || FR[r["팀"]]===tm) && (!needNext || r["KBO첫해"]<BASE) && (ty==="" || typOf(r)===+ty));
 }
 const zf = (f,x)=>{ const [m,s]=D.scale[role][f]; return (x-m)/s; };
 function distance(a,b){
@@ -592,10 +613,10 @@ function renderPast(){
   const cols = role==="투수"
     ? [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","상대 타자",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["hr_pct","홈런%",2],["era","ERA",2],
-       ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["판정","판정",null],["stay_n","재계약",0]]
+       ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["typ","유형",null],["판정","판정",null],["stay_n","재계약",0]]
     : [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","타석",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["iso","ISO",3],["avg","타율",3],
-       ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["판정","판정",null],["stay_n","재계약",0]];
+       ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["typ","유형",null],["판정","판정",null],["stay_n","재계약",0]];
   if (ADJ) cols.forEach(c=>{ if (ADJF.has(c[0])) { c[1] += " 지수"; c[2] = 0; } });
   rows.forEach(r=> r["판정"] = isSuccess(r) ? "성공" : "아님");
   if (sortKey) rows.sort((a,b)=>{ const x=a[sortKey], y=b[sortKey]; if (x==null) return 1; if (y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir; });
@@ -607,6 +628,7 @@ function renderPast(){
       if (k==="팀") v = teamK(v);
       else if (k==="mlb_share") v = fmt(v*100,0);
       else if (k==="stay_n") v = `${r.stay_n}년${r.stay_plus?"+":""}`;
+      else if (k==="typ") v = `<span class="note" style="white-space:nowrap">${esc(typName(r))}</span>`;
       else if (k==="판정") v = `<span class="tag ${v==="성공"?"good":"bad"}">${v}</span>`;
       else if (k==="영문명") v = nameHTML(r) + (wvOf(r.mykbo_id).length ? ` <span class="tag warn" title="${esc(wvText(r.mykbo_id))}">${wvExplicit(r.mykbo_id)?"웨이버":"방출"}</span>` : "") + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
       else if (c[2]!=null) v = fmt(v,c[2]);
@@ -704,6 +726,7 @@ function renderCands(){
     else {
       if ($("noKbo").checked && c["KBO경력"]) continue;
       if ($("lvSel").value && c["소속"]!==$("lvSel").value) continue;
+      if ($("typSel").value!=="" && typOf(c)!==+$("typSel").value) continue;
       if (!passRf(c)) continue;
       if (c["출생연도"]!=null && BASE-c["출생연도"]>ageMax) continue;
     }
@@ -712,17 +735,17 @@ function renderCands(){
   res.sort((a,b)=>a.dist-b.dist);
   const top = res.slice(0, q?15:10);
   const LVS = {"AAA·MLB 오감":"AAA↔MLB","AAA만":"AAA","MLB만":"MLB"};
-  let h = `<thead><tr><th class="l">#</th><th class="l">선수</th><th class="l">2026 소속</th><th>나이</th><th>거리</th><th>최근 5년 표본</th><th>MLB%</th><th class="l">가장 닮은 지난 사례</th></tr></thead><tbody>`;
+  let h = `<thead><tr><th class="l">#</th><th class="l">선수</th><th class="l">2026 소속</th><th class="l">유형</th><th>나이</th><th>거리</th><th>최근 5년 표본</th><th>MLB%</th><th class="l">가장 닮은 지난 사례</th></tr></thead><tbody>`;
   top.forEach((t,i)=>{
     const c=t.c, nn = nearest(c, pool, 1)[0];
     h += `<tr class="clickable" data-kind="cand" data-key="${c.player_id}"><td class="l">${i+1}</td>
       <td class="l">${nameHTML(c)}${c["KBO경력"]?' <span class="tag warn" title="이름이 MyKBO 외국인 명단에 있음(동명이인일 수 있음)">KBO경력 의심</span>':""}</td>
-      <td class="l">${LVS[c["소속"]]||c["소속"]}</td>
+      <td class="l">${LVS[c["소속"]]||c["소속"]}</td><td class="l"><span class="note" style="white-space:nowrap">${esc(typName(c))}</span></td>
       <td>${c["출생연도"]!=null? BASE-c["출생연도"] : "-"}</td><td>${t.dist.toFixed(2)}</td>
       <td>${volTxt(c)}</td><td>${fmt(c.mlb_share*100,0)}</td>
       <td class="l">${nn? `${nameHTML(nn.p)} (${nn.p["KBO첫해"]}) ${tag(nn.p)}` : "-"}</td></tr>`;
   });
-  $("candTable").innerHTML = h + (top.length?"":`<tr><td colspan="8" class="l note">조건에 맞는 선수가 없습니다.</td></tr>`) + "</tbody>";
+  $("candTable").innerHTML = h + (top.length?"":`<tr><td colspan="9" class="l note">조건에 맞는 선수가 없습니다.</td></tr>`) + "</tbody>";
   $("candNote").innerHTML = `기준: <b>${esc(ref.name)}</b>. 거리가 작을수록 닮은 유형입니다. 후보가 KBO에 온다는 뜻은 아닙니다.${q?" (이름 검색 중에는 필터를 쓰지 않습니다.)":""}${(!q && rfActive().length)?` 범위 필터 적용: ${esc(rfActive().join(" / "))} → 후보 ${res.length}명.`:""}`;
 }
 
@@ -737,7 +760,7 @@ function openDetail(kind, key){
   const head = isPast
     ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
     : `${role} · 2026 ${({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]]||rec["소속"]} (스탯캐스트 합산 ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"}) · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
-  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p></div><button class="close" id="dlgClose">닫기</button></div>`;
+  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p><p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b></p></div><button class="close" id="dlgClose">닫기</button></div>`;
   /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
   const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
   const vq = role==="투수" ? ["pitching","피칭"] : ["batting highlights","타격"];
@@ -848,8 +871,64 @@ function renderEtc(){
   $("etcNote").innerHTML = `${ev.length}건(선수 ${new Set(ev.map(w=>w.mykbo_id)).size}명, 웨이버 공시 명시 ${ex}건). "방출·퇴출"은 기사에 웨이버 표현이 없던 경우입니다. 줄에 마우스를 올리면 비고가 보입니다. 원 자료는 KBO 공식 사이트(자동 수집 금지)라 쓰지 못했습니다.`;
 }
 
+/* ================= 유형 선택·유형별 성공 비율 ================= */
+let lastTypKey = "";
+function fillTypeSel(){
+  const key = role+"|"+ADJ, sel = $("typSel"), prev = sel.value;
+  sel.innerHTML = `<option value="">전체 유형</option>` + typList().map(t=>`<option value="${t.id}">${esc(t.name)} (${t.size})</option>`).join("");
+  sel.value = (lastTypKey===key && [...sel.options].some(o=>o.value===prev)) ? prev : "";
+  lastTypKey = key;
+}
+function renderTypes(){
+  const rows = pastRows(role, true), cands = D.cands[role], base = rows.length ? rows.filter(isSuccess).length/rows.length*100 : 0;
+  let h = "";
+  for (const t of typList()){
+    const m = rows.filter(r=>typOf(r)===t.id), s = m.filter(isSuccess).length, rate = m.length ? s/m.length*100 : 0, k = cands.filter(c=>typOf(c)===t.id).length;
+    h += `<div class="typrow" data-typ="${t.id}" title="누르면 이 유형만 보기">
+      <span class="tn">${esc(t.name)}</span>
+      <div class="gapbar" style="height:14px"><i style="left:0;width:${Math.min(rate,100).toFixed(1)}%"></i><b style="position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--bad);left:${Math.min(base,100).toFixed(1)}%"></b></div>
+      <span>${s}/${m.length}명 <span class="note">(${m.length?rate.toFixed(0):"-"}%)</span></span><span class="note">2026 후보 ${k}명</span></div>`;
+  }
+  $("typPanel").innerHTML = h || "<p class='note'>유형 정보가 없습니다.</p>";
+  const sils = typList().map(t=>t.sil).filter(x=>x!=null);
+  $("typNote").innerHTML = `붉은 선 = 전체 성공 비율(${base.toFixed(0)}%). 유형은 기록 모양을 K-평균으로 묶은 것이라 <b>경계가 뚜렷하지 않고</b>${sils.length?`(실루엣 점수 ${Math.min(...sils).toFixed(2)}~${Math.max(...sils).toFixed(2)}, 0.5 이상이면 뚜렷)`:""}, 유형 안 표본이 작아 비율 차이는 우연일 수 있습니다. 투수는 선발(등판 중 선발 50% 이상)과 불펜을 먼저 나눕니다.`;
+}
+
+/* ================= 4. 검증: 입단 전 지표로 성공을 가려낼 수 있나 ================= */
+function aucBar(auc, lo, hi){
+  const X = v => (v*140).toFixed(1), out = auc > hi;
+  return `<svg viewBox="0 0 140 18" width="140" height="18" role="img" aria-label="AUC ${auc} (무작위 범위 ${lo}~${hi})">
+    <rect x="${X(lo)}" y="4" width="${(((hi-lo)*140)).toFixed(1)}" height="10" fill="var(--band2)"/>
+    <line x1="70" x2="70" y1="1" y2="17" stroke="var(--muted)" stroke-dasharray="2 2"/>
+    <circle cx="${X(auc)}" cy="9" r="4.5" fill="${out?"var(--good)":"var(--accent)"}"><title>AUC ${auc}, 무작위 범위 ${lo}~${hi}</title></circle></svg>`;
+}
+function renderVal(){
+  const V = (D.validation||[]).filter(v=>v.role===role);
+  let h = `<thead><tr><th class="l">성공 방식</th><th class="l">지표</th><th>표본(성공)</th><th class="l">로지스틱 회귀 AUC</th><th>p</th><th class="l">닮은 사례 5명 AUC</th><th>p</th><th class="l">가장 구분되는 단일 지표</th></tr></thead><tbody>`;
+  let sig = 0, cells = 0, minUni = null;
+  for (const v of V){
+    const fl = v.feat==="adj" ? "환경 보정" : "원본";
+    if (v.lr==null){ h += `<tr><td class="l">${MODE_NOTE[v.crit]}</td><td class="l">${fl}</td><td>${v.n}(${v.pos})</td><td class="l note" colspan="5">성공·비성공 표본이 6명 미만이라 계산하지 않음</td></tr>`; continue; }
+    cells++; if (v.lr_p<0.05) sig++; if (v.knn_p<0.05) sig++;
+    const best = Object.entries(v.uni).sort((a,b)=>a[1][1]-b[1][1])[0];
+    if (!minUni || best[1][1] < minUni.p) minUni = {f:best[0], auc:best[1][0], p:best[1][1], crit:v.crit, feat:fl};
+    h += `<tr><td class="l">${MODE_NOTE[v.crit]}</td><td class="l">${fl}</td><td>${v.n}(${v.pos})</td>
+      <td class="l">${aucBar(v.lr, v.lr_lo, v.lr_hi)} <span class="note">${v.lr.toFixed(2)}</span></td><td>${v.lr_p.toFixed(2)}</td>
+      <td class="l">${aucBar(v.knn, v.knn_lo, v.knn_hi)} <span class="note">${v.knn.toFixed(2)}</span></td><td>${v.knn_p.toFixed(2)}</td>
+      <td class="l">${esc(labelBase(role,best[0]))} <span class="note">AUC ${best[1][0].toFixed(2)}, p=${best[1][1].toFixed(2)}</span></td></tr>`;
+  }
+  $("valTable").innerHTML = h + "</tbody>";
+  $("valNote").innerHTML = V.length ? `${cells}개 조합 × 2가지 방법 중 p&lt;0.05인 것은 <b>${sig}개</b>입니다.${minUni?` 가장 눈에 띄는 단일 지표는 ${esc(labelBase(role,minUni.f))}(${esc(MODE_NOTE[minUni.crit])}, ${minUni.feat}) AUC ${minUni.auc.toFixed(2)}, p=${minUni.p.toFixed(2)}인데, 80번 안팎을 비교했으니 우연으로도 흔한 수준입니다.`:""}
+    AUC 0.5=무관, 1=완벽. 점선=0.5, 회색 띠=라벨을 섞었을 때 범위(교차검증은 신호가 없어도 0.5보다 낮게 나오는 편향이 있음). 일부 조합에서 띠보다 아래인 것은 "신호 없음"과 맞는 결과이며 원인은 확인하지 못했습니다. 성공 기준은 임시이고 표본이 작습니다.` : "";
+}
+
 /* ================= 이벤트 ================= */
-function renderAll(){ renderPast(); renderGap(); renderScatter(); fillRefs(); fillRf(); renderCands(); renderEtc(); }
+function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); }
+document.addEventListener("click", e=>{
+  const r = e.target.closest(".typrow"); if (!r) return;
+  $("typSel").value = r.dataset.typ; renderAll();
+  document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"});
+});
 document.addEventListener("click", e=>{
   const el = e.target.closest("[data-kind]"); if (!el || e.target.closest("th") || e.target.closest("a")) return;
   if (el.dataset.role && el.dataset.role!==role) $("roleSeg").querySelector(`button[data-r="${el.dataset.role}"]`).click();
@@ -863,7 +942,7 @@ $("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=>{
   fillScatterSel(); renderAll();
 });
 $("teamSel").innerHTML = `<option value="">전체 팀</option>` + FR_LIST.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
-["pIP","pERA","bAB","bOPS","yFrom","yTo","teamSel","critMode"].forEach(id=> $(id).oninput = renderAll);
+["pIP","pERA","bAB","bOPS","yFrom","yTo","teamSel","critMode","typSel"].forEach(id=> $(id).oninput = renderAll);
 ["xSel","ySel","enough"].forEach(id=> $(id).oninput = renderScatter);
 ["refSel","lvSel","ageMax","noKbo","q","rf1Min","rf1Max","rf2Min","rf2Max"].forEach(id=> $(id).oninput = renderCands);
 [1,2].forEach(n=>{
