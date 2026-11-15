@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KBO 외국인 선수 닮은 유형 찾기 (초안)</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#1b2430; --muted:#5d6b7b; --line:#dfe4ea;
+  --accent:#1f5fbf; --mlb:#c7791f; --aa:#2f8f5b; --ap:#8a55c2; --a:#7b8794; --mex:#b4402f;
+  --good:#1c7c4d; --bad:#b4402f; --warn-bg:#fff6df; --warn-line:#e6c978;
+  --bar:#9db7de; --bar2:#e3a59a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171d; --card:#1a212a; --ink:#e7ecf2; --muted:#9aa8b8; --line:#2c3643;
+    --accent:#6ea2ee; --mlb:#e0a050; --aa:#5fc994; --ap:#b48be6; --a:#9aa8b8; --mex:#ee8a78;
+    --good:#5fc994; --bad:#ee8a78; --warn-bg:#2b2616; --warn-line:#6b5a22;
+    --bar:#4a6c9e; --bar2:#a8564a;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 64px}
+header{padding:32px 0 8px}
+h1{font-size:26px;margin:0 0 6px}
+h2{font-size:19px;margin:0 0 4px}
+h3{font-size:15px;margin:18px 0 6px}
+.sub{color:var(--muted);margin:0}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin:18px 0}
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:14px}
+.warn ul{margin:6px 0 0;padding-left:18px}
+.row{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin:10px 0}
+label{font-size:14px;color:var(--muted)}
+select,input[type=number],input[type=search]{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+input[type=number]{width:84px}
+input[type=search]{width:200px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;border:0;background:var(--card);color:var(--ink);padding:6px 16px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff}
+.tablewrap{overflow-x:auto}
+.tall{max-height:560px;overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:600;background:var(--card);cursor:pointer;position:sticky;top:0;z-index:1}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+.tag.good{color:var(--good);border-color:var(--good)}
+.tag.bad{color:var(--muted)}
+.tag.warn{color:var(--mlb);border-color:var(--mlb)}
+.note{font-size:12.5px;color:var(--muted)}
+.gap{display:grid;grid-template-columns:130px 1fr 170px;align-items:center;gap:8px;margin:4px 0;font-size:13.5px}
+.gapbar{position:relative;height:16px;background:color-mix(in srgb,var(--line) 50%,transparent);border-radius:3px}
+.gapbar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.gapbar i{position:absolute;top:2px;bottom:2px;background:var(--bar);border-radius:2px}
+.gapbar i.neg{background:var(--bar2)}
+svg{max-width:100%;height:auto;display:block}
+svg text{fill:var(--ink);font-family:inherit}
+svg .m{fill:var(--muted)}
+svg .grid{stroke:var(--line);fill:none}
+svg .axis{stroke:var(--muted);fill:none}
+.rd-a{fill:color-mix(in srgb,var(--accent) 28%,transparent);stroke:var(--accent);stroke-width:2}
+.rd-b{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 3}
+.rd-zero{stroke:var(--muted);fill:none;stroke-dasharray:2 3}
+.pt{cursor:pointer}
+.pt:hover{stroke:var(--ink);stroke-width:2}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);width:min(940px,96vw);max-height:92vh;padding:0}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlgin{padding:18px 20px 24px}
+.dlghead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.dlghead h2{font-size:22px}
+.close{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:4px 12px;cursor:pointer}
+.two{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start}
+.trgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px 14px}
+.trt{font-size:13px;font-weight:600;margin-top:6px}
+.box{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:14px}
+.legend span{display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%}
+footer{color:var(--muted);font-size:12.5px;margin-top:28px}
+@media (max-width:700px){
+  .gap{grid-template-columns:96px 1fr 120px}
+  .two{grid-template-columns:1fr}
+  input[type=search]{width:140px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>KBO 외국인 선수, 오기 전 5년은 어떤 기록이었나</h1>
+  <p class="sub">KBO에 처음 온 외국인 선수들의 <b>입단 전 5시즌 미국 기록</b>과 KBO 첫해 성적을 모아, 지금 비슷한 유형의 선수를 찾아 봅니다. <b>초안</b>이며 영입 예측이 아닙니다. 표나 그래프의 선수를 누르면 상세 그래프가 열립니다.</p>
+</header>
+
+<div class="warn">
+  <b>이 화면을 볼 때 꼭 알아 둘 점</b>
+  <ul>
+    <li><b>표본이 작고 고르지 않습니다.</b> 지금 비교 가능한 지난 사례는 <span id="nPast"></span>명입니다. 일본·대만·호주 등 미국 기록이 없는 선수(아시아쿼터 포함)와 미국 기록이 부족한 선수는 빠져 있어, <b>KBO 외국인 전체가 아니라 "미국 기록이 충분한 선수"</b>의 이야기입니다.</li>
+    <li><b>2015~2026년 입단자만 포함</b>합니다. 2010~2014년 입단자는 KBO 성적을 가져올 수 있는 출처가 아직 없어 넣지 못했습니다.</li>
+    <li>미국 기록은 MLB와 트리플A를 <b>레벨 보정 없이 합쳐서</b> 계산했고(MLB 비중을 함께 표시), 멕시칸 리그는 뺐습니다. 연도별 리그 환경(공, 득점 수준) 차이도 보정하지 않았습니다.</li>
+    <li>계약 여부, 나이, 샐러리캡, 구단 사정, 부상은 들어 있지 않습니다. 후보에 올랐다고 KBO에 온다는 뜻이 아닙니다.</li>
+    <li>"성공" 기준은 <b>임시로 정한 것</b>이며 아래에서 직접 바꿀 수 있습니다. WAR은 쓰지 않았습니다. 선수 사진·구단 로고는 쓰지 않았습니다.</li>
+  </ul>
+</div>
+
+<section id="s0">
+  <h2>보기 설정</h2>
+  <div class="row">
+    <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
+    <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
+    <span id="critP">
+      <label>성공 기준: 이닝 ≥ <input type="number" id="pIP" value="100"></label>
+      <label>그리고 ERA ≤ <input type="number" id="pERA" value="4.00" step="0.05"></label>
+    </span>
+    <span id="critB" hidden>
+      <label>성공 기준: 타수 ≥ <input type="number" id="bAB" value="300"></label>
+      <label>그리고 OPS ≥ <input type="number" id="bOPS" value="0.800" step="0.01"></label>
+    </span>
+  </div>
+  <p class="note" id="critNote"></p>
+</section>
+
+<section id="s1">
+  <h2>1. 지난 사례: 입단 전 5년 기록과 KBO 첫해 성적</h2>
+  <p class="sub">입단 전 기록은 MLB 공식 Stats API(입단 해 바로 앞 5시즌, MLB+트리플A 합산), KBO 성적은 MyKBO Stats입니다. 머리글을 누르면 정렬됩니다.</p>
+  <div class="tablewrap tall"><table id="pastTable"></table></div>
+  <details style="margin-top:10px"><summary>비교에서 빠진 선수 보기</summary><div class="note" id="excluded"></div></details>
+</section>
+
+<section id="s2">
+  <h2>2. 성공한 선수와 아닌 선수는 어디서 갈렸나</h2>
+  <p class="sub">입단 전 5년 기록의 평균 차이를 "비교 대상 전체의 흔한 편차" 단위로 나타냈습니다. 오른쪽(파랑)이 성공 쪽이 더 높음.</p>
+  <div id="gap"></div>
+  <p class="note" id="gapNote"></p>
+
+  <h3>지표 하나를 골라 KBO 성적과 비교해 보기</h3>
+  <div class="row">
+    <label>입단 전 지표(가로) <select id="xSel"></select></label>
+    <label>KBO 첫해 성적(세로) <select id="ySel"></select></label>
+    <label><input type="checkbox" id="enough" checked> <span id="enoughTxt"></span></label>
+  </div>
+  <div id="scatter"></div>
+  <p class="note" id="scatNote"></p>
+</section>
+
+<section id="s3">
+  <h2>3. 지금 닮은 유형은? (2026 트리플A 선수 중)</h2>
+  <p class="sub">기준 선수를 고르면, 최근 5시즌(2022~2026) 기록 모양이 비슷한 2026년 트리플A 선수를 찾아 줍니다. 이름으로 직접 찾을 수도 있습니다.</p>
+  <div class="row">
+    <label>기준 <select id="refSel"></select></label>
+    <label>나이 상한 <input type="number" id="ageMax" value="40" min="20" max="45"></label>
+    <label title="번호로 확인된 선수 + MyKBO 외국인 명단(2010~)과 이름이 같은 선수. 이름만 같은 다른 사람이 빠질 수 있음"><input type="checkbox" id="noKbo" checked> KBO 경력(이름 기준 의심 포함) 선수 빼기</label>
+    <label>이름 검색 <input type="search" id="q" placeholder="예: Sabato"></label>
+  </div>
+  <div class="tablewrap"><table id="candTable"></table></div>
+  <p class="note" id="candNote"></p>
+</section>
+
+<footer>
+  출처: MLB Stats API(미국 시즌별 기록, 출생연도), Baseball Savant(스탯캐스트 보조 지표), MyKBO Stats(KBO 외국인 선수 성적), Chadwick Bureau 선수 명부(이름-번호 연결).
+  원본 수집일 <span id="made"></span>. 이 페이지는 <code>tools/08_build_dataset.py</code>가 만든 <code>web/data.js</code>를 읽습니다.
+</footer>
+</div>
+
+<dialog id="dlg"><div class="dlgin" id="dlgBody"></div></dialog>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+const D = window.DATA;
+const LABEL = {
+  k_pct:"삼진%", bb_pct:"볼넷%", hr_pct:"홈런%", era:"ERA", gs_pct:"선발 비율%", iso:"ISO(장타력)", avg:"타율",
+  mlb_share:"MLB 비중%", age:"입단 때 나이",
+  velocity:"평균 구속(mph)", k_percent:"삼진%", bb_percent:"볼넷%", swing_miss_percent:"헛스윙%",
+  hardhit_percent:"강한 타구%", xwoba:"xwOBA", launch_angle:"평균 발사각", release_extension:"익스텐션(ft)",
+  arm_angle:"팔 각도", launch_speed:"평균 타구속도", barrels_per_bbe_percent:"배럴%"
+};
+const HINT = {k_pct:"투수는 상대 타자 중, 타자는 타석 중 비율. 높을수록 삼진이 많음", hr_pct:"투수는 허용한 홈런 비율, 타자는 친 홈런 비율", gs_pct:"등판 중 선발 비율. 100에 가까울수록 선발"};
+const labelFor = (role,f)=>{
+  if (f==="hardhit_percent") return role==="투수"?"강한 타구 허용%":"강한 타구%";
+  if (f==="xwoba") return role==="투수"?"xwOBA(허용)":"xwOBA";
+  if (role==="투수" && f==="bb_pct") return "볼넷%(허용)";
+  if (role==="투수" && f==="hr_pct") return "홈런%(허용)";
+  return LABEL[f]||f;
+};
+const TEAM = {"Doosan Bears":"두산","Hanwha Eagles":"한화","Kia Tigers":"KIA","Kiwoom Heroes":"키움","KT Wiz":"KT","LG Twins":"LG","Lotte Giants":"롯데","NC Dinos":"NC","Samsung Lions":"삼성","SSG Landers":"SSG","Nexen Heroes":"넥센","Lotte":"롯데"};
+const LVCOL = {MLB:"var(--mlb)", AAA:"var(--accent)", AA:"var(--aa)", "A+":"var(--ap)", A:"var(--a)", MEX:"var(--mex)"};
+const $ = id => document.getElementById(id);
+const fmt = (v,d=1)=> v==null ? "-" : Number(v).toFixed(d);
+const decOf = f => (f==="xwoba"||f==="iso"||f==="avg") ? 3 : (f==="era" ? 2 : 1);
+const fF = (f,v)=> fmt(v,decOf(f));
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const flip = n => { const p = String(n).split(", "); return p.length===2 ? p[1]+" "+p[0] : n; };
+const plain = s => String(s).normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const teamK = t => { for (const k in TEAM) if (String(t).startsWith(k.split(" ")[0])) return TEAM[k]; return t; };
+const BASE = D["후보연도"] || 2026;
+
+let role = "투수", sortKey = null, sortDir = -1;
+$("made").textContent = D["만든날"];
+
+/* ================= 공통 계산 ================= */
+function isSuccess(r){
+  if (r["역할"]==="투수") return r.KBO_이닝!=null && r.KBO_ERA!=null && r.KBO_이닝 >= +$("pIP").value && r.KBO_ERA <= +$("pERA").value;
+  return r.KBO_타수!=null && r.KBO_OPS!=null && r.KBO_타수 >= +$("bAB").value && r.KBO_OPS >= +$("bOPS").value;
+}
+function pastRows(r0){
+  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role;
+  return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b);
+}
+const zf = (f,x)=>{ const [m,s]=D.scale[role][f]; return (x-m)/s; };
+function distance(a,b){
+  const feats = D.feats[role]; let sum=0,n=0; const dz={};
+  for (const f of feats){
+    if (a[f]==null || b[f]==null) continue;
+    const d = zf(f,a[f]) - zf(f,b[f]); dz[f]=d; sum+=d*d; n++;
+  }
+  return n >= feats.length-1 ? {dist:Math.sqrt(sum/n), dz} : null;
+}
+function nearest(vec, pool, k, skip){
+  const res=[];
+  for (const p of pool){ if (skip && skip(p)) continue; const d=distance(vec,p); if (d) res.push({p,dist:d.dist,dz:d.dz}); }
+  res.sort((a,b)=>a.dist-b.dist); return res.slice(0,k);
+}
+function meanVec(rows){
+  const out={}; D.feats[role].forEach(f=>{ const a=rows.map(r=>r[f]).filter(x=>x!=null); out[f]=a.length? a.reduce((s,x)=>s+x,0)/a.length : null; });
+  return out;
+}
+const tag = r => isSuccess(r) ? '<span class="tag good">성공</span>' : '<span class="tag bad">아님</span>';
+const resultLine = r => role==="투수" ? `${fmt(r.KBO_이닝,1)}이닝 ERA ${fmt(r.KBO_ERA,2)}` : `${fmt(r.KBO_타수,0)}타수 OPS ${fmt(r.KBO_OPS,3)}`;
+const volTxt = r => role==="투수" ? `상대 ${r.vol}명` : `${r.vol}타석`;
+
+/* ================= SVG 그래프 ================= */
+function radarSVG(series, feats, zfun, labfun){
+  feats = feats.filter(f=>series.every(s=>s.vec[f]!=null));
+  const n = feats.length; if (n<3) return "<p class='note'>그릴 수 있는 지표가 부족합니다.</p>";
+  const cx=190, cy=160, R=105, zmax=2.5;
+  const ang = i => -Math.PI/2 + i*2*Math.PI/n;
+  const rad = z => (Math.min(Math.max(z,-zmax),zmax)+zmax)/(2*zmax)*R;
+  const pt = (i,z)=> [cx+Math.cos(ang(i))*rad(z), cy+Math.sin(ang(i))*rad(z)];
+  const poly = zs => zs.map((z,i)=>pt(i,z).map(v=>v.toFixed(1)).join(",")).join(" ");
+  let h = `<svg viewBox="0 0 380 320" role="img" aria-label="지표별 편차 레이더 그래프">`;
+  for (const z of [-2,-1,1,2]) h += `<polygon class="grid" points="${poly(feats.map(()=>z))}"/>`;
+  h += `<polygon class="rd-zero" points="${poly(feats.map(()=>0))}"/>`;
+  feats.forEach((f,i)=>{
+    const x=cx+Math.cos(ang(i))*R, y=cy+Math.sin(ang(i))*R, c=Math.cos(ang(i));
+    h += `<line class="grid" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+    const lx=cx+Math.cos(ang(i))*(R+10), ly=cy+Math.sin(ang(i))*(R+10)+4;
+    h += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="11" text-anchor="${Math.abs(c)<0.2?"middle":c>0?"start":"end"}">${esc(labfun(f))}</text>`;
+  });
+  series.slice().reverse().forEach(s=>{ h += `<polygon class="${s.cls}" points="${poly(feats.map(f=>zfun(f,s.vec[f])))}"><title>${esc(s.name)}</title></polygon>`; });
+  return h + `</svg>`;
+}
+function trendSVG(f, hist, y0, y1, kboYear){
+  const W=260,H=136,L=40,Rr=12,T=20,B=22;
+  const pts = hist.filter(h=>h[f]!=null);
+  const title = `<div class="trt">${esc(labelFor(role,f))}</div>`;
+  if (!pts.length) return `<div>${title}<p class="note">기록 없음</p></div>`;
+  const ref = D.scale[role][f][0];
+  const vals = pts.map(p=>p[f]).concat([ref]); let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*0.2||1; lo-=pad; hi+=pad;
+  const X = y => L + (y-(y0-0.5))/((y1+0.5)-(y0-0.5))*(W-L-Rr);
+  const Y = v => T + (1-(v-lo)/(hi-lo))*(H-T-B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(labelFor(role,f))} 추이">`;
+  for (let y=y0; y<=y1; y++) s += `<line class="grid" x1="${X(y)}" x2="${X(y)}" y1="${T}" y2="${H-B}"/><text class="m" x="${X(y)}" y="${H-7}" font-size="10" text-anchor="middle">${y}</text>`;
+  s += `<line class="axis" stroke-dasharray="3 3" x1="${L}" x2="${W-Rr}" y1="${Y(ref)}" y2="${Y(ref)}"/><text class="m" x="${L-4}" y="${Y(ref)+3}" font-size="9" text-anchor="end">평균</text>`;
+  if (kboYear){ const kx=X(kboYear-0.5); s += `<line stroke="var(--bad)" stroke-dasharray="4 3" x1="${kx}" x2="${kx}" y1="${T-6}" y2="${H-B}"/><text x="${kx-3}" y="${T-8}" font-size="10" text-anchor="end" style="fill:var(--bad)">${kboYear} KBO 입단 →</text>`; }
+  const showVal = pts.length <= 8;
+  for (const lv of ["MEX","A","A+","AA","AAA","MLB"]){
+    const g = pts.filter(p=>p.lv===lv).sort((a,b)=>a.y-b.y), col = LVCOL[lv];
+    if (g.length>1) s += `<polyline fill="none" stroke="${col}" stroke-width="1.3" stroke-opacity=".7" points="${g.map(p=>X(p.y).toFixed(1)+","+Y(p[f]).toFixed(1)).join(" ")}"/>`;
+    g.forEach(p=>{
+      const px=X(p.y), py=Y(p[f]), r = 3 + Math.min(p.vol,500)/500*3.5;
+      s += `<circle cx="${px}" cy="${py}" r="${r.toFixed(1)}" fill="${col}"><title>${p.y} ${lv} ${fF(f,p[f])} (${role==="투수"?"상대 타자 ":""}${p.vol}${role==="투수"?"명":"타석"})</title></circle>`;
+      if (showVal) s += `<text x="${px}" y="${py-r-3}" font-size="9.5" text-anchor="middle">${fF(f,p[f])}</text>`;
+    });
+  }
+  return `<div>${title}${s}</svg></div>`;
+}
+function kboBarsSVG(rows){
+  const isP = role==="투수", key = isP?"ERA":"OPS", thr = isP ? +$("pERA").value : +$("bOPS").value;
+  const vals = rows.map(r=>r[key]).filter(v=>v!=null); if (!vals.length) return "";
+  const max = Math.max(...vals, thr) * 1.15, bw = 44, gap = 22, W = Math.max(280, rows.length*(bw+gap)+50), H=190, T=26, B=46;
+  const Y = v => T + (1-v/max)*(H-T-B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="max-width:${Math.max(W,280)}px" role="img" aria-label="KBO 연도별 ${key}">`;
+  s += `<line class="axis" x1="30" x2="${W-6}" y1="${H-B}" y2="${H-B}"/>`;
+  s += `<line stroke="var(--good)" stroke-dasharray="4 3" x1="30" x2="${W-6}" y1="${Y(thr)}" y2="${Y(thr)}"/><text x="${W-6}" y="${Y(thr)-4}" font-size="10" text-anchor="end" style="fill:var(--good)">성공 기준 ${thr}</text>`;
+  rows.forEach((r,i)=>{
+    const x = 40 + i*(bw+gap), v=r[key]; if (v==null) return;
+    s += `<rect x="${x}" y="${Y(v)}" width="${bw}" height="${H-B-Y(v)}" fill="var(--bar)"><title>${r.y} ${teamK(r["팀"])} ${key} ${v}</title></rect>`;
+    s += `<text x="${x+bw/2}" y="${Y(v)-4}" font-size="11" text-anchor="middle">${isP?fmt(v,2):fmt(v,3)}</text>`;
+    s += `<text class="m" x="${x+bw/2}" y="${H-B+14}" font-size="11" text-anchor="middle">${r.y}</text>`;
+    s += `<text class="m" x="${x+bw/2}" y="${H-B+27}" font-size="10" text-anchor="middle">${isP?fmt(r.IP,0)+"이닝":fmt(r.AB,0)+"타수"}</text>`;
+    s += `<text class="m" x="${x+bw/2}" y="${H-B+39}" font-size="10" text-anchor="middle">${esc(teamK(r["팀"]))}</text>`;
+  });
+  return s + "</svg>";
+}
+
+/* ================= 산점도 ================= */
+const YM = {
+  "투수": {"ERA":["ERA (낮을수록 좋음)",r=>r.KBO_ERA,2],"WHIP":["WHIP (낮을수록 좋음)",r=>r.KBO_WHIP,2],
+           "K9":["9이닝당 삼진",r=>r.KBO_이닝? r.KBO_삼진/r.KBO_이닝*9:null,1],"BB9":["9이닝당 볼넷",r=>r.KBO_이닝? r.KBO_볼넷/r.KBO_이닝*9:null,1],"IP":["이닝",r=>r.KBO_이닝,0]},
+  "타자": {"OPS":["OPS",r=>r.KBO_OPS,3],"HR":["홈런",r=>r.KBO_홈런,0],"KR":["삼진/타수",r=>r.KBO_타수? r.KBO_삼진/r.KBO_타수:null,3],"AB":["타수",r=>r.KBO_타수,0]}
+};
+const xval = (r,f)=> f==="age" ? (r["출생연도"]!=null ? r["KBO첫해"]-r["출생연도"] : null) : (f==="mlb_share" ? r.mlb_share*100 : r[f]);
+function fillScatterSel(){
+  $("xSel").innerHTML = D.feats[role].concat(["mlb_share","age"]).map(f=>`<option value="${f}">${esc(labelFor(role,f))}</option>`).join("");
+  $("ySel").innerHTML = Object.entries(YM[role]).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("");
+  $("enoughTxt").textContent = role==="투수" ? "표본 충분한 선수만 (KBO 첫해 50이닝 이상)" : "표본 충분한 선수만 (KBO 첫해 150타수 이상)";
+}
+function renderScatter(){
+  const f = $("xSel").value, yk = $("ySel").value, [ylab,yfn,yd] = YM[role][yk];
+  let rows = pastRows().filter(r=>xval(r,f)!=null && yfn(r)!=null);
+  if ($("enough").checked) rows = rows.filter(r=> role==="투수" ? r.KBO_이닝>=50 : r.KBO_타수>=150);
+  if (rows.length<3){ $("scatter").innerHTML="<p class='note'>그릴 선수가 너무 적습니다.</p>"; $("scatNote").textContent=""; return; }
+  const xs=rows.map(r=>xval(r,f)), ys=rows.map(yfn);
+  const ext = a => { const lo=Math.min(...a), hi=Math.max(...a), p=(hi-lo)*0.08||1; return [lo-p,hi+p]; };
+  const [x0,x1]=ext(xs), [y0,y1]=ext(ys), W=640,H=340,L=56,Rr=16,T=14,B=44;
+  const X=v=>L+(v-x0)/(x1-x0)*(W-L-Rr), Y=v=>T+(1-(v-y0)/(y1-y0))*(H-T-B), xd = (f==="age"||f==="mlb_share")?0:decOf(f);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="산점도">`;
+  for (let i=0;i<=4;i++){
+    const xv=x0+(x1-x0)*i/4, yv=y0+(y1-y0)*i/4;
+    s += `<line class="grid" x1="${X(xv)}" x2="${X(xv)}" y1="${T}" y2="${H-B}"/><text class="m" x="${X(xv)}" y="${H-B+15}" font-size="11" text-anchor="middle">${fmt(xv,xd)}</text>`;
+    s += `<line class="grid" x1="${L}" x2="${W-Rr}" y1="${Y(yv)}" y2="${Y(yv)}"/><text class="m" x="${L-6}" y="${Y(yv)+4}" font-size="11" text-anchor="end">${fmt(yv,yd)}</text>`;
+  }
+  s += `<text class="m" x="${(L+W-Rr)/2}" y="${H-6}" font-size="12" text-anchor="middle">${esc(labelFor(role,f))} (입단 전)</text>`;
+  s += `<text class="m" x="14" y="${(T+H-B)/2}" font-size="12" text-anchor="middle" transform="rotate(-90 14 ${(T+H-B)/2})">${esc(ylab)} (KBO 첫해)</text>`;
+  const n=rows.length, mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  let sxy=0,sxx=0,syy=0; rows.forEach((r,i)=>{ sxy+=(xs[i]-mx)*(ys[i]-my); sxx+=(xs[i]-mx)**2; syy+=(ys[i]-my)**2; });
+  const corr = sxy/Math.sqrt(sxx*syy), slope=sxy/sxx, ic=my-slope*mx;
+  s += `<line stroke="var(--muted)" stroke-dasharray="5 4" x1="${X(x0)}" y1="${Y(ic+slope*x0)}" x2="${X(x1)}" y2="${Y(ic+slope*x1)}"/>`;
+  rows.forEach(r=>{
+    const ok=isSuccess(r), size = role==="투수" ? r.KBO_이닝 : r.KBO_타수/2.2, rr = 3.5 + Math.min(size,180)/180*5.5;
+    s += `<circle class="pt" data-kind="past" data-key="${r.mykbo_id}" cx="${X(xval(r,f))}" cy="${Y(yfn(r))}" r="${rr.toFixed(1)}" fill="${ok?"var(--accent)":"transparent"}" stroke="${ok?"var(--accent)":"var(--muted)"}" stroke-width="1.5" fill-opacity="${ok?0.7:1}"><title>${esc(r["영문명"])} (${r["KBO첫해"]}) — ${esc(labelFor(role,f))} ${fmt(xval(r,f),xd)}, ${esc(ylab)} ${fmt(yfn(r),yd)}</title></circle>`;
+  });
+  $("scatter").innerHTML = s + `</svg><div class="legend"><span><i style="background:var(--accent)"></i>성공 기준 충족</span><span><i style="border:1.5px solid var(--muted)"></i>그 외</span><span>점 크기 = ${role==="투수"?"이닝":"타수"}, 점선 = 추세선</span></div>`;
+  $("scatNote").innerHTML = `선수 ${n}명, 상관계수 r = <b>${corr.toFixed(2)}</b>. 표본이 ${n}명이라 |r|이 0.2~0.3 안팎이면 우연과 구별하기 어렵습니다. 점을 누르면 그 선수의 상세가 열립니다.`;
+}
+
+/* ================= 1. 지난 사례 표 ================= */
+function renderPast(){
+  const rows = pastRows();
+  $("nPast").textContent = D.past["투수"].length + D.past["타자"].length;
+  const cols = role==="투수"
+    ? [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","상대 타자",0],["mlb_share","MLB%",0],
+       ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["hr_pct","홈런%",2],["era","ERA",2],
+       ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["판정","판정",null],["다음해_KBO","다음해",null]]
+    : [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","타석",0],["mlb_share","MLB%",0],
+       ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["iso","ISO",3],["avg","타율",3],
+       ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["판정","판정",null],["다음해_KBO","다음해",null]];
+  rows.forEach(r=> r["판정"] = isSuccess(r) ? "성공" : "아님");
+  if (sortKey) rows.sort((a,b)=>{ const x=a[sortKey], y=b[sortKey]; if (x==null) return 1; if (y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir; });
+  else rows.sort((a,b)=> b["KBO첫해"]-a["KBO첫해"] || String(a["영문명"]).localeCompare(b["영문명"]));
+  let h = "<thead><tr>" + cols.map(c=>`<th data-k="${c[0]}" class="${c[2]==null?"l":""}">${c[1]}${sortKey===c[0]?(sortDir>0?" ▲":" ▼"):""}</th>`).join("") + "</tr></thead><tbody>";
+  for (const r of rows){
+    h += `<tr class="clickable" data-kind="past" data-key="${r.mykbo_id}">` + cols.map(c=>{
+      const k=c[0]; let v=r[k];
+      if (k==="팀") v = teamK(v);
+      else if (k==="mlb_share") v = fmt(v*100,0);
+      else if (k==="판정") v = `<span class="tag ${v==="성공"?"good":"bad"}">${v}</span>`;
+      else if (k==="영문명") v = esc(v) + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
+      else if (c[2]!=null) v = fmt(v,c[2]);
+      else if (v==null || v==="") v = "-";
+      return `<td class="${c[2]==null?"l":""}">${v}</td>`;
+    }).join("") + "</tr>";
+  }
+  $("pastTable").innerHTML = h + "</tbody>";
+  $("pastTable").querySelectorAll("th").forEach(th=> th.onclick = ()=>{ const k=th.dataset.k; if (sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} renderPast(); });
+  const ok = rows.filter(r=>r["판정"]==="성공").length;
+  $("critNote").textContent = `${role} ${rows.length}명 중 ${ok}명이 이 기준을 넘었습니다. 표의 ⓘ는 연결·계산 과정의 주의 사항이니 마우스를 올려 보세요. "MLB%"는 5년 중 MLB에서 상대한 비중입니다.`;
+  const a=+$("yFrom").value, b=+$("yTo").value;
+  const ex = D.excluded[role].filter(e=>e["KBO첫해"]>=a && e["KBO첫해"]<=b);
+  const reasons = {}; ex.forEach(e=>{ (reasons[e["이유"]] = reasons[e["이유"]]||[]).push(e); });
+  $("excluded").innerHTML = `<p>${role} ${ex.length}명이 빠졌습니다. 대부분 일본·대만·호주 등 다른 리그 출신이거나 미국 기록이 부족한 선수로 보이지만, 개별 확인한 것은 아닙니다.</p>` +
+    Object.entries(reasons).map(([k,v])=>`<p><b>${esc(k)}</b> (${v.length}명)<br>${v.sort((x,y)=>x["KBO첫해"]-y["KBO첫해"]).map(e=>`${e["KBO첫해"]} ${esc(e["영문명"])}`).join(" · ")}</p>`).join("");
+}
+
+/* ================= 2. 갈린 지표 ================= */
+function renderGap(){
+  const rows = pastRows(), S = rows.filter(isSuccess), N = rows.filter(r=>!isSuccess(r));
+  const ms = meanVec(S), mn = meanVec(N); let h = "";
+  for (const f of D.feats[role]){
+    if (ms[f]==null || mn[f]==null) continue;
+    const sd = D.scale[role][f][1], d = (ms[f]-mn[f])/sd, w = Math.min(Math.abs(d),1)*50;
+    h += `<div class="gap" title="${esc(HINT[f]||"")}"><span>${labelFor(role,f)}</span>
+      <div class="gapbar"><i class="${d<0?"neg":""}" style="${d>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div>
+      <span>${d>=0?"+":""}${d.toFixed(2)} <span class="note">(${fF(f,ms[f])} vs ${fF(f,mn[f])})</span></span></div>`;
+  }
+  $("gap").innerHTML = h || "<p class='note'>성공 또는 비성공 선수가 없어 비교할 수 없습니다. 기준을 바꿔 보세요.</p>";
+  $("gapNote").innerHTML = `성공 ${S.length}명 vs 그 외 ${N.length}명. 막대 길이는 ±1 편차까지 표시합니다. <b>이 정도 표본에서는 ±0.3~0.5 정도의 차이는 우연으로도 흔히 나옵니다.</b> "이 지표가 성공을 만든다"가 아니라 "이번 표본에서 이런 차이가 보였다"까지만 말합니다.`;
+}
+
+/* ================= 3. 닮은 후보 ================= */
+function fillRefs(){
+  const sel = $("refSel"), prev = sel.value, rows = pastRows().slice().sort((a,b)=>b["KBO첫해"]-a["KBO첫해"]||String(a["영문명"]).localeCompare(b["영문명"]));
+  let h = `<option value="__succ">성공 사례 평균 (${rows.filter(isSuccess).length}명)</option>`;
+  rows.forEach(r=>{ h += `<option value="${r.mykbo_id}">${r["KBO첫해"]} ${esc(r["영문명"])} (${teamK(r["팀"])}${isSuccess(r)?", 성공":""})</option>`; });
+  sel.innerHTML = h; if ([...sel.options].some(o=>o.value===prev)) sel.value = prev;
+}
+function refVector(){
+  const v = $("refSel").value, rows = pastRows();
+  if (v==="__succ"){ const S = rows.filter(isSuccess); return S.length ? {name:"성공 사례 평균", vec:meanVec(S)} : null; }
+  const r = rows.find(x=>String(x.mykbo_id)===v); return r ? {name:r["영문명"], vec:r} : null;
+}
+function renderCands(){
+  const ref = refVector();
+  if (!ref){ $("candTable").innerHTML=""; $("candNote").textContent="기준으로 쓸 선수가 없습니다. 성공 기준이나 입단 연도 범위를 바꿔 보세요."; return; }
+  const q = plain($("q").value.trim()), ageMax = +$("ageMax").value;
+  const pool = pastRows();
+  let res = [];
+  for (const c of D.cands[role]){
+    if (q){ if (!plain(flip(c.player_name)).includes(q)) continue; }
+    else { if ($("noKbo").checked && c["KBO경력"]) continue; if (c["출생연도"]!=null && BASE-c["출생연도"]>ageMax) continue; }
+    const d = distance(c, ref.vec); if (d) res.push({c, dist:d.dist});
+  }
+  res.sort((a,b)=>a.dist-b.dist);
+  const top = res.slice(0, q?15:10);
+  let h = `<thead><tr><th class="l">#</th><th class="l">선수</th><th>나이</th><th>거리</th><th>최근 5년 표본</th><th>MLB%</th><th class="l">가장 닮은 지난 사례</th></tr></thead><tbody>`;
+  top.forEach((t,i)=>{
+    const c=t.c, nn = nearest(c, pool, 1)[0];
+    h += `<tr class="clickable" data-kind="cand" data-key="${c.player_id}"><td class="l">${i+1}</td>
+      <td class="l">${esc(flip(c.player_name))}${c["KBO경력"]?' <span class="tag warn" title="이름이 MyKBO 외국인 명단에 있음(동명이인일 수 있음)">KBO경력 의심</span>':""}</td>
+      <td>${c["출생연도"]!=null? BASE-c["출생연도"] : "-"}</td><td>${t.dist.toFixed(2)}</td>
+      <td>${volTxt(c)}</td><td>${fmt(c.mlb_share*100,0)}</td>
+      <td class="l">${nn? `${esc(nn.p["영문명"])} (${nn.p["KBO첫해"]}) ${tag(nn.p)}` : "-"}</td></tr>`;
+  });
+  $("candTable").innerHTML = h + (top.length?"":`<tr><td colspan="7" class="l note">조건에 맞는 선수가 없습니다.</td></tr>`) + "</tbody>";
+  $("candNote").innerHTML = `기준: <b>${esc(ref.name)}</b>의 입단 전 5년 기록. 거리는 ${D.feats[role].length}개 지표(${D.feats[role].map(f=>labelFor(role,f)).join(", ")})를 편차 단위로 바꿔 평균낸 차이이며 <b>작을수록 닮은 유형</b>입니다. 후보는 2026 트리플A에서 ${role==="투수"?"공 500개":"200타석"} 이상 뛴 선수 중 최근 5시즌 MLB·트리플A 기록이 150${role==="투수"?"명":"타석"} 이상인 사람입니다. 이들이 KBO에 온다는 뜻이 아니며, 계약·나이·부상·샐러리캡은 반영하지 않았습니다.${q?" (이름 검색 중에는 나이·KBO 경력 필터를 쓰지 않습니다.)":""}`;
+}
+
+/* ================= 상세 창 ================= */
+let cur = null;
+function openDetail(kind, key){
+  const rec = kind==="past" ? D.past[role].find(r=>String(r.mykbo_id)===String(key)) : D.cands[role].find(c=>String(c.player_id)===String(key));
+  if (!rec) return;
+  cur = {kind, rec};
+  const isPast = kind==="past", pool = pastRows();
+  const name = isPast ? rec["영문명"] : flip(rec.player_name);
+  const age = rec["출생연도"]!=null ? (isPast ? rec["KBO첫해"]-rec["출생연도"] : BASE-rec["출생연도"]) : null;
+  const head = isPast
+    ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
+    : `${role} · 2026 트리플A ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"} · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
+  let h = `<div class="dlghead"><div><h2>${esc(name)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p></div><button class="close" id="dlgClose">닫기</button></div>`;
+  if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
+  if (!isPast && rec["KBO경력"]) h += `<div class="box note">이름이 MyKBO 외국인 명단에 있어 KBO 경력자로 의심됩니다(동명이인일 수 있음).</div>`;
+  if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
+
+  h += `<h3>입단 전 5년 기록의 모양 <span class="note">— MLB+트리플A 합산, 비교 대상 전체 평균을 0으로 둔 편차</span></h3>
+        <div class="row"><label>비교 대상 <select id="cmpSel"><option value="succ">성공 사례 평균</option><option value="avg">전체 평균</option></select></label></div>
+        <div class="two"><div id="radarBox"></div><div id="radarTbl"></div></div>
+        <p class="note">바깥쪽일수록 평균보다 높다는 뜻이며 좋고 나쁨이 아닙니다(예: 볼넷%가 높은 것은 투수에게 불리). 점선 도형이 비교 대상입니다. ${role==="투수"?"ERA는 구장·리그 환경에 크게 좌우됩니다.":""}</p>`;
+
+  const feat4 = role==="투수" ? ["k_pct","bb_pct","hr_pct","era"] : ["k_pct","bb_pct","iso","avg"];
+  const y0 = isPast ? rec["KBO첫해"]-5 : BASE-4, y1 = isPast ? rec["KBO첫해"]-1 : BASE;
+  h += `<h3>시즌별 추이 <span class="note">— ${y0}~${y1}</span></h3>
+        <div class="legend">${["MLB","AAA","AA","A+","A","MEX"].map(l=>`<span><i style="background:${LVCOL[l]}"></i>${l==="MEX"?"멕시칸 리그":l}</span>`).join("")}<span>점 크기 = 표본, 점선 = 전체 평균</span></div>
+        <div class="trgrid">${feat4.map(f=>trendSVG(f, rec.hist||[], y0, y1, isPast?rec["KBO첫해"]:null)).join("")}</div>
+        <p class="note">레벨마다 상대 수준이 달라 같은 숫자의 의미가 다릅니다. 표본이 작은 해의 점은 흔들림이 큽니다(점에 마우스를 올리면 표본이 보입니다). 기록이 없는 해는 해당 레벨에서 뛰지 않았거나 이 자료에 없는 것입니다.</p>`;
+
+  if (isPast){
+    const kb = rec.kbo||[];
+    h += `<h3>KBO 성적 <span class="note">— MyKBO Stats, ${role==="투수"?"ERA":"OPS"}</span></h3>${kboBarsSVG(kb)}
+          <p class="note">${role==="투수"
+            ? `첫해 ${fmt(rec.KBO_이닝,1)}이닝, ${rec.KBO_승??"-"}승 ${rec.KBO_패??"-"}패, ERA ${fmt(rec.KBO_ERA,2)}, WHIP ${fmt(rec.KBO_WHIP,2)}, 삼진 ${rec.KBO_삼진??"-"}개, 볼넷 ${rec.KBO_볼넷??"-"}개.`
+            : `첫해 ${fmt(rec.KBO_타수,0)}타수, 타율 ${fmt(rec.KBO_타율,3)}, OPS ${fmt(rec.KBO_OPS,3)}, 홈런 ${rec.KBO_홈런??"-"}개, 볼넷 ${rec.KBO_볼넷??"-"}개, 삼진 ${rec.KBO_삼진??"-"}개.`}
+            다음 해 KBO 기록: ${rec["다음해_KBO"]||"아직 모름(2026 입단)"}. 막대는 해당 시즌 성적일 뿐, 부상·교체 사유는 알 수 없습니다.</p>`;
+  }
+
+  if (rec.sc) h += `<h3>스탯캐스트 보조 지표 <span class="note">— ${rec.sc.y} ${rec.sc.lv}, 공 ${rec.sc.n}개 기준</span></h3>
+        <div class="two"><div id="scBox"></div><div id="scTbl"></div></div>
+        <p class="note">스탯캐스트는 MLB 2015년, 트리플A 2023년부터 있어서 있는 선수만 나옵니다. 트리플A 2023~2026 선수 평균을 0으로 둔 편차입니다. 유사도 계산에는 쓰지 않습니다.</p>`;
+
+  if (isPast){
+    const near = nearest(rec, D.cands[role], 5, c=> $("noKbo").checked && c["KBO경력"]);
+    h += `<h3>이 선수와 닮은 2026 트리플A 선수 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th>나이</th><th>거리</th></tr></thead><tbody>` +
+      near.map(n=>`<tr class="clickable" data-kind="cand" data-key="${n.p.player_id}"><td class="l">${esc(flip(n.p.player_name))}</td><td>${n.p["출생연도"]!=null?BASE-n.p["출생연도"]:"-"}</td><td>${n.dist.toFixed(2)}</td></tr>`).join("") + `</tbody></table></div>`;
+  } else {
+    const near = nearest(rec, pool, 5), succ = near.filter(n=>isSuccess(n.p)).length, base = pool.filter(isSuccess).length;
+    h += `<h3>이 선수와 닮은 지난 KBO 사례 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th class="l">KBO 첫해</th><th>거리</th><th class="l">판정</th></tr></thead><tbody>` +
+      near.map(n=>`<tr class="clickable" data-kind="past" data-key="${n.p.mykbo_id}"><td class="l">${esc(n.p["영문명"])}</td><td class="l">${n.p["KBO첫해"]} ${teamK(n.p["팀"])} · ${resultLine(n.p)}</td><td>${n.dist.toFixed(2)}</td><td class="l">${tag(n.p)}</td></tr>`).join("") + `</tbody></table></div>
+      <div class="box">닮은 사례 ${near.length}명 중 <b>${succ}명</b>이 성공 기준을 넘었습니다. (지난 사례 전체: ${pool.length}명 중 ${base}명.) 비교 대상이 5명뿐이라 <b>우연일 가능성이 큽니다</b>. "이 선수가 성공한다"는 뜻이 아닙니다.</div>`;
+  }
+  $("dlgBody").innerHTML = h;
+  drawRadar();
+  if (rec.sc) drawSc();
+  $("cmpSel").onchange = drawRadar;
+  $("dlgClose").onclick = ()=> $("dlg").close();
+  if (!$("dlg").open) $("dlg").showModal();
+  $("dlg").scrollTop = 0;
+}
+function drawRadar(){
+  const rec = cur.rec, cmp = $("cmpSel").value, feats = D.feats[role];
+  const mine = {}; feats.forEach(f=> mine[f]=rec[f]);
+  let other, otherName;
+  if (cmp==="succ"){ const S = pastRows().filter(isSuccess); other = S.length? meanVec(S) : null; otherName="성공 사례 평균"; }
+  else { other = {}; feats.forEach(f=> other[f]=D.scale[role][f][0]); otherName="전체 평균"; }
+  const series = [{name:"이 선수", vec:mine, cls:"rd-a"}]; if (other) series.push({name:otherName, vec:other, cls:"rd-b"});
+  $("radarBox").innerHTML = radarSVG(series, feats, zf, f=>labelFor(role,f));
+  let t = `<table><thead><tr><th class="l">지표</th><th>이 선수</th><th>${otherName}</th><th>편차</th></tr></thead><tbody>`;
+  for (const f of feats){
+    if (mine[f]==null) continue;
+    const z = zf(f,mine[f]);
+    t += `<tr title="${esc(HINT[f]||"")}"><td class="l">${esc(labelFor(role,f))}</td><td>${fF(f,mine[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${z>=0?"+":""}${z.toFixed(2)}</td></tr>`;
+  }
+  $("radarTbl").innerHTML = t + `</tbody></table><p class="note">편차 = (이 선수 − 전체 평균) ÷ 전체 표준편차. 전체 = 지난 사례 + 2026 후보.</p>`;
+}
+function drawSc(){
+  const sc = cur.rec.sc, feats = D.sfeats[role], zs = (f,x)=>{ const [m,s]=D.sscale[role][f]; return (x-m)/s; };
+  $("scBox").innerHTML = radarSVG([{name:"이 선수", vec:sc, cls:"rd-a"}], feats, zs, f=>labelFor(role,f));
+  $("scTbl").innerHTML = `<table><thead><tr><th class="l">지표</th><th>값</th><th>편차</th></tr></thead><tbody>` +
+    feats.map(f=>`<tr><td class="l">${esc(labelFor(role,f))}</td><td>${fF(f,sc[f])}</td><td>${(zs(f,sc[f])>=0?"+":"")+zs(f,sc[f]).toFixed(2)}</td></tr>`).join("") + `</tbody></table>`;
+}
+
+/* ================= 이벤트 ================= */
+function renderAll(){ renderPast(); renderGap(); renderScatter(); fillRefs(); renderCands(); }
+document.addEventListener("click", e=>{
+  const el = e.target.closest("[data-kind]"); if (el && !e.target.closest("th")) openDetail(el.dataset.kind, el.dataset.key);
+});
+$("dlg").addEventListener("click", e=>{ if (e.target===$("dlg")) $("dlg").close(); });
+$("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=>{
+  $("roleSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+  role = b.dataset.r; sortKey = null; $("q").value = "";
+  $("critP").hidden = role!=="투수"; $("critB").hidden = role!=="타자";
+  fillScatterSel(); renderAll();
+});
+["pIP","pERA","bAB","bOPS","yFrom","yTo"].forEach(id=> $(id).oninput = renderAll);
+["xSel","ySel","enough"].forEach(id=> $(id).oninput = renderScatter);
+["refSel","ageMax","noKbo","q"].forEach(id=> $(id).oninput = renderCands);
+fillScatterSel(); renderAll();
+</script>
+</body>
+</html>
