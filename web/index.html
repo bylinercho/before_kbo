@@ -50,6 +50,7 @@ nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
 .btn:hover{background:var(--ink);color:var(--bg)}
 .btn.ghost{border-color:var(--line);color:var(--muted);margin-left:8px}
 .btn.mini{padding:4px 12px;font-size:12px;letter-spacing:.02em}
+.en{color:var(--muted);font-size:12px;margin-left:3px}
 .row.rf{margin:4px 0}
 .row.rf input[type=number]{width:78px}
 .stats{display:flex;justify-content:center;gap:44px;margin-top:40px;flex-wrap:wrap}
@@ -317,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       <label>소속 <select id="lvSel"><option value="">전체</option><option value="AAA·MLB 오감">트리플A·MLB 오가는 선수</option><option value="AAA만">트리플A만</option><option value="MLB만">MLB만</option></select></label>
       <label>나이 상한 <input type="number" id="ageMax" value="40" min="20" max="45"></label>
       <label title="번호로 확인된 선수 + MyKBO 외국인 명단(2010~)과 이름이 같은 선수. 이름만 같은 다른 사람이 빠질 수 있음"><input type="checkbox" id="noKbo" checked> KBO 경력(이름 기준 의심 포함) 선수 빼기</label>
-      <label>이름 검색 <input type="search" id="q" placeholder="예: Sabato"></label>
+      <label>이름 검색 <input type="search" id="q" placeholder="예: Sabato, 치리노스"></label>
     </div>
     <div class="row rf">
       <span class="note">기록 수준 범위 필터</span>
@@ -403,6 +404,10 @@ const fF = (f,v)=> fmt(v,decOf(f));
 const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const flip = n => { const p = String(n).split(", "); return p.length===2 ? p[1]+" "+p[0] : n; };
 const plain = s => String(s).normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase();
+/* 이름 표기: 한국 등록명이 있으면 "치리노스 Yonny Chirinos", 없으면 영문만 */
+const enName = r => r["영문명"] || flip(r.player_name);
+const nameHTML = r => r["한글명"] ? `${esc(r["한글명"])} <span class="en">${esc(enName(r))}</span>` : esc(enName(r));
+const nameTxt = r => r["한글명"] ? `${r["한글명"]} ${enName(r)}` : enName(r);
 const teamK = t => { for (const k in TEAM) if (String(t).startsWith(k.split(" ")[0])) return TEAM[k]; return t; };
 const BASE = D["후보연도"] || 2026;
 
@@ -540,7 +545,7 @@ function renderScatter(){
   s += `<line stroke="var(--muted)" stroke-dasharray="5 4" x1="${X(x0)}" y1="${Y(ic+slope*x0)}" x2="${X(x1)}" y2="${Y(ic+slope*x1)}"/>`;
   rows.forEach(r=>{
     const ok=isSuccess(r), size = role==="투수" ? r.KBO_이닝 : r.KBO_타수/2.2, rr = 3.5 + Math.min(size,180)/180*5.5;
-    s += `<circle class="pt" data-kind="past" data-key="${r.mykbo_id}" cx="${X(xval(r,f))}" cy="${Y(yfn(r))}" r="${rr.toFixed(1)}" fill="${ok?"var(--accent)":"transparent"}" stroke="${ok?"var(--accent)":"var(--muted)"}" stroke-width="1.5" fill-opacity="${ok?0.7:1}"><title>${esc(r["영문명"])} (${r["KBO첫해"]}) — ${esc(labelFor(role,f))} ${fmt(xval(r,f),xd)}, ${esc(ylab)} ${fmt(yfn(r),yd)}</title></circle>`;
+    s += `<circle class="pt" data-kind="past" data-key="${r.mykbo_id}" cx="${X(xval(r,f))}" cy="${Y(yfn(r))}" r="${rr.toFixed(1)}" fill="${ok?"var(--accent)":"transparent"}" stroke="${ok?"var(--accent)":"var(--muted)"}" stroke-width="1.5" fill-opacity="${ok?0.7:1}"><title>${esc(nameTxt(r))} (${r["KBO첫해"]}) —${esc(labelFor(role,f))} ${fmt(xval(r,f),xd)}, ${esc(ylab)} ${fmt(yfn(r),yd)}</title></circle>`;
   });
   $("scatter").innerHTML = s + `</svg><div class="legend"><span><i style="background:var(--accent)"></i>성공 기준 충족</span><span><i style="border:1.5px solid var(--muted)"></i>그 외</span><span>점 크기 = ${role==="투수"?"이닝":"타수"}, 점선 = 추세선</span></div>`;
   $("scatNote").innerHTML = `${n}명, 상관계수 r = <b>${corr.toFixed(2)}</b>. |r|이 0.2~0.3 안팎이면 우연과 구별하기 어렵습니다. 점을 누르면 상세가 열립니다.`;
@@ -567,7 +572,7 @@ function renderPast(){
       if (k==="팀") v = teamK(v);
       else if (k==="mlb_share") v = fmt(v*100,0);
       else if (k==="판정") v = `<span class="tag ${v==="성공"?"good":"bad"}">${v}</span>`;
-      else if (k==="영문명") v = esc(v) + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
+      else if (k==="영문명") v = nameHTML(r) + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
       else if (c[2]!=null) v = fmt(v,c[2]);
       else if (v==null || v==="") v = "-";
       return `<td class="${c[2]==null?"l":""}">${v}</td>`;
@@ -581,7 +586,7 @@ function renderPast(){
   const ex = D.excluded[role].filter(e=>e["KBO첫해"]>=a && e["KBO첫해"]<=b);
   const reasons = {}; ex.forEach(e=>{ (reasons[e["이유"]] = reasons[e["이유"]]||[]).push(e); });
   $("excluded").innerHTML = `<p>${role} ${ex.length}명이 빠졌습니다(대부분 미국 밖 출신으로 보이나 개별 확인은 안 했습니다).</p>` +
-    Object.entries(reasons).map(([k,v])=>`<p><b>${esc(k)}</b> (${v.length}명)<br>${v.sort((x,y)=>x["KBO첫해"]-y["KBO첫해"]).map(e=>`${e["KBO첫해"]} ${esc(e["영문명"])}`).join(" · ")}</p>`).join("");
+    Object.entries(reasons).map(([k,v])=>`<p><b>${esc(k)}</b> (${v.length}명)<br>${v.sort((x,y)=>x["KBO첫해"]-y["KBO첫해"]).map(e=>`${e["KBO첫해"]} ${e["한글명"]?esc(e["한글명"])+" ":""}${esc(e["영문명"])}`).join(" · ")}</p>`).join("");
 }
 
 /* ================= 2. 갈린 지표 ================= */
@@ -643,13 +648,13 @@ function rfActive(){
 function fillRefs(){
   const sel = $("refSel"), prev = sel.value, rows = pastRows().slice().sort((a,b)=>b["KBO첫해"]-a["KBO첫해"]||String(a["영문명"]).localeCompare(b["영문명"]));
   let h = `<option value="__succ">성공 사례 평균 (${rows.filter(isSuccess).length}명)</option>`;
-  rows.forEach(r=>{ h += `<option value="${r.mykbo_id}">${r["KBO첫해"]} ${esc(r["영문명"])} (${teamK(r["팀"])}${isSuccess(r)?", 성공":""})</option>`; });
+  rows.forEach(r=>{ h += `<option value="${r.mykbo_id}">${r["KBO첫해"]} ${esc(nameTxt(r))} (${teamK(r["팀"])}${isSuccess(r)?", 성공":""})</option>`; });
   sel.innerHTML = h; if ([...sel.options].some(o=>o.value===prev)) sel.value = prev;
 }
 function refVector(){
   const v = $("refSel").value, rows = pastRows();
   if (v==="__succ"){ const S = rows.filter(isSuccess); return S.length ? {name:"성공 사례 평균", vec:meanVec(S)} : null; }
-  const r = rows.find(x=>String(x.mykbo_id)===v); return r ? {name:r["영문명"], vec:r} : null;
+  const r = rows.find(x=>String(x.mykbo_id)===v); return r ? {name:nameTxt(r), vec:r} : null;
 }
 function renderCands(){
   const ref = refVector();
@@ -658,7 +663,7 @@ function renderCands(){
   const pool = pastRows();
   let res = [];
   for (const c of D.cands[role]){
-    if (q){ if (!plain(flip(c.player_name)).includes(q)) continue; }
+    if (q){ if (!plain(flip(c.player_name)+" "+(c["한글명"]||"")).includes(q)) continue; }
     else {
       if ($("noKbo").checked && c["KBO경력"]) continue;
       if ($("lvSel").value && c["소속"]!==$("lvSel").value) continue;
@@ -674,11 +679,11 @@ function renderCands(){
   top.forEach((t,i)=>{
     const c=t.c, nn = nearest(c, pool, 1)[0];
     h += `<tr class="clickable" data-kind="cand" data-key="${c.player_id}"><td class="l">${i+1}</td>
-      <td class="l">${esc(flip(c.player_name))}${c["KBO경력"]?' <span class="tag warn" title="이름이 MyKBO 외국인 명단에 있음(동명이인일 수 있음)">KBO경력 의심</span>':""}</td>
+      <td class="l">${nameHTML(c)}${c["KBO경력"]?' <span class="tag warn" title="이름이 MyKBO 외국인 명단에 있음(동명이인일 수 있음)">KBO경력 의심</span>':""}</td>
       <td class="l">${LVS[c["소속"]]||c["소속"]}</td>
       <td>${c["출생연도"]!=null? BASE-c["출생연도"] : "-"}</td><td>${t.dist.toFixed(2)}</td>
       <td>${volTxt(c)}</td><td>${fmt(c.mlb_share*100,0)}</td>
-      <td class="l">${nn? `${esc(nn.p["영문명"])} (${nn.p["KBO첫해"]}) ${tag(nn.p)}` : "-"}</td></tr>`;
+      <td class="l">${nn? `${nameHTML(nn.p)} (${nn.p["KBO첫해"]}) ${tag(nn.p)}` : "-"}</td></tr>`;
   });
   $("candTable").innerHTML = h + (top.length?"":`<tr><td colspan="8" class="l note">조건에 맞는 선수가 없습니다.</td></tr>`) + "</tbody>";
   $("candNote").innerHTML = `기준: <b>${esc(ref.name)}</b>. 거리가 작을수록 닮은 유형입니다. 후보가 KBO에 온다는 뜻은 아닙니다.${q?" (이름 검색 중에는 필터를 쓰지 않습니다.)":""}${(!q && rfActive().length)?` 범위 필터 적용: ${esc(rfActive().join(" / "))} → 후보 ${res.length}명.`:""}`;
@@ -691,12 +696,11 @@ function openDetail(kind, key){
   if (!rec) return;
   cur = {kind, rec};
   const isPast = kind==="past", pool = pastRows();
-  const name = isPast ? rec["영문명"] : flip(rec.player_name);
   const age = rec["출생연도"]!=null ? (isPast ? rec["KBO첫해"]-rec["출생연도"] : BASE-rec["출생연도"]) : null;
   const head = isPast
     ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
     : `${role} · 2026 ${({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]]||rec["소속"]} (스탯캐스트 합산 ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"}) · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
-  let h = `<div class="dlghead"><div><h2>${esc(name)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p></div><button class="close" id="dlgClose">닫기</button></div>`;
+  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p></div><button class="close" id="dlgClose">닫기</button></div>`;
   if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
   if (!isPast && rec["KBO경력"]) h += `<div class="box note">이름이 KBO 외국인 명단과 같아 경력자로 의심됩니다(동명이인일 수 있음).</div>`;
   if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
@@ -729,11 +733,11 @@ function openDetail(kind, key){
   if (isPast){
     const near = nearest(rec, D.cands[role], 5, c=> $("noKbo").checked && c["KBO경력"]);
     h += `<h3>이 선수와 닮은 2026 트리플A 선수 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th>나이</th><th>거리</th></tr></thead><tbody>` +
-      near.map(n=>`<tr class="clickable" data-kind="cand" data-key="${n.p.player_id}"><td class="l">${esc(flip(n.p.player_name))}</td><td>${n.p["출생연도"]!=null?BASE-n.p["출생연도"]:"-"}</td><td>${n.dist.toFixed(2)}</td></tr>`).join("") + `</tbody></table></div>`;
+      near.map(n=>`<tr class="clickable" data-kind="cand" data-key="${n.p.player_id}"><td class="l">${nameHTML(n.p)}</td><td>${n.p["출생연도"]!=null?BASE-n.p["출생연도"]:"-"}</td><td>${n.dist.toFixed(2)}</td></tr>`).join("") + `</tbody></table></div>`;
   } else {
     const near = nearest(rec, pool, 5), succ = near.filter(n=>isSuccess(n.p)).length, base = pool.filter(isSuccess).length;
     h += `<h3>이 선수와 닮은 지난 KBO 사례 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th class="l">KBO 첫해</th><th>거리</th><th class="l">판정</th></tr></thead><tbody>` +
-      near.map(n=>`<tr class="clickable" data-kind="past" data-key="${n.p.mykbo_id}"><td class="l">${esc(n.p["영문명"])}</td><td class="l">${n.p["KBO첫해"]} ${teamK(n.p["팀"])} · ${resultLine(n.p)}</td><td>${n.dist.toFixed(2)}</td><td class="l">${tag(n.p)}</td></tr>`).join("") + `</tbody></table></div>
+      near.map(n=>`<tr class="clickable" data-kind="past" data-key="${n.p.mykbo_id}"><td class="l">${nameHTML(n.p)}</td><td class="l">${n.p["KBO첫해"]} ${teamK(n.p["팀"])} · ${resultLine(n.p)}</td><td>${n.dist.toFixed(2)}</td><td class="l">${tag(n.p)}</td></tr>`).join("") + `</tbody></table></div>
       <div class="box">닮은 사례 ${near.length}명 중 <b>${succ}명</b>이 성공 기준을 넘었습니다(전체 ${pool.length}명 중 ${base}명). 5명뿐이라 우연일 수 있습니다.</div>`;
   }
   $("dlgBody").innerHTML = h;

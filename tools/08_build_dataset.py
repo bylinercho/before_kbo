@@ -144,6 +144,10 @@ def num(x):
 
 def main():
     co = pd.read_csv("data/kbo_cohort.csv", dtype=str).fillna("")
+    kn = {}  # mykbo_id -> 한국 등록명 (09번이 MyKBO 선수 페이지에서 받음. 없으면 빈 칸)
+    if os.path.exists("data/kbo_korean_names.csv"):
+        k = pd.read_csv("data/kbo_korean_names.csv", dtype=str).fillna("")
+        kn = dict(zip(k["mykbo_id"], k["한국등록명"]))
     co["KBO첫해"] = co["KBO첫해"].astype(int)
     hist = pd.read_csv("data/raw/history_long.csv", encoding="utf-8-sig")
     hist_by = {k: g for k, g in hist.groupby(["id", "group"])}
@@ -161,14 +165,15 @@ def main():
     for _, r in co.iterrows():
         role, debut = r["역할"], r["KBO첫해"]
         if r["연결"] != "연결됨":
-            excluded.append({"KBO첫해": debut, "영문명": r["영문명"], "팀": r["팀"], "역할": role, "이유": r["연결"] if r["연결"] else "연결 안 됨"})
+            excluded.append({"KBO첫해": debut, "영문명": r["영문명"], "한글명": kn.get(r["mykbo_id"], ""), "팀": r["팀"], "역할": role,
+                             "이유": r["연결"] if r["연결"] else "연결 안 됨"})
             continue
         h = get_h(r["mlbam"], role)
         prof, note, why = profile(role, h, debut - WINDOW, debut - 1)
         if prof is None:
-            excluded.append({"KBO첫해": debut, "영문명": r["영문명"], "팀": r["팀"], "역할": role, "이유": why})
+            excluded.append({"KBO첫해": debut, "영문명": r["영문명"], "한글명": kn.get(r["mykbo_id"], ""), "팀": r["팀"], "역할": role, "이유": why})
             continue
-        rec = {"KBO첫해": debut, "mykbo_id": r["mykbo_id"], "영문명": r["영문명"], "팀": r["팀"], "역할": role,
+        rec = {"KBO첫해": debut, "mykbo_id": r["mykbo_id"], "영문명": r["영문명"], "한글명": kn.get(r["mykbo_id"], ""), "팀": r["팀"], "역할": role,
                "mlbam": int(r["mlbam"]), "창": prof.pop("years"), **{k: clean(v) for k, v in prof.items()}}
         flags = [note] if note else []
         if "확인 필요" in r["연결방법"]:
@@ -215,6 +220,7 @@ def main():
 
     # ---------- 2026 후보
     cand_ids = {int(r["mlbam"]) for r in past}
+    mlb_ko = {int(r["mlbam"]): r["한글명"] for r in past if r["한글명"]}  # 2026 후보 중 KBO에 왔던 선수는 한국 등록명도 붙인다
     cands, dropped = [], 0
     for _, c in pool.iterrows():
         role = c["역할"]
@@ -227,7 +233,8 @@ def main():
             dropped += 1
             continue
         name_flag = norm(" ".join(reversed(str(c["player_name"]).split(", ")))) in kbo_names
-        rec = {"player_id": int(c["player_id"]), "player_name": c["player_name"], "역할": role, "창": prof.pop("years"),
+        rec = {"player_id": int(c["player_id"]), "player_name": c["player_name"], "한글명": mlb_ko.get(int(c["player_id"]), ""),
+               "역할": role, "창": prof.pop("years"),
                **{k: clean(v) for k, v in prof.items()}, "total_pitches": int(c["total_pitches"]), "pa26": int(c["pa"]),
                "MLB_공수": int(c["MLB_공수"]), "소속": c["소속"],
                "KBO경력": 1 if (name_flag or int(c["player_id"]) in cand_ids) else 0, "주의": note}
