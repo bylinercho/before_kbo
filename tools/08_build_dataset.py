@@ -185,10 +185,18 @@ def hist_rows(role, h, y0, y1):
     return out
 
 
+PEOPLE_COLS = ["id", "fullName", "birthDate", "bat", "throw", "country", "pos", "height", "weight"]
+
+
 def load_people(ids):
+    """MLB 선수 정보(생년월일·타격손·투구손·출생국·포지션·키·몸무게). 새 열이 없던 옛 캐시는 비어 있는 선수만 다시 받는다."""
     path = "data/raw/people.csv"
-    have = pd.read_csv(path, dtype=str) if os.path.exists(path) else pd.DataFrame(columns=["id", "fullName", "birthDate"])
-    need = [i for i in sorted(set(ids)) if str(i) not in set(have["id"])]
+    have = pd.read_csv(path, dtype=str).fillna("") if os.path.exists(path) else pd.DataFrame(columns=PEOPLE_COLS)
+    for c in PEOPLE_COLS:
+        if c not in have.columns:
+            have[c] = ""
+    done = set(have.loc[have["pos"] != "", "id"])
+    need = [i for i in sorted(set(ids)) if str(i) not in done]
     rows = []
     for k in range(0, len(need), 100):
         chunk = ",".join(str(i) for i in need[k:k + 100])
@@ -196,15 +204,51 @@ def load_people(ids):
             r = requests.get("https://statsapi.mlb.com/api/v1/people", params={"personIds": chunk},
                              headers={"User-Agent": "Mozilla/5.0 (research script)"}, timeout=60)
             r.raise_for_status()
-            rows += [{"id": str(p["id"]), "fullName": p.get("fullName", ""), "birthDate": p.get("birthDate", "")} for p in r.json().get("people", [])]
+            for p in r.json().get("people", []):
+                rows.append({"id": str(p["id"]), "fullName": p.get("fullName", ""), "birthDate": p.get("birthDate", ""),
+                             "bat": (p.get("batSide") or {}).get("code", ""), "throw": (p.get("pitchHand") or {}).get("code", ""),
+                             "country": p.get("birthCountry", ""), "pos": (p.get("primaryPosition") or {}).get("abbreviation", ""),
+                             "height": p.get("height", ""), "weight": str(p.get("weight", "") or "")})
         except Exception as e:
-            print("출생연도 받기 실패:", repr(e)[:120])
+            print("선수 정보 받기 실패:", repr(e)[:120])
             break
         time.sleep(2)
     if rows:
-        have = pd.concat([have, pd.DataFrame(rows)], ignore_index=True).drop_duplicates("id")
-        have.to_csv(path, index=False, encoding="utf-8-sig")
+        have = pd.concat([have[~have["id"].isin([r["id"] for r in rows])], pd.DataFrame(rows)], ignore_index=True)
+        have[PEOPLE_COLS].to_csv(path, index=False, encoding="utf-8-sig")
     return have.set_index("id")
+
+
+COUNTRY_KO = {"USA": "미국", "Dominican Republic": "도미니카공화국", "Venezuela": "베네수엘라", "Cuba": "쿠바", "Mexico": "멕시코",
+              "Puerto Rico": "푸에르토리코", "Canada": "캐나다", "Japan": "일본", "South Korea": "한국", "Colombia": "콜롬비아",
+              "Panama": "파나마", "Australia": "호주", "Taiwan": "대만", "Curacao": "퀴라소", "Curaçao": "퀴라소", "Netherlands": "네덜란드",
+              "Nicaragua": "니카라과", "Brazil": "브라질", "Aruba": "아루바", "Bahamas": "바하마", "Honduras": "온두라스",
+              "Peru": "페루", "Germany": "독일", "Italy": "이탈리아", "Great Britain": "영국", "United Kingdom": "영국", "Jamaica": "자메이카",
+              "Virgin Islands": "버진아일랜드", "Republic of Korea": "한국", "Portugal": "포르투갈", "Slovakia": "슬로바키아", "Czech Republic": "체코", "Lithuania": "리투아니아", "South Africa": "남아공", "China": "중국"}
+POS_KO = {"P": "투수", "C": "포수", "1B": "1루수", "2B": "2루수", "3B": "3루수", "SS": "유격수", "LF": "좌익수", "CF": "중견수",
+          "RF": "우익수", "OF": "외야수", "IF": "내야수", "DH": "지명타자", "TWP": "투타겸업"}
+
+
+def bio_of(people, pid):
+    """화면에 쓸 선수 신상: 포지션, 투구손(R/L), 타격손(R/L/S), 출생국(한글), 키(cm), 몸무게(kg). 값이 없으면 키를 뺀다."""
+    if not len(people) or str(pid) not in people.index:
+        return None
+    r = people.loc[str(pid)]
+    out = {}
+    if r["pos"]:
+        out["pos"] = r["pos"]
+    if r["throw"]:
+        out["thr"] = r["throw"]
+    if r["bat"]:
+        out["bat"] = r["bat"]
+    if r["country"]:
+        out["ctry"] = COUNTRY_KO.get(r["country"], r["country"])
+    m = re.match(r"(\d+)'\s*(\d+)", str(r["height"]))
+    if m:
+        out["ht"] = round((int(m.group(1)) * 12 + int(m.group(2))) * 2.54)
+    if str(r["weight"]).isdigit():
+        out["wt"] = round(int(r["weight"]) * 0.45359237)
+    return out or None
 
 
 def load_savant():
@@ -558,8 +602,14 @@ def main():
 
     for r in past:
         r["출생연도"] = by(r["mlbam"])
+        b = bio_of(people, r["mlbam"])
+        if b:
+            r["bio"] = b
     for c in cands:
         c["출생연도"] = by(c["player_id"])
+        b = bio_of(people, c["player_id"])
+        if b:
+            c["bio"] = b
 
     # ---------- 표준화 기준: 지난 사례 + 후보 전체
     scale = {}

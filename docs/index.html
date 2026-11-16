@@ -40,6 +40,7 @@ h3{font-size:15px;margin:20px 0 6px}
 .logo b{font-weight:300;letter-spacing:.12em}
 .logo.brand{display:inline-flex;align-items:center;padding:7px 16px;border-radius:999px;background:#f3f1ec;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .logo.brand img{display:block;height:22px;width:auto}
+.bio{margin:6px 0 0;font-size:13.5px;color:var(--ink);letter-spacing:.01em}
 nav{display:flex;gap:26px;font-size:13px;letter-spacing:.04em}
 nav a{text-decoration:none;color:var(--muted);padding:4px 0;border-bottom:1px solid transparent}
 nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
@@ -735,18 +736,32 @@ function renderScatter(){
 }
 
 /* ================= 1. 지난 사례 표 ================= */
+/* 선수 신상(MLB Stats API): 포지션·투구손·타격손·출생국·키·몸무게. 없으면 "-" 또는 생략 */
+const HAND = {R:"우",L:"좌",S:"양"};
+const POS_KO = {P:"투수",C:"포수","1B":"1루수","2B":"2루수","3B":"3루수",SS:"유격수",LF:"좌익수",CF:"중견수",RF:"우익수",OF:"외야수",IF:"내야수",DH:"지명타자",TWP:"투타겸업"};
+const bioPos = r => (r.bio && r.bio.pos) || "-";
+const bioBat = r => (r.bio && r.bio.bat && HAND[r.bio.bat]) || "-";
+function bioLine(rec){
+  const b = rec.bio; if (!b) return "";
+  const p = [];
+  if (b.pos && b.pos!=="P") p.push(`${POS_KO[b.pos]||b.pos}(${b.pos})`);
+  if (b.thr || b.bat) p.push(`${b.thr?HAND[b.thr]+"투":""}${b.bat?HAND[b.bat]+"타":""}`);
+  if (b.ctry) p.push(esc(b.ctry));
+  if (b.ht) p.push(`${b.ht}cm${b.wt?` ${b.wt}kg`:""}`);
+  return p.length ? `<p class="bio">${p.join(" · ")}</p>` : "";
+}
 function renderPast(){
   const rows = pastRows();
   $("nPast").textContent = D.past["투수"].length + D.past["타자"].length;
   const cols = role==="투수"
-    ? [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","상대 타자",0],["mlb_share","MLB%",0],
+    ? [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["vol","상대 타자",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["hr_pct","홈런%",2],["era","ERA",2],
-       ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["typ","유형",null],["판정","판정",null],["stay_n","재계약",0]]
-    : [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["창","입단 전 5년",null],["vol","타석",0],["mlb_share","MLB%",0],
+       ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["판정","판정",null],["stay_n","재계약",0]]
+    : [["영문명","선수",null],["포지션","포지션",null],["타","타",null],["KBO첫해","첫해",0],["팀","팀",null],["vol","타석",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["iso","ISO",3],["avg","타율",3],
-       ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["typ","유형",null],["판정","판정",null],["stay_n","재계약",0]];
+       ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["판정","판정",null],["stay_n","재계약",0]];
   if (ADJ) cols.forEach(c=>{ if (ADJF.has(c[0])) { c[1] += " 지수"; c[2] = 0; } });
-  rows.forEach(r=> r["판정"] = isSuccess(r) ? "성공" : "아님");
+  rows.forEach(r=>{ r["판정"] = isSuccess(r) ? "성공" : "아님"; r["포지션"] = bioPos(r); r["타"] = bioBat(r); });
   if (sortKey) rows.sort((a,b)=>{ const x=a[sortKey], y=b[sortKey]; if (x==null) return 1; if (y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir; });
   else rows.sort((a,b)=> b["KBO첫해"]-a["KBO첫해"] || String(a["영문명"]).localeCompare(b["영문명"]));
   let h = "<thead><tr>" + cols.map(c=>`<th data-k="${c[0]}" class="${c[2]==null?"l":""}">${c[1]}${sortKey===c[0]?(sortDir>0?" ▲":" ▼"):""}</th>`).join("") + "</tr></thead><tbody>";
@@ -872,17 +887,17 @@ function renderCands(){
   res.sort((a,b)=>a.dist-b.dist);
   const top = res.slice(0, q?15:10);
   const LVS = {"AAA·MLB 오감":"AAA↔MLB","AAA만":"AAA","MLB만":"MLB"};
-  let h = `<thead><tr><th class="l">#</th><th class="l">선수</th><th class="l">2026 소속</th><th class="l">유형</th><th>나이</th><th>거리</th><th>최근 5년 표본</th><th>MLB%</th><th class="l">가장 닮은 지난 사례</th></tr></thead><tbody>`;
+  let h = `<thead><tr><th class="l">#</th><th class="l">선수</th>${role==="타자"?'<th class="l">포지션</th><th class="l">타</th>':""}<th class="l">2026 소속</th><th class="l">유형</th><th>나이</th><th>거리</th><th>최근 5년 표본</th><th>MLB%</th><th class="l">가장 닮은 지난 사례</th></tr></thead><tbody>`;
   top.forEach((t,i)=>{
     const c=t.c, nn = nearest(c, pool, 1)[0];
     h += `<tr class="clickable" data-kind="cand" data-key="${c.player_id}"><td class="l">${i+1}</td>
       <td class="l">${nameHTML(c)}${c["KBO경력"]?' <span class="tag warn" title="이름이 MyKBO 외국인 명단에 있음(동명이인일 수 있음)">KBO경력 의심</span>':""}</td>
-      <td class="l">${LVS[c["소속"]]||c["소속"]}</td><td class="l"><span class="note" style="white-space:nowrap">${esc(typName(c))}</span></td>
+      ${role==="타자"?`<td class="l">${bioPos(c)}</td><td class="l">${bioBat(c)}</td>`:""}<td class="l">${LVS[c["소속"]]||c["소속"]}</td><td class="l"><span class="note" style="white-space:nowrap">${esc(typName(c))}</span></td>
       <td>${c["출생연도"]!=null? BASE-c["출생연도"] : "-"}</td><td>${t.dist.toFixed(2)}</td>
       <td>${volTxt(c)}</td><td>${fmt(c.mlb_share*100,0)}</td>
       <td class="l">${nn? `${nameHTML(nn.p)} (${nn.p["KBO첫해"]}) ${tag(nn.p)}` : "-"}</td></tr>`;
   });
-  $("candTable").innerHTML = h + (top.length?"":`<tr><td colspan="9" class="l note">조건에 맞는 선수가 없습니다.</td></tr>`) + "</tbody>";
+  $("candTable").innerHTML = h + (top.length?"":`<tr><td colspan="11" class="l note">조건에 맞는 선수가 없습니다.</td></tr>`) + "</tbody>";
   $("candNote").innerHTML = `기준: <b>${esc(ref.name)}</b>. 거리가 작을수록 닮은 유형입니다. 후보가 KBO에 온다는 뜻은 아닙니다.${q?" (이름 검색 중에는 필터를 쓰지 않습니다.)":""}${(!q && rfActive().length)?` 범위 필터 적용: ${esc(rfActive().join(" / "))} → 후보 ${res.length}명.`:""}`;
 }
 
@@ -898,7 +913,7 @@ function openDetail(kind, key){
     ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
     : `${role} · 2026 ${({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]]||rec["소속"]} (스탯캐스트 합산 ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"}) · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
   const fid = isPast ? rec.mykbo_id : rec.player_id;
-  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p><p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b>${(()=>{ const rm = rumorOf(rec, kind); return rm ? ` <span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}" style="margin-left:2px">Rumor · ${esc(rm.status||"루머")}</span>` : ""; })()}</p></div>
+  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p>${bioLine(rec)}<p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b>${(()=>{ const rm = rumorOf(rec, kind); return rm ? ` <span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}" style="margin-left:2px">Rumor · ${esc(rm.status||"루머")}</span>` : ""; })()}</p></div>
     <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="dlgClose">닫기</button></div></div>`;
   /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
   const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
