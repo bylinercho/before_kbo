@@ -238,6 +238,20 @@ dialog::backdrop{background:rgba(5,6,8,.72);backdrop-filter:blur(4px)}
 .close{border-radius:999px;border-color:var(--line);padding:6px 16px}
 .close:hover{background:var(--accent);border-color:var(--accent);color:#16110d}
 
+/* 스카우팅 노트(방문자 리포트) */
+.replist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.rep{border:1px solid var(--line);border-radius:12px;background:#12141a;padding:16px 18px}
+.rep[data-kind]{cursor:pointer;transition:border-color .15s,transform .15s}
+.rep[data-kind]:hover{border-color:var(--accent);transform:translateY(-1px)}
+.rep .who{font-weight:700;font-size:15px}
+.rep .one{margin:8px 0 10px;font-size:14.5px;line-height:1.55}
+.rep dl{margin:0;font-size:13px;line-height:1.55}
+.rep dt{color:var(--muted);font-size:11.5px;letter-spacing:.08em;margin-top:8px}
+.rep dd{margin:2px 0 0}
+.rep .by{margin-top:12px;font-size:12px;color:var(--muted)}
+.badge-op{display:inline-block;font-size:11px;letter-spacing:.04em;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
+.repbtn{display:inline-block;margin-top:6px}
+
 /* 스크롤바: 얇고 어두운 트랙, 마우스 올리면 주황 */
 html{scroll-behavior:smooth;scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
 *{scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
@@ -276,6 +290,7 @@ dialog{overscroll-behavior:contain}
       <a href="#s3">닮은 유형</a>
       <a href="#s4">검증</a>
       <a href="#s5">기타</a>
+      <a href="#s7">리포트</a>
       <a href="#about">방법·한계</a>
     </nav>
   </div>
@@ -467,6 +482,13 @@ dialog{overscroll-behavior:contain}
     <div class="tablewrap" style="margin-top:10px"><table id="etcTable"></table></div>
     <p class="note" id="etcNote"></p>
   </div>
+  <div class="tool" id="s7">
+    <p class="eyebrow">07 · 리포트</p>
+    <h2>스카우팅 노트</h2>
+    <p class="sub">방문자가 남긴 선수 평가입니다. <b>개인 의견이며 이 사이트의 분석 결과가 아닙니다.</b> 운영자가 검수해 승인한 글만 올라오고, 선수 상세 창 맨 아래에서 노트를 남길 수 있습니다.</p>
+    <div id="repList" class="replist"></div>
+    <p class="note" id="repNote"></p>
+  </div>
 </main>
 
 <!-- ========== 근거 (신뢰) ========== -->
@@ -498,6 +520,7 @@ dialog{overscroll-behavior:contain}
 <div id="cmpBar" hidden>비교: <span id="cmpItems"></span> <button class="btn mini" id="cmpGo" type="button">비교 보기</button> <button class="btn mini" id="cmpClear" type="button">비우기</button></div>
 
 <script src="data.js"></script>
+<script src="reports.js" onerror="void 0"></script>
 <script>
 "use strict";
 const D = window.DATA;
@@ -926,6 +949,7 @@ function openDetail(kind, key){
       near.map(n=>`<tr class="clickable" data-kind="past" data-key="${n.p.mykbo_id}"><td class="l">${nameHTML(n.p)}</td><td class="l">${n.p["KBO첫해"]} ${teamK(n.p["팀"])} · ${resultLine(n.p)}</td><td>${n.dist.toFixed(2)}</td><td class="l">${tag(n.p)}</td></tr>`).join("") + `</tbody></table></div>
       <div class="box">닮은 사례 ${near.length}명 중 <b>${succ}명</b>이 성공 기준을 넘었습니다(전체 ${pool.length}명 중 ${base}명). 5명뿐이라 우연일 수 있습니다.</div>`;
   }
+  h += reportSection(rec, role, kind, fid);
   $("dlgBody").innerHTML = h;
   drawRadar();
   if (rec.sc) drawSc();
@@ -957,6 +981,44 @@ function drawSc(){
   $("scBox").innerHTML = radarSVG([{name:"이 선수", vec:sc, cls:"rd-a"}], feats, zs, f=>labelFor(role,f));
   $("scTbl").innerHTML = `<table><thead><tr><th class="l">지표</th><th>값</th><th>편차</th></tr></thead><tbody>` +
     feats.map(f=>`<tr><td class="l">${esc(labelFor(role,f))}</td><td>${fF(f,sc[f])}</td><td>${(zs(f,sc[f])>=0?"+":"")+zs(f,sc[f]).toFixed(2)}</td></tr>`).join("") + `</tbody></table>`;
+}
+
+/* ================= 스카우팅 노트(방문자 리포트) ================= */
+/* 폼 연결: Google Form을 만든 뒤 아래 세 값을 채운다. 비어 있으면 버튼이 "준비 중"으로 보인다.
+   url = 폼 주소(…/viewform 앞까지), codeEntry·nameEntry = 사전 입력 링크에서 얻는 entry.숫자 */
+const REPORT_FORM = {url:"", codeEntry:"", nameEntry:""};
+const REPORTS = Array.isArray(window.REPORTS) ? window.REPORTS : [];
+const safeUrl = u => /^https?:\/\//i.test(String(u||"")) ? String(u) : "";
+const repKey = (r0,k,id)=> `${r0}|${k}|${id}`;
+function repCard(x, withWho){
+  const rec = withWho ? recOf(x.role, x.kind, x.id) : null;
+  const who = withWho ? (rec ? nameHTML(rec) : esc(x.name||"")) : "";
+  const link = safeUrl(x.link);
+  const attr = (withWho && rec) ? ` data-kind="${x.kind}" data-key="${esc(x.id)}" data-role="${esc(x.role)}"` : "";
+  return `<div class="rep"${attr}>${withWho?`<div class="who">${who} <span class="note">${esc(x.role)}·${x.kind==="past"?"지난 사례":"2026 후보"}</span><span class="badge-op">사용자 의견</span></div>`:`<span class="badge-op" style="margin:0">사용자 의견</span>`}
+    <p class="one">${esc(x.one||"")}</p>
+    <dl>${x.pro?`<dt>강점</dt><dd>${esc(x.pro)}</dd>`:""}${x.con?`<dt>우려점</dt><dd>${esc(x.con)}</dd>`:""}${link?`<dt>근거</dt><dd><a href="${esc(link)}" target="_blank" rel="noopener noreferrer nofollow">링크 열기</a></dd>`:""}</dl>
+    <div class="by">${esc(x.nick||"익명")}${x.date?` · ${esc(x.date)}`:""}</div></div>`;
+}
+function reportFormUrl(rec, r0, kind, fid){
+  if (!REPORT_FORM.url) return "";
+  const q = [];
+  if (REPORT_FORM.codeEntry) q.push(`${REPORT_FORM.codeEntry}=${encodeURIComponent(repKey(r0,kind,fid))}`);
+  if (REPORT_FORM.nameEntry) q.push(`${REPORT_FORM.nameEntry}=${encodeURIComponent(rec["한글명"]?`${rec["한글명"]} ${enName(rec)}`:enName(rec))}`);
+  return REPORT_FORM.url + (q.length ? (REPORT_FORM.url.includes("?")?"&":"?") + "usp=pp_url&" + q.join("&") : "");
+}
+function reportSection(rec, r0, kind, fid){
+  const mine = REPORTS.filter(x=> repKey(x.role,x.kind,x.id)===repKey(r0,kind,fid));
+  const fu = reportFormUrl(rec, r0, kind, fid);
+  return `<h3>스카우팅 노트 <span class="note">— 방문자 의견 ${mine.length}건</span></h3>
+    ${mine.length ? `<div class="replist">${mine.map(x=>repCard(x,false)).join("")}</div>` : `<p class="note">아직 올라온 노트가 없습니다.</p>`}
+    <p>${fu ? `<a class="btn mini repbtn" href="${esc(fu)}" target="_blank" rel="noopener noreferrer">노트 남기기</a>` : `<span class="btn mini repbtn" style="opacity:.5;cursor:default">노트 남기기 (준비 중)</span>`}</p>
+    <p class="note">제출한 글은 운영자가 검수한 뒤 올라옵니다. 개인 의견이며 근거 없는 비방, 개인정보는 반려됩니다.</p>`;
+}
+function renderReports(){
+  const list = REPORTS.slice().sort((a,b)=> String(b.date||"").localeCompare(String(a.date||"")));
+  $("repList").innerHTML = list.length ? list.map(x=>repCard(x,true)).join("") : `<p class="note">아직 승인된 노트가 없습니다. 선수 상세 창에서 첫 노트를 남겨 보세요.</p>`;
+  $("repNote").textContent = list.length ? `${list.length}건. 카드를 누르면 해당 선수의 상세가 열립니다.` : "";
 }
 
 /* ================= 랜딩(히어로·소개·근거) ================= */
@@ -1186,7 +1248,7 @@ function renderVal(){
 }
 
 /* ================= 이벤트 ================= */
-function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); }
+function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); renderReports(); }
 document.addEventListener("click", e=>{
   const tr = e.target.closest("tr[data-team]");
   if (tr){ $("teamSel").value = tr.dataset.team; renderAll(); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"}); return; }
