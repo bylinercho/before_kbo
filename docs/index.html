@@ -9,8 +9,8 @@
    차콜 배경 + 따뜻한 오프화이트 글자 + 주황 포인트. 그래프 색(레벨·성공·막대)도 같은 팔레트에서 고른다. */
 :root{
   color-scheme:dark;
-  --bg:#0c0d10; --band:#121419; --band2:#1a1d24; --card:#15171c; --ink:#ece9e4; --muted:#8b909b; --line:#262932;
-  --accent:#ff7a45; --mlb:#e5b04a; --aa:#4fc3b0; --ap:#9b8cff; --a:#8b909b; --mex:#e35d5d;
+  --bg:#0b1424; --band:#0f1a2e; --band2:#16253d; --card:#121f36; --ink:#e8ecf3; --muted:#8e9bb3; --line:#25344d;
+  --accent:#ff7a45; --mlb:#e5b04a; --aa:#4fc3b0; --ap:#9b8cff; --a:#8e9bb3; --mex:#e35d5d;
   --good:#52d39b; --bad:#ff6b6b; --warn-bg:#2a2214; --warn-line:#6b5420;
   --bar:#ff9a66; --bar2:#5b86d6;
 }
@@ -177,7 +177,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 }
 
 /* ================= 어두운 프리미엄 톤: 위 기본 스타일을 덮어쓴다 ================= */
-.top{background:rgba(12,13,16,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.top{background:rgba(11,20,36,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 nav a:hover{color:var(--ink);border-bottom-color:var(--accent)}
 h2{font-weight:700;letter-spacing:-.015em}
 
@@ -189,7 +189,7 @@ h2{font-weight:700;letter-spacing:-.015em}
 .eyebrow{color:var(--accent);letter-spacing:.22em;font-weight:600}
 .hero h1{font-size:clamp(32px,5.6vw,60px);font-weight:800;letter-spacing:-.025em;line-height:1.12;max-width:900px}
 .hl{background:linear-gradient(90deg,#ff7a45,#ffc27a);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p.lead{font-size:16px;color:#aeb2bc}
+.hero p.lead{font-size:16px;color:#aab6cb}
 .stats{gap:56px;margin-top:60px}
 .stats b{font-size:44px;font-weight:700;letter-spacing:-.02em}
 
@@ -199,7 +199,7 @@ h2{font-weight:700;letter-spacing:-.015em}
 .btn.ghost{background:transparent;border-color:var(--line);color:var(--muted)}
 .btn.mini{padding:5px 14px;font-weight:500;background:transparent;border:1px solid var(--line);color:var(--ink);letter-spacing:.02em}
 .btn.mini:hover{background:var(--accent);border-color:var(--accent);color:#16110d;box-shadow:none;transform:none}
-select,input[type=number],input[type=search],input[type=text]{border-radius:8px;background:#0f1115;border-color:var(--line)}
+select,input[type=number],input[type=search],input[type=text]{border-radius:8px;background:#0b1322;border-color:var(--line)}
 select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,122,69,.18)}
 .seg{border-radius:999px;overflow:hidden;border-color:var(--line)}
 .seg button.on{background:var(--accent);color:#16110d;font-weight:700}
@@ -208,32 +208,32 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .pitch{padding:88px 0 68px}
 .pitch h2{font-size:clamp(22px,3.2vw,32px);font-weight:700;letter-spacing:-.02em}
 .tool{border-radius:16px}
-.tool{background:linear-gradient(180deg,#171a20,#13151a);box-shadow:0 14px 44px rgba(0,0,0,.35);padding:30px}
-.card .img{border-radius:16px;border:1px solid var(--line);background:radial-gradient(260px 200px at 50% 0%,rgba(255,122,69,.16),transparent 70%),linear-gradient(180deg,#1a1d24,#14161b)}
+.tool{background:linear-gradient(180deg,#13213a,#0f1a2f);box-shadow:0 14px 44px rgba(0,0,0,.35);padding:30px}
+.card .img{border-radius:16px;border:1px solid var(--line);background:radial-gradient(260px 200px at 50% 0%,rgba(255,122,69,.16),transparent 70%),linear-gradient(180deg,#16253d,#0f1b30)}
 .card:hover .img{border-color:var(--accent);box-shadow:0 14px 44px rgba(255,122,69,.18)}
 .card b{letter-spacing:.16em}
 .warn{border-radius:12px}
-.box{border-radius:10px;background:#12141a}
-footer{background:#0a0b0d;border-top:1px solid var(--line)}
+.box{border-radius:10px;background:#0e182b}
+footer{background:#08101d;border-top:1px solid var(--line)}
 
 /* 표·막대·태그 */
-th{color:#7d828d;border-bottom:1px solid #30343f}
-tr.clickable:hover td,.tablewrap tr.clickable:hover td:first-child,.typrow:hover{background:#1c1f27}
+th{color:#8190aa;border-bottom:1px solid #2c3b57}
+tr.clickable:hover td,.tablewrap tr.clickable:hover td:first-child,.typrow:hover{background:#1a2a45}
 .tag{border-radius:999px}
 .gapbar{background:var(--band2);border-radius:4px}
 .gapbar i{border-radius:3px}
-.chip{border-radius:999px;background:#0f1115}
-#cmpBar{border-radius:999px;border-color:var(--accent);background:#14161b}
+.chip{border-radius:999px;background:#0b1322}
+#cmpBar{border-radius:999px;border-color:var(--accent);background:#0f1b30}
 
 /* 상세·비교 창 */
-dialog{border:1px solid #30343f;border-radius:18px;background:linear-gradient(180deg,#171a20,#12141a);box-shadow:0 30px 90px rgba(0,0,0,.65)}
-dialog::backdrop{background:rgba(5,6,8,.72);backdrop-filter:blur(4px)}
+dialog{border:1px solid #2c3b57;border-radius:18px;background:linear-gradient(180deg,#13213a,#0e182b);box-shadow:0 30px 90px rgba(0,0,0,.65)}
+dialog::backdrop{background:rgba(4,9,18,.74);backdrop-filter:blur(4px)}
 .close{border-radius:999px;border-color:var(--line);padding:6px 16px}
 .close:hover{background:var(--accent);border-color:var(--accent);color:#16110d}
 
 /* 스카우팅 노트(방문자 리포트) */
 .replist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
-.rep{border:1px solid var(--line);border-radius:12px;background:#12141a;padding:16px 18px}
+.rep{border:1px solid var(--line);border-radius:12px;background:#0e182b;padding:16px 18px}
 .rep[data-kind]{cursor:pointer;transition:border-color .15s,transform .15s}
 .rep[data-kind]:hover{border-color:var(--accent);transform:translateY(-1px)}
 .rep .who{font-weight:700;font-size:15px}
@@ -250,7 +250,7 @@ dialog::backdrop{background:rgba(5,6,8,.72);backdrop-filter:blur(4px)}
 .rep .meta{font-size:12.5px;color:var(--muted);margin-top:6px}
 
 /* 챕터 탭: 한 번에 한 챕터만 보인다 */
-.tabs{display:flex;gap:6px;overflow-x:auto;margin:26px 0 0;padding:8px;border:1px solid var(--line);border-radius:999px;background:rgba(20,22,27,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);position:sticky;top:70px;z-index:15;scrollbar-width:none}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:26px 0 0;padding:8px;border:1px solid var(--line);border-radius:999px;background:rgba(15,26,46,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);position:sticky;top:70px;z-index:15;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:0 0 auto;font:inherit;font-size:14px;color:var(--muted);background:transparent;border:0;border-radius:999px;padding:9px 18px;cursor:pointer;white-space:nowrap;transition:color .15s,background .15s}
 .tabs button:hover{color:var(--ink)}
@@ -281,16 +281,16 @@ dialog{width:min(1040px,96vw)}
 @media (max-width:600px){.trgrid{grid-template-columns:1fr}}
 svg [data-tip]:hover{stroke:var(--ink);stroke-opacity:.55;stroke-width:1.5}
 svg rect[data-tip]:hover{opacity:.85}
-#tip{position:fixed;z-index:9999;pointer-events:none;max-width:260px;padding:9px 12px;border:1px solid #3a3e4a;border-radius:10px;background:rgba(18,20,26,.96);box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:12.5px;line-height:1.6;color:var(--ink)}
+#tip{position:fixed;z-index:9999;pointer-events:none;max-width:260px;padding:9px 12px;border:1px solid #3b4a66;border-radius:10px;background:rgba(14,24,43,.96);box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:12.5px;line-height:1.6;color:var(--ink)}
 #tip[hidden]{display:none}
 #tip .mut{color:var(--muted)}
 
 /* 스크롤바: 얇고 어두운 트랙, 마우스 올리면 주황 */
-html{scroll-behavior:smooth;scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
-*{scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
+html{scroll-behavior:smooth;scrollbar-color:#3b4a66 transparent;scrollbar-width:thin}
+*{scrollbar-color:#3b4a66 transparent;scrollbar-width:thin}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#31343e;border-radius:999px;border:3px solid transparent;background-clip:content-box;transition:background .2s}
+::-webkit-scrollbar-thumb{background:#32415e;border-radius:999px;border:3px solid transparent;background-clip:content-box;transition:background .2s}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:content-box;border:3px solid transparent}
 ::-webkit-scrollbar-corner{background:transparent}
 html::-webkit-scrollbar-track{background:var(--bg)}
