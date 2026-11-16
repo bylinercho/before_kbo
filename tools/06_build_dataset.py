@@ -1,11 +1,11 @@
-"""6단계: 표본을 넓혀 분석용 자료를 만든다. (화면 web/index.html 이 읽는 web/data.js 도 여기서 만든다)
+"""6단계: 표본을 넓혀 분석용 자료를 만든다. (화면 docs/index.html 이 읽는 docs/data.js 도 여기서 만든다)
 
 실행:  python tools/06_build_dataset.py
 입력:  data/kbo_foreign_seasons.csv (05번), data/raw/seasons/*.csv (03번)
 결과:  data/analysis_players.csv   2024~2026년 KBO 첫해 외국인 선수: 오기 전 기록 + KBO 첫해 성적
        data/candidates_2026_v1.csv 2026 트리플A 선수(구버전 후보 풀. 지금 후보 풀은 03번이 data/candidates_2026.csv 로 만든다)
        data/raw/people.csv         선수 출생연도 (MLB 공개 Stats API, 한 번 받아 둠)
-       web/data.js                 화면용 자료
+       docs/data.js                 화면용 자료
 
 대상: MyKBO Stats 목록에서 2024·2025·2026년에 처음 나온 외국인 선수 (시즌 중 교체, 아시아쿼터 포함).
       스탯캐스트(2023~)에 기록이 없는 선수(일본·대만 등에서 온 선수)는 비교에서 빠진다. 빠진 사람도 파일에 남긴다.
@@ -262,9 +262,9 @@ def main():
         for rec in out["cands"][role]:
             rec["hist"] = hist_of(role, rec["player_id"])
 
-    os.makedirs("web", exist_ok=True)
-    # 2026-11-15: 구버전(2024~2026 표본, 스탯캐스트 기준). 화면은 이제 08번이 만드는 web/data.js 를 읽는다.
-    with open("web/data_v1.js", "w", encoding="utf-8") as f:
+    os.makedirs("docs", exist_ok=True)
+    # 2026-11-15: 구버전(2024~2026 표본, 스탯캐스트 기준). 화면은 이제 08번이 만드는 docs/data.js 를 읽는다.
+    with open("docs/data_v1.js", "w", encoding="utf-8") as f:
         f.write("// tools/06_build_dataset.py(구버전)가 만든 파일. 직접 고치지 않는다.\nwindow.DATA = ")
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
         f.write(";\n")
@@ -280,7 +280,7 @@ def main():
     print(bad[["영문명", "API_이름", "mlbam"]].to_string(index=False))
     print("=" * 70)
     print("후보 풀:", {r: len(d) for r, d in pools.items()}, "/ 출생연도 없는 후보:", int(cands["출생연도"].isna().sum()))
-    print("web/data.js", os.path.getsize("web/data.js"), "bytes")
+    print("docs/data.js", os.path.getsize("docs/data.js"), "bytes")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 실행:  python tools/run_all.py              전 단계 실행
        python tools/run_all.py --from 08    08번부터 실행
-       python tools/run_all.py --only 08    08번만 실행 (화면 자료 web/data.js 만 다시 만들 때)
+       python tools/run_all.py --only 08    08번만 실행 (화면 자료 docs/data.js 만 다시 만들 때)
        python tools/run_all.py --list       단계 목록만 보기
 
 순서와 하는 일
@@ -14,7 +14,7 @@
   11  기사에서 확인한 웨이버 공시·방출 사례                          (data/kbo_waivers.csv)
   12  MLB 투수 구종 사용 비율                                      (data/pitch_arsenal.csv)
   13  선수별 부상자 명단(IL) 이력                                   (data/il_stints.csv)
-  08  위 자료를 합쳐 프로필·군집·검증을 계산하고 화면 자료를 만듦     (web/data.js, 몇 분 걸림)
+  08  위 자료를 합쳐 프로필·군집·검증을 계산하고 화면 자료를 만듦     (docs/data.js, 몇 분 걸림)
 
 참고
 - 인터넷 연결이 필요하다. 이미 받은 파일은 건너뛰므로 두 번째 실행부터는 빠르다. 처음 실행은 MyKBO 선수 페이지(약 300쪽, 6초 간격)
@@ -38,7 +38,7 @@ STEPS = [
     ("11", "11_waivers.py", "웨이버 공시·방출 사례(기사 확인분)"),
     ("12", "12_pitch_arsenal.py", "MLB 투수 구종 사용 비율"),
     ("13", "13_injuries.py", "부상자 명단 이력"),
-    ("08", "08_build_dataset.py", "프로필·군집·검증 계산 + web/data.js"),
+    ("08", "08_build_dataset.py", "프로필·군집·검증 계산 + docs/data.js"),
 ]
 
 
@@ -57,7 +57,7 @@ def main():
             print(f"{sid}  {f:28s} {desc}")
         return
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.chdir(root)  # 스크립트들이 data/, web/ 를 저장소 최상위 기준으로 쓴다
+    os.chdir(root)  # 스크립트들이 data/, docs/ 를 저장소 최상위 기준으로 쓴다
     run = [s for s in STEPS if (a.only is None or s[0] == a.only)]
     if a.start:
         run = [s for s in run if ids.index(s[0]) >= ids.index(a.start)]
@@ -69,7 +69,7 @@ def main():
         if r.returncode != 0:
             sys.exit(f"\n[{sid}] 단계가 실패했습니다(종료 코드 {r.returncode}). 위 메시지를 확인하세요.")
         print(f"----- [{sid}] 완료 ({time.time() - t1:.0f}초)", flush=True)
-    print(f"\n전체 완료 ({time.time() - t0:.0f}초). 화면: web/index.html")
+    print(f"\n전체 완료 ({time.time() - t0:.0f}초). 화면: docs/index.html")
 
 
 if __name__ == "__main__":

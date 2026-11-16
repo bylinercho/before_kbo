@@ -1,11 +1,11 @@
-"""8단계: "입단 전 5년" 프로필을 만들어 화면용 자료(web/data.js)를 만든다.
+"""8단계: "입단 전 5년" 프로필을 만들어 화면용 자료(docs/data.js)를 만든다.
 
 실행:  python -I tools/08_build_dataset.py
 입력:  data/kbo_cohort.csv, data/raw/history_long.csv (07번), data/kbo_foreign_seasons.csv (05번),
        data/raw/seasons/*.csv (스탯캐스트, 03번), data/candidates_2026.csv (03번이 만든 2026 후보 풀: 트리플A·MLB 합산)
 결과:  data/cohort_profiles.csv       지난 사례(2015~2026 KBO 첫해 외국인) 프로필 + KBO 첫해 성적
        data/candidates_profiles.csv   2026 후보 프로필
-       web/data.js                    화면용 자료
+       docs/data.js                    화면용 자료
 
 프로필(비교의 중심)
 - 지난 사례: KBO 입단 해 바로 앞 5시즌(입단 해는 제외), 후보: 2022~2026 5시즌.
@@ -599,8 +599,8 @@ def main():
         out["past"][role] = [r for r in past if r["역할"] == role]
         out["cands"][role] = [c for c in cands if c["역할"] == role]
         out["excluded"][role] = [e for e in excluded if e["역할"] == role]
-    os.makedirs("web", exist_ok=True)
-    with open("web/data.js", "w", encoding="utf-8") as f:
+    os.makedirs("docs", exist_ok=True)
+    with open("docs/data.js", "w", encoding="utf-8") as f:
         f.write("// tools/08_build_dataset.py 가 만든 파일. 직접 고치지 않는다.\nwindow.DATA = ")
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
         f.write(";\n")
@@ -617,7 +617,7 @@ def main():
     print("제외 사유:", pd.DataFrame(excluded)["이유"].value_counts().to_dict())
     print("후보:", {r: len(v) for r, v in out["cands"].items()}, "탈락(5년 기록 부족 등):", dropped)
     print("스탯캐스트 보조 있음: 지난 사례", sum("sc" in r for r in past), "/", len(past), ", 후보", sum("sc" in c for c in cands), "/", len(cands))
-    print("web/data.js", os.path.getsize("web/data.js"), "bytes")
+    print("docs/data.js", os.path.getsize("docs/data.js"), "bytes")
     print({r: {f: [round(a, 2) for a in v] for f, v in s.items()} for r, s in scale.items()})
 
 
