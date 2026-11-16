@@ -634,11 +634,13 @@ function radarSVG(series, feats, zfun, labfun){
   });
   series.slice().reverse().forEach(s=>{ h += `<polygon class="${s.cls}" points="${poly(feats.map(f=>zfun(f,s.vec[f])))}"/>`; });
   series.forEach(s=>{ feats.forEach((f,i)=>{ const [x,y]=pt(i,zfun(f,s.vec[f])); h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.6" fill="${dotCol(s.cls)}" pointer-events="none"/>`; }); });
-  /* 마우스를 올리면 그 축의 세부 수치가 뜬다(축 위 어디든) */
+  /* 점에 마우스를 올리면 그 축의 세부 수치가 뜬다. 점은 선수 시리즈(주황 등)에만 둔다(평균 비교선 rd-b 제외) */
   feats.forEach((f,i)=>{
-    const x=cx+Math.cos(ang(i))*(R+4), y=cy+Math.sin(ang(i))*(R+4);
     const tip = `<b>${esc(labfun(f))}</b>` + series.map(s=>{ const z=zfun(f,s.vec[f]); return `<br><span style="color:${dotCol(s.cls)}">●</span> ${esc(s.name)} <b>${fF(f,s.vec[f])}</b> <span class="mut">(편차 ${z>=0?"+":""}${z.toFixed(2)})</span>`; }).join("");
-    h += `<line data-tip="${esc(tip)}" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="transparent" stroke-width="30" stroke-linecap="round" pointer-events="stroke"/>`;
+    series.filter(s=>s.cls!=="rd-b").forEach(s=>{
+      const [x,y]=pt(i,zfun(f,s.vec[f]));
+      h += `<circle data-tip="${esc(tip)}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="transparent"/>`;
+    });
   });
   return h + `</svg>`;
 }
