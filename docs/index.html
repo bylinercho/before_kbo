@@ -290,14 +290,14 @@ dialog{overscroll-behavior:contain}
   <div class="wrap">
     <a class="logo" href="#top">BEFORE <b>KBO</b></a>
     <nav aria-label="주 메뉴">
-      <a href="#s1">지난 사례</a>
-      <a href="#s2">갈린 지표</a>
-      <a href="#s6">구단별</a>
-      <a href="#s3">닮은 유형</a>
-      <a href="#s4">검증</a>
-      <a href="#s5">기타</a>
+      <a href="#s1">Past Cases</a>
+      <a href="#s2">Key Metrics</a>
+      <a href="#s6">By Team</a>
+      <a href="#s3">Similar Types</a>
+      <a href="#s4">Validation</a>
+      <a href="#s5">Others</a>
       <a href="#s8">Rumor Player</a>
-      <a href="#s7">리포트</a>
+      <a href="#s7">Reports</a>
     </nav>
   </div>
 </header>
@@ -370,18 +370,18 @@ dialog{overscroll-behavior:contain}
   </div>
 
   <div class="tabs" id="tabs" role="tablist" aria-label="챕터">
-    <button type="button" role="tab" data-tab="s1">지난 사례</button>
-    <button type="button" role="tab" data-tab="s2">갈린 지표</button>
-    <button type="button" role="tab" data-tab="s6">구단별</button>
-    <button type="button" role="tab" data-tab="s3">닮은 유형</button>
-    <button type="button" role="tab" data-tab="s4">검증</button>
-    <button type="button" role="tab" data-tab="s5">기타</button>
+    <button type="button" role="tab" data-tab="s1">Past Cases</button>
+    <button type="button" role="tab" data-tab="s2">Key Metrics</button>
+    <button type="button" role="tab" data-tab="s6">By Team</button>
+    <button type="button" role="tab" data-tab="s3">Similar Types</button>
+    <button type="button" role="tab" data-tab="s4">Validation</button>
+    <button type="button" role="tab" data-tab="s5">Others</button>
     <button type="button" role="tab" data-tab="s8">Rumor Player</button>
-    <button type="button" role="tab" data-tab="s7">리포트</button>
+    <button type="button" role="tab" data-tab="s7">Reports</button>
   </div>
 
   <div class="tool" id="s1">
-    <p class="eyebrow">01 · 지난 사례</p>
+    <p class="eyebrow">01 · Past Cases</p>
     <h2>입단 전 5년 기록과 KBO 첫해 성적</h2>
     <p class="sub">선수를 누르면 그래프가 열리고, 머리글을 누르면 정렬됩니다. 재계약 N년 = KBO 연속 시즌 수(+는 2026년 진행 중).</p>
     <div class="tablewrap tall" style="margin-top:12px"><table id="pastTable"></table></div>
@@ -389,7 +389,7 @@ dialog{overscroll-behavior:contain}
   </div>
 
   <div class="tool" id="s2">
-    <p class="eyebrow">02 · 갈린 지표</p>
+    <p class="eyebrow">02 · Key Metrics</p>
     <h2>성공한 선수와 아닌 선수는 어디서 갈렸나</h2>
     <p class="sub">입단 전 5년 기록의 평균 차이입니다. 오른쪽(주황)이 성공 쪽이 더 높음.</p>
     <div id="gap" style="margin-top:12px"></div>
@@ -410,7 +410,7 @@ dialog{overscroll-behavior:contain}
   </div>
 
   <div class="tool" id="s6">
-    <p class="eyebrow">구단별 성향</p>
+    <p class="eyebrow">By Team</p>
     <h2>구단은 어떤 외국인을 데려왔나</h2>
     <p class="sub">KBO 첫해 소속 구단별로 입단 전 5년 프로필의 평균을 비교합니다. 구단을 누르면 그 구단만 봅니다.</p>
     <div class="tablewrap" style="margin-top:10px"><table id="teamTable"></table></div>
@@ -419,7 +419,7 @@ dialog{overscroll-behavior:contain}
   </div>
 
   <div class="tool" id="s3">
-    <p class="eyebrow">03 · 닮은 유형</p>
+    <p class="eyebrow">03 · Similar Types</p>
     <h2>지금 닮은 유형은? (2026 MLB·트리플A 선수 중)</h2>
     <p class="sub">기준 선수와 최근 5시즌 기록 모양이 비슷한 2026년 미국 선수를 찾습니다(MLB·트리플A 합쳐 공 500개/200타석 이상, 미국 밖 선수 제외).</p>
     <div class="row">
@@ -448,7 +448,7 @@ dialog{overscroll-behavior:contain}
   </div>
 
   <div class="tool" id="s4">
-    <p class="eyebrow">04 · 검증</p>
+    <p class="eyebrow">04 · Validation</p>
     <h2>이 지표로 성공을 가려낼 수 있을까?</h2>
     <p class="sub">입단 전 5년 지표 5개로 성공 여부를 교차검증으로 예측해 봤습니다. 회색 띠는 "성공·실패를 무작위로 섞었을 때" 같은 방법이 내는 값의 범위라서, <b>점이 띠 안이면 우연과 구별되지 않습니다.</b></p>
     <div class="tablewrap" style="margin-top:10px"><table id="valTable"></table></div>
@@ -456,14 +456,14 @@ dialog{overscroll-behavior:contain}
   </div>
 
   <div class="tool" id="s5">
-    <p class="eyebrow">05 · 기타</p>
+    <p class="eyebrow">05 · Others</p>
     <h2>웨이버 공시·방출 사례</h2>
     <p class="sub">기사에서 직접 확인한 사례만 모았습니다. <b>전체 목록이 아니며</b>, 목록에 없다고 공시되지 않았다는 뜻이 아닙니다. 선수를 누르면 상세가 열립니다.</p>
     <div class="tablewrap" style="margin-top:10px"><table id="etcTable"></table></div>
     <p class="note" id="etcNote"></p>
   </div>
   <div class="tool" id="s7">
-    <p class="eyebrow">07 · 리포트</p>
+    <p class="eyebrow">07 · Reports</p>
     <h2>스카우팅 노트</h2>
     <p class="sub">방문자가 남긴 선수 평가입니다. <b>개인 의견이며 이 사이트의 분석 결과가 아닙니다.</b> 운영자가 검수해 승인한 글만 올라오고, 선수 상세 창 맨 아래에서 노트를 남길 수 있습니다.</p>
     <div id="repList" class="replist"></div>
@@ -482,7 +482,7 @@ dialog{overscroll-behavior:contain}
 <footer>
   <div class="wrap">
     <div class="cols">
-      <div><a href="#s1">지난 사례</a><a href="#s2">갈린 지표</a><a href="#s3">닮은 유형</a></div>
+      <div><a href="#s1">Past Cases</a><a href="#s2">Key Metrics</a><a href="#s3">Similar Types</a></div>
       <div class="logo">BEFORE <b>KBO</b></div>
       <div><a href="https://baseballsavant.mlb.com/" rel="noopener">Baseball Savant</a><a href="https://mykbostats.com/" rel="noopener">MyKBO Stats</a><a href="https://github.com/chadwickbureau/register" rel="noopener">Chadwick Register</a></div>
     </div>
