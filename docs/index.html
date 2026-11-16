@@ -1090,10 +1090,11 @@ function renderRumors(){
 
 /* ================= KBO 시상 이력: 이름 옆 트로피 아이콘 (docs/awards.js) ================= */
 const AWARDS = Array.isArray(window.AWARDS) ? window.AWARDS : [];
-const AW_IDX = new Map();
-AWARDS.forEach(a=> a.names.forEach(n=> AW_IDX.set(nkey(n), a)));
+const AW_IDX = new Map(), AW_ID = new Map();
+AWARDS.forEach(a=>{ (a.names||[]).forEach(n=> AW_IDX.set(nkey(n), a)); (a.ids||[]).forEach(i=> AW_ID.set(String(i), a)); });
 function awardOf(rec){
-  return AW_IDX.get(nkey(enName(rec))) || (rec.player_name ? AW_IDX.get(nkey(flip(rec.player_name))) : null) || null;
+  const id = String(rec.mlbam ?? rec.player_id ?? "");   // 번호로 지정한 선수(동명이인 구분)
+  return AW_ID.get(id) || AW_IDX.get(nkey(enName(rec))) || (rec.player_name ? AW_IDX.get(nkey(flip(rec.player_name))) : null) || null;
 }
 function awardBadges(rec){
   const a = awardOf(rec); if (!a) return "";

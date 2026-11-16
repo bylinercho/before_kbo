@@ -14,7 +14,7 @@ window.AWARDS = [
   {names:["Yamaico Navarro"], gg:[2015]},
   {names:["Roger Bernadina"], gg:[2017]},
   {names:["Jerry Sands"], gg:[2019]},
-  {names:["José Miguel Fernández"], gg:[2019]},
+  {ids:[628336], gg:[2019]},   /* José Miguel Fernández. 데이터에는 "José Fernández"로 있고 동명이인이 있어 번호(mlbam)로 연결 */
   {names:["Raúl Alcántara"], gg:[2020]},
   {names:["José Pirela"], gg:[2022]},
   {names:["Austin Dean"], gg:[2023,2024]},

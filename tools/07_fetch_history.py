@@ -18,6 +18,7 @@
 이름 연결: ① 체드윅 명부에서 이름(악센트·대소문자 무시)이 같은 사람 ② 별명 표(ALIAS) ③ 성이 같고 이름 앞 3글자가 같은 사람(확인 필요)
       후보가 여럿이면 "입단 전 5년 동안 미국 기록이 있는 후보가 딱 한 명"일 때만 고른다. 아니면 비워 둔다.
       Asian Quota 등 미국 기록이 없는 선수는 연결되지 않는다.
+수동 지정: data/manual_links.csv (영문명, KBO첫해, mlbam)에 적은 선수는 위 규칙을 건너뛰고 그 번호로 연결한다(운영자가 확인한 선수).
 
 규칙: 요청은 100명씩 묶어 보내고 사이에 쉰다. 이미 받은 (레벨, 선수)는 다시 받지 않는다.
 """
@@ -150,6 +151,18 @@ def main():
         cohort.append({"KBO첫해": debut, "mykbo_id": r["mykbo_id"], "영문명": name, "팀": r["팀"], "역할": r["역할"],
                        "후보번호": "|".join(cand["key_mlbam"].astype(str)), "연결방법": how if len(cand) else "체드윅에 없음"})
     co = pd.DataFrame(cohort)
+    if os.path.exists("data/manual_links.csv"):
+        man = pd.read_csv("data/manual_links.csv", dtype=str, encoding="utf-8-sig").fillna("")
+        done = 0
+        for _, m in man.iterrows():
+            hit = co[(co["영문명"].map(norm) == norm(m["영문명"])) & (co["KBO첫해"] == int(m["KBO첫해"]))]
+            if hit.empty:
+                print("수동 지정 대상을 못 찾음:", m["영문명"], m["KBO첫해"])
+                continue
+            co.loc[hit.index, "후보번호"] = m["mlbam"]
+            co.loc[hit.index, "연결방법"] = "수동 지정(운영자 확인)"
+            done += 1
+        print("수동 지정 반영:", done, "/", len(man), "명")
 
     ids = {int(i) for s in co["후보번호"] for i in s.split("|") if i}
     pool = pd.read_csv("data/candidates_2026.csv")
@@ -163,6 +176,9 @@ def main():
     for _, r in co.iterrows():
         group = "pitching" if r["역할"] == "투수" else "hitting"
         vol_col = "bf" if group == "pitching" else "pa"
+        if str(r["연결방법"]).startswith("수동 지정"):
+            chosen.append(int(r["후보번호"])); status.append("연결됨")
+            continue
         ok = []
         for i in [int(x) for x in r["후보번호"].split("|") if x]:
             d = h[(h["id"] == i) & (h["group"] == group) & (h["season"] >= r["KBO첫해"] - 5) & (h["season"] <= r["KBO첫해"] - 1)]
