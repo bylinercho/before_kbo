@@ -253,7 +253,7 @@ dialog::backdrop{background:rgba(5,6,8,.72);backdrop-filter:blur(4px)}
 /* 히어로: 심플 — 장식 없이 글자와 여백만 */
 .hero{padding:130px 0 110px}
 .hero::before,.hero::after{display:none}
-.hero h1{font-weight:600;letter-spacing:-.035em;line-height:1.2;margin-bottom:20px}
+.hero h1{font-size:clamp(30px,4.6vw,46px);font-weight:600;letter-spacing:-.035em;line-height:1.25;margin-bottom:18px;max-width:none}
 .hero p.lead{font-size:17px;color:var(--muted);margin:0 auto 36px}
 .hero .btn{padding:13px 32px;font-size:14px;font-weight:600;box-shadow:none}
 .hero .btn:hover{transform:none;box-shadow:none}
@@ -315,7 +315,7 @@ dialog{overscroll-behavior:contain}
     <path d="M0 300 C240 230 420 360 680 290 S1020 230 1200 290 L1200 380 L0 380Z" fill="var(--band2)" opacity=".7"/>
   </svg>
   <div class="wrap">
-    <h1><span style="white-space:nowrap">KBO에 오기 전, 이 선수들은</span><br><span style="white-space:nowrap"><span class="hl">어떤 기록</span>이었을까</span></h1>
+    <h1>KBO에 오기 전의 기록</h1>
     <p class="lead">입단 전 5년 기록으로 비슷한 유형을 찾습니다.</p>
     <a class="btn" href="#s3">닮은 유형 찾아보기</a>
     <div class="stats">
