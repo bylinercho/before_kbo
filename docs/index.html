@@ -52,13 +52,6 @@ h3{font-size:15px;margin:20px 0 6px}
 .tablewrap td:not(:first-child),.tablewrap th:not(:first-child){text-align:center}
 .tablewrap .tag{line-height:1.25;vertical-align:middle}
 .stamp{display:none}
-.pager{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;margin:16px 0 4px}
-.pager button{font:inherit;font-size:13px;min-width:34px;padding:5px 11px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;border-radius:8px}
-.pager button:hover:not(:disabled){border-color:var(--accent)}
-.pager button.on{background:var(--accent);border-color:var(--accent);color:#16110d;font-weight:700}
-.pager button:disabled{opacity:.35;cursor:default}
-.pager .gap2{color:var(--muted)}
-.pager .pgcount{flex-basis:100%;text-align:center;font-size:12.5px;color:var(--muted);margin-top:2px}
 .themebtn{font:inherit;font-size:12px;letter-spacing:.06em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:3px 12px;cursor:pointer;align-self:center}
 .themebtn:hover{color:var(--ink);border-color:var(--ink)}
 nav{align-items:center}
@@ -421,8 +414,7 @@ dialog{overscroll-behavior:contain}
     <p class="eyebrow">01 · Past Cases</p>
     <h2>입단 전 5년 기록과 KBO 첫해 성적</h2>
     <p class="sub">선수를 누르면 그래프가 열리고, 머리글을 누르면 정렬됩니다. 재계약 N년 = KBO 연속 시즌 수(+는 2026년 진행 중).</p>
-    <div class="tablewrap" style="margin-top:12px"><table id="pastTable"></table></div>
-    <div class="pager" id="pastPager"></div>
+    <div class="tablewrap tall" style="margin-top:12px"><table id="pastTable"></table></div>
     <details style="margin-top:10px"><summary>비교에서 빠진 선수 보기</summary><div class="note" id="excluded"></div></details>
   </div>
 
@@ -778,24 +770,6 @@ function bioLine(rec){
   if (b.ht) p.push(`${b.ht}cm${b.wt?` ${b.wt}kg`:""}`);
   return p.length ? `<p class="bio">${p.join(" · ")}</p>` : "";
 }
-const PAGE = 10; let pastPage = 1;
-function renderPastPager(total, pages){
-  const el = $("pastPager"); if (!el) return;
-  if (total <= PAGE){ el.innerHTML = total ? `<span class="pgcount">${total}명</span>` : ""; return; }
-  const nums = [...new Set([1, pastPage-1, pastPage, pastPage+1, pages])].filter(n=>n>=1 && n<=pages).sort((a,b)=>a-b);
-  let btns = "", prev = 0;
-  for (const n of nums){
-    if (n - prev > 1) btns += `<span class="gap2">…</span>`;
-    btns += `<button type="button" data-pg="${n}" class="${n===pastPage?"on":""}" ${n===pastPage?'aria-current="page"':""}>${n}</button>`;
-    prev = n;
-  }
-  const a = (pastPage-1)*PAGE + 1, b = Math.min(pastPage*PAGE, total);
-  el.innerHTML = `<button type="button" data-pg="${pastPage-1}" ${pastPage<=1?"disabled":""}>‹ 이전</button>${btns}<button type="button" data-pg="${pastPage+1}" ${pastPage>=pages?"disabled":""}>다음 ›</button><span class="pgcount">${a}–${b} / ${total}명</span>`;
-}
-document.addEventListener("click", e=>{
-  const b = e.target.closest("#pastPager button[data-pg]"); if (!b || b.disabled) return;
-  pastPage = +b.dataset.pg; renderPast();
-});
 function renderPast(){
   const rows = pastRows();
   $("nPast").textContent = D.past["투수"].length + D.past["타자"].length;
@@ -811,9 +785,7 @@ function renderPast(){
   if (sortKey) rows.sort((a,b)=>{ const x=a[sortKey], y=b[sortKey]; if (x==null) return 1; if (y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir; });
   else rows.sort((a,b)=> b["KBO첫해"]-a["KBO첫해"] || String(a["영문명"]).localeCompare(b["영문명"]));
   let h = "<thead><tr>" + cols.map(c=>`<th data-k="${c[0]}" class="${c[2]==null?"l":""}">${c[1]}${sortKey===c[0]?(sortDir>0?" ▲":" ▼"):""}</th>`).join("") + "</tr></thead><tbody>";
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE));
-  pastPage = Math.min(Math.max(pastPage, 1), pages);
-  for (const r of rows.slice((pastPage-1)*PAGE, pastPage*PAGE)){
+  for (const r of rows){
     h += `<tr class="clickable" data-kind="past" data-key="${r.mykbo_id}">` + cols.map(c=>{
       const k=c[0]; let v=r[k];
       if (k==="팀") v = teamK(v);
@@ -828,8 +800,7 @@ function renderPast(){
     }).join("") + "</tr>";
   }
   $("pastTable").innerHTML = h + "</tbody>";
-  renderPastPager(rows.length, pages);
-  $("pastTable").querySelectorAll("th").forEach(th=> th.onclick = ()=>{ const k=th.dataset.k; if (sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} pastPage = 1; renderPast(); });
+  $("pastTable").querySelectorAll("th").forEach(th=> th.onclick = ()=>{ const k=th.dataset.k; if (sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} renderPast(); });
   const ok = rows.filter(r=>r["판정"]==="성공").length;
   $("critNote").textContent = `${role} ${rows.length}명 중 ${ok}명이 "${MODE_NOTE[$("critMode").value]}" 기준을 넘었습니다.${$("critMode").value!=="first"?" (2026 입단자는 제외)":""} ⓘ는 주의 사항, MLB%는 5년 중 MLB 비중입니다.`;
   const a=+$("yFrom").value, b=+$("yTo").value;
@@ -1355,7 +1326,7 @@ function renderVal(){
 }
 
 /* ================= 이벤트 ================= */
-function renderAll(){ pastPage = 1; fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); renderReports(); renderRumors(); }
+function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); renderReports(); renderRumors(); }
 document.addEventListener("click", e=>{
   const tr = e.target.closest("tr[data-team]");
   if (tr){ $("teamSel").value = tr.dataset.team; renderAll(); showTab("s1"); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"}); return; }

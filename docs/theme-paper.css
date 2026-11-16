@@ -117,11 +117,6 @@ html[data-theme="paper"] footer{background:var(--band2) var(--noise);border-top:
 html[data-theme="paper"] footer a{color:var(--ink)}
 html[data-theme="paper"] footer .logo{color:var(--ink)}
 
-/* 페이지 넘김 */
-html[data-theme="paper"] .pager button{border-radius:0;border:1px solid var(--rule);background:#f8f3e3;color:var(--ink)}
-html[data-theme="paper"] .pager button:hover:not(:disabled){background:var(--ink);color:var(--paper);border-color:var(--ink)}
-html[data-theme="paper"] .pager button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-
 /* 스크롤바 */
 html[data-theme="paper"] *{scrollbar-color:#a39878 transparent}
 html[data-theme="paper"] ::-webkit-scrollbar-thumb{background:#a39878;background-clip:content-box;border-radius:0}
