@@ -771,10 +771,10 @@ function renderPast(){
   const rows = pastRows();
   $("nPast").textContent = D.past["투수"].length + D.past["타자"].length;
   const cols = role==="투수"
-    ? [["영문명","선수",null],["KBO첫해","첫해",0],["팀","팀",null],["vol","상대 타자",0],["mlb_share","MLB%",0],
+    ? [["영문명","선수",null],["KBO첫해","데뷔",0],["팀","팀",null],["vol","상대 타자",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["hr_pct","홈런%",2],["era","ERA",2],
        ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["판정","판정",null],["stay_n","재계약",0]]
-    : [["영문명","선수",null],["포지션","포지션",null],["타","타",null],["KBO첫해","첫해",0],["팀","팀",null],["vol","타석",0],["mlb_share","MLB%",0],
+    : [["영문명","선수",null],["포지션","포지션",null],["타","타",null],["KBO첫해","데뷔",0],["팀","팀",null],["vol","타석",0],["mlb_share","MLB%",0],
        ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["iso","ISO",3],["avg","타율",3],
        ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["판정","판정",null],["stay_n","재계약",0]];
   if (ADJ) cols.forEach(c=>{ if (ADJF.has(c[0])) { c[1] += " 지수"; c[2] = 0; } });
@@ -973,7 +973,7 @@ function openDetail(kind, key){
       near.map(n=>`<tr class="clickable" data-kind="cand" data-key="${n.p.player_id}"><td class="l">${nameHTML(n.p)}</td><td>${n.p["출생연도"]!=null?BASE-n.p["출생연도"]:"-"}</td><td>${n.dist.toFixed(2)}</td></tr>`).join("") + `</tbody></table></div>`;
   } else {
     const near = nearest(rec, pool, 5), succ = near.filter(n=>isSuccess(n.p)).length, base = pool.filter(isSuccess).length;
-    h += `<h3>이 선수와 닮은 지난 KBO 사례 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th class="l">KBO 첫해</th><th>거리</th><th class="l">판정</th></tr></thead><tbody>` +
+    h += `<h3>이 선수와 닮은 지난 KBO 사례 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th class="l">데뷔</th><th>거리</th><th class="l">판정</th></tr></thead><tbody>` +
       near.map(n=>`<tr class="clickable" data-kind="past" data-key="${n.p.mykbo_id}"><td class="l">${nameHTML(n.p)}</td><td class="l">${n.p["KBO첫해"]} ${teamK(n.p["팀"])} · ${resultLine(n.p)}</td><td>${n.dist.toFixed(2)}</td><td class="l">${tag(n.p)}</td></tr>`).join("") + `</tbody></table></div>
       <div class="box">닮은 사례 ${near.length}명 중 <b>${succ}명</b>이 성공 기준을 넘었습니다(전체 ${pool.length}명 중 ${base}명). 5명뿐이라 우연일 수 있습니다.</div>`;
   }
@@ -1115,7 +1115,7 @@ function renderLanding(){
 function renderEtc(){
   const all = D.past["투수"].concat(D.past["타자"]), byId = {}; all.forEach(r=>{ byId[String(r.mykbo_id)] = r; });
   const ev = (D.waivers||[]).slice().sort((a,b)=>String(b["일자"]).localeCompare(String(a["일자"])));
-  let h = `<thead><tr><th class="l">일자</th><th class="l">선수</th><th>역할</th><th class="l">KBO 첫해·팀</th><th class="l">당시 구단</th><th class="l">구분</th><th class="l">일자 정확도</th><th>첫해 판정</th><th>재계약</th><th class="l">출처</th></tr></thead><tbody>`;
+  let h = `<thead><tr><th class="l">일자</th><th class="l">선수</th><th>역할</th><th class="l">데뷔·팀</th><th class="l">당시 구단</th><th class="l">구분</th><th class="l">일자 정확도</th><th>첫해 판정</th><th>재계약</th><th class="l">출처</th></tr></thead><tbody>`;
   for (const w of ev){
     const r = byId[String(w.mykbo_id)];
     const nm = r ? nameHTML(r) : `${esc(w["한국등록명"]||"")} <span class="en">${esc(w["영문명"])}</span>`;

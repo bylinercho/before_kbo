@@ -3,6 +3,10 @@
    - 전부 html[data-theme="paper"] 아래에만 적용된다. 헤더의 전환 버튼(또는 이 파일 링크 삭제)으로 언제든 원래 모습으로 돌아간다.
    - 원래 디자인(짙은 네이비)은 git 태그 before-paper-theme 에도 저장돼 있다.
    ========================================================================== */
+/* 타자기 글꼴의 % 모양이 작고 떠 보여서, % 글자(U+0025)만 KBO 다이아고딕으로 그린다 */
+@font-face{font-family:"KBO Pct";src:url("fonts/KBO-Dia-Gothic_light.woff") format("woff");font-weight:100 400;unicode-range:U+0025}
+@font-face{font-family:"KBO Pct";src:url("fonts/KBO-Dia-Gothic_medium.woff") format("woff");font-weight:500 600;unicode-range:U+0025}
+@font-face{font-family:"KBO Pct";src:url("fonts/KBO-Dia-Gothic_bold.woff") format("woff");font-weight:700 900;unicode-range:U+0025}
 html[data-theme="paper"]{
   color-scheme:light;
   --bg:#ddd4bc; --band:#e6dec8; --band2:#d6ccb2; --card:#efe8d4; --paper:#f1ead7;
@@ -10,8 +14,8 @@ html[data-theme="paper"]{
   --accent:#b3262b; --good:#2f6f46; --bad:#b3262b; --warn-bg:#f3e5a6; --warn-line:#b8962e;
   --mlb:#a8741a; --aa:#2f7d6d; --ap:#5c4fb5; --a:#6f6a5c; --mex:#b3262b;
   --bar:#b3262b; --bar2:#2b4a8a;
-  --font-base:"Courier New",Courier,"KBO Dia Gothic","Pretendard","Malgun Gothic",monospace;
-  --font-brand:"Courier New",Courier,"KBO Dia Gothic","Pretendard","Malgun Gothic",monospace;
+  --font-base:"KBO Pct","Courier New",Courier,"KBO Dia Gothic","Pretendard","Malgun Gothic",monospace;
+  --font-brand:"KBO Pct","Courier New",Courier,"KBO Dia Gothic","Pretendard","Malgun Gothic",monospace;
   --noise:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32  0 0 0 0 .27  0 0 0 0 .18  0 0 0 .10 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 html[data-theme="paper"] body{background:var(--bg) var(--noise);color:var(--ink);font-size:14.5px;line-height:1.65}
