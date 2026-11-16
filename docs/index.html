@@ -41,6 +41,10 @@ h3{font-size:15px;margin:20px 0 6px}
 .logo.brand{display:inline-flex;align-items:center;padding:7px 16px;border-radius:999px;background:#f3f1ec;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .logo.brand img{display:block;height:22px;width:auto}
 .bio{margin:6px 0 0;font-size:13.5px;color:var(--ink);letter-spacing:.01em}
+.awards{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}
+.aw{display:inline-flex;align-items:center;cursor:help}
+.aw img{display:block;width:auto}
+
 nav{display:flex;gap:26px;font-size:13px;letter-spacing:.04em}
 nav a{text-decoration:none;color:var(--muted);padding:4px 0;border-bottom:1px solid transparent}
 nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
@@ -506,6 +510,7 @@ dialog{overscroll-behavior:contain}
 <script src="data.js"></script>
 <script src="reports.js" onerror="void 0"></script>
 <script src="rumors.js" onerror="void 0"></script>
+<script src="awards.js" onerror="void 0"></script>
 <script>
 "use strict";
 const D = window.DATA;
@@ -773,7 +778,7 @@ function renderPast(){
       else if (k==="stay_n") v = `${r.stay_n}년${r.stay_plus?"+":""}`;
       else if (k==="typ") v = `<span class="note" style="white-space:nowrap">${esc(typName(r))}</span>`;
       else if (k==="판정") v = `<span class="tag ${v==="성공"?"good":"bad"}">${v}</span>`;
-      else if (k==="영문명") v = nameHTML(r) + (wvOf(r.mykbo_id).length ? ` <span class="tag warn" title="${esc(wvText(r.mykbo_id))}">${wvExplicit(r.mykbo_id)?"웨이버":"방출"}</span>` : "") + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
+      else if (k==="영문명") v = nameHTML(r) + awardBadges(r) + (wvOf(r.mykbo_id).length ? ` <span class="tag warn" title="${esc(wvText(r.mykbo_id))}">${wvExplicit(r.mykbo_id)?"웨이버":"방출"}</span>` : "") + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
       else if (c[2]!=null) v = fmt(v,c[2]);
       else if (v==null || v==="") v = "-";
       return `<td class="${c[2]==null?"l":""}">${v}</td>`;
@@ -891,7 +896,7 @@ function renderCands(){
   top.forEach((t,i)=>{
     const c=t.c, nn = nearest(c, pool, 1)[0];
     h += `<tr class="clickable" data-kind="cand" data-key="${c.player_id}"><td class="l">${i+1}</td>
-      <td class="l">${nameHTML(c)}${c["KBO경력"]?' <span class="tag warn" title="이름이 MyKBO 외국인 명단에 있음(동명이인일 수 있음)">KBO경력 의심</span>':""}</td>
+      <td class="l">${nameHTML(c)}${awardBadges(c)}${c["KBO경력"]?' <span class="tag warn" title="이름이 MyKBO 외국인 명단에 있음(동명이인일 수 있음)">KBO경력 의심</span>':""}</td>
       ${role==="타자"?`<td class="l">${bioPos(c)}</td><td class="l">${bioBat(c)}</td>`:""}<td class="l">${LVS[c["소속"]]||c["소속"]}</td><td class="l"><span class="note" style="white-space:nowrap">${esc(typName(c))}</span></td>
       <td>${c["출생연도"]!=null? BASE-c["출생연도"] : "-"}</td><td>${t.dist.toFixed(2)}</td>
       <td>${volTxt(c)}</td><td>${fmt(c.mlb_share*100,0)}</td>
@@ -913,7 +918,7 @@ function openDetail(kind, key){
     ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
     : `${role} · 2026 ${({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]]||rec["소속"]} (스탯캐스트 합산 ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"}) · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
   const fid = isPast ? rec.mykbo_id : rec.player_id;
-  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p>${bioLine(rec)}<p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b>${(()=>{ const rm = rumorOf(rec, kind); return rm ? ` <span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}" style="margin-left:2px">Rumor · ${esc(rm.status||"루머")}</span>` : ""; })()}</p></div>
+  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)}${awardBadges(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p>${bioLine(rec)}<p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b>${(()=>{ const rm = rumorOf(rec, kind); return rm ? ` <span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}" style="margin-left:2px">Rumor · ${esc(rm.status||"루머")}</span>` : ""; })()}</p></div>
     <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="dlgClose">닫기</button></div></div>`;
   /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
   const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
@@ -1069,6 +1074,20 @@ function renderRumors(){
       <div class="by">${x.team?`${esc(x.team)} · `:""}${x.date?esc(x.date):""}${link?` · <a href="${esc(link)}" target="_blank" rel="noopener noreferrer nofollow">${esc(x.srcName||"출처")}</a>`:""}</div></div>`;
   }).join("") : `<p class="note">아직 없습니다.</p>`;
   $("rumNote").textContent = list.length ? `${list.length}명. 카드를 누르면 상세가 열립니다. 상태: 루머 → 언론 보도 → 공식 발표 순으로 확실합니다.` : "";
+}
+
+/* ================= KBO 시상 이력: 이름 옆 트로피 아이콘 (docs/awards.js) ================= */
+const AWARDS = Array.isArray(window.AWARDS) ? window.AWARDS : [];
+const AW_IDX = new Map();
+AWARDS.forEach(a=> a.names.forEach(n=> AW_IDX.set(nkey(n), a)));
+function awardOf(rec){
+  return AW_IDX.get(nkey(enName(rec))) || (rec.player_name ? AW_IDX.get(nkey(flip(rec.player_name))) : null) || null;
+}
+function awardBadges(rec){
+  const a = awardOf(rec); if (!a) return "";
+  const one = (img, label, yrs, h) => (yrs && yrs.length)
+    ? `<span class="aw" data-tip="${esc(`<b>${label}</b> ${yrs.join(", ")}`)}"><img src="img/${img}.png" alt="${label}" style="height:${h}px"></span>` : "";
+  return `<span class="awards">${one("mvp","KBO MVP",a.mvp,22)}${one("gg","KBO 골든글러브",a.gg,18)}</span>`;
 }
 
 /* ================= 랜딩(히어로·소개·근거) ================= */
