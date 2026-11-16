@@ -249,6 +249,15 @@ dialog::backdrop{background:rgba(5,6,8,.72);backdrop-filter:blur(4px)}
 .rum-st.r0{color:var(--muted)}.rum-st.r1{color:var(--mlb);border-color:var(--mlb)}.rum-st.r2{color:var(--aa);border-color:var(--aa)}
 .rep .meta{font-size:12.5px;color:var(--muted);margin-top:6px}
 
+/* 챕터 탭: 한 번에 한 챕터만 보인다 */
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:26px 0 0;padding:8px;border:1px solid var(--line);border-radius:999px;background:rgba(20,22,27,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);position:sticky;top:70px;z-index:15;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;font:inherit;font-size:14px;color:var(--muted);background:transparent;border:0;border-radius:999px;padding:9px 18px;cursor:pointer;white-space:nowrap;transition:color .15s,background .15s}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#16110d;font-weight:700}
+.tool.chapter[hidden]{display:none}
+@media (max-width:820px){.tabs{top:0;position:static;border-radius:14px}}
+
 /* 스크롤바: 얇고 어두운 트랙, 마우스 올리면 주황 */
 html{scroll-behavior:smooth;scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
 *{scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
@@ -394,6 +403,17 @@ dialog{overscroll-behavior:contain}
       <input type="text" id="shareUrl" readonly hidden style="width:min(560px,100%)">
       <span class="note" id="shareMsg"></span>
     </div>
+  </div>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="챕터">
+    <button type="button" role="tab" data-tab="s1">지난 사례</button>
+    <button type="button" role="tab" data-tab="s2">갈린 지표</button>
+    <button type="button" role="tab" data-tab="s6">구단별</button>
+    <button type="button" role="tab" data-tab="s3">닮은 유형</button>
+    <button type="button" role="tab" data-tab="s4">검증</button>
+    <button type="button" role="tab" data-tab="s5">기타</button>
+    <button type="button" role="tab" data-tab="s8">Rumor Player</button>
+    <button type="button" role="tab" data-tab="s7">리포트</button>
   </div>
 
   <div class="tool" id="s1">
@@ -1280,10 +1300,10 @@ function renderVal(){
 function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); renderReports(); renderRumors(); }
 document.addEventListener("click", e=>{
   const tr = e.target.closest("tr[data-team]");
-  if (tr){ $("teamSel").value = tr.dataset.team; renderAll(); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"}); return; }
+  if (tr){ $("teamSel").value = tr.dataset.team; renderAll(); showTab("s1"); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"}); return; }
   const r = e.target.closest(".typrow"); if (!r) return;
   $("typSel").value = r.dataset.typ; renderAll();
-  document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"});
+  showTab("s1"); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"});
 });
 document.addEventListener("click", e=>{
   const el = e.target.closest("[data-kind]"); if (!el || e.target.closest("th") || e.target.closest("a")) return;
@@ -1328,6 +1348,24 @@ $("adjOn").oninput = ()=>{
   sortKey = null; fillScatterSel(); renderAll();
 };
 fillScatterSel(); renderAll(); renderLanding();
+
+/* ================= 챕터 탭 ================= */
+const CHAPTERS = ["s1","s2","s6","s3","s4","s5","s8","s7"];
+CHAPTERS.forEach(id=> $(id).classList.add("chapter"));
+function showTab(id, scroll){
+  if (!CHAPTERS.includes(id)) id = "s1";
+  CHAPTERS.forEach(c=> $(c).hidden = c!==id);
+  $("tabs").querySelectorAll("button").forEach(b=> b.setAttribute("aria-selected", b.dataset.tab===id ? "true" : "false"));
+  if (scroll) $("tabs").scrollIntoView({behavior:"smooth", block:"start"});
+}
+$("tabs").addEventListener("click", e=>{ const b = e.target.closest("button[data-tab]"); if (b) showTab(b.dataset.tab, true); });
+/* 메뉴·카드의 #s1 같은 링크는 해당 탭을 연다 */
+document.addEventListener("click", e=>{
+  const a = e.target.closest('a[href^="#s"]'); if (!a) return;
+  const id = a.getAttribute("href").slice(1);
+  if (CHAPTERS.includes(id)){ e.preventDefault(); showTab(id, true); }
+});
+showTab("s1", false);
 
 /* 관심 선수 · 비교 · 링크 공유 연결 */
 renderFav(); renderCmpBar();
