@@ -1085,9 +1085,10 @@ function awardOf(rec){
 }
 function awardBadges(rec){
   const a = awardOf(rec); if (!a) return "";
-  const one = (img, label, yrs, h) => (yrs && yrs.length)
-    ? `<span class="aw" data-tip="${esc(`<b>${label}</b> ${yrs.join(", ")}`)}"><img src="img/${img}.png" alt="${label}" style="height:${h}px"></span>` : "";
-  return `<span class="awards">${one("mvp","KBO MVP",a.mvp,22)}${one("gg","KBO 골든글러브",a.gg,18)}</span>`;
+  /* 받은 횟수만큼 아이콘을 하나씩 넣는다. 아이콘마다 그 해를 보여 준다. */
+  const each = (img, label, yrs, h) => (yrs||[]).map(y=>
+    `<span class="aw" data-tip="${esc(`<b>${label}</b> ${y}`)}"><img src="img/${img}.png" alt="${label} ${y}" style="height:${h}px"></span>`).join("");
+  return `<span class="awards">${each("mvp","KBO MVP",a.mvp,22)}${each("gg","KBO 골든글러브",a.gg,18)}</span>`;
 }
 
 /* ================= 랜딩(히어로·소개·근거) ================= */
