@@ -252,6 +252,10 @@ dialog::backdrop{background:rgba(5,6,8,.72);backdrop-filter:blur(4px)}
 .badge-op{display:inline-block;font-size:11px;letter-spacing:.04em;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
 .repbtn{display:inline-block;margin-top:6px}
 
+.rum-st{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);margin-left:6px;vertical-align:middle}
+.rum-st.r0{color:var(--muted)}.rum-st.r1{color:var(--mlb);border-color:var(--mlb)}.rum-st.r2{color:var(--aa);border-color:var(--aa)}
+.rep .meta{font-size:12.5px;color:var(--muted);margin-top:6px}
+
 /* 스크롤바: 얇고 어두운 트랙, 마우스 올리면 주황 */
 html{scroll-behavior:smooth;scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
 *{scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
@@ -290,6 +294,7 @@ dialog{overscroll-behavior:contain}
       <a href="#s3">닮은 유형</a>
       <a href="#s4">검증</a>
       <a href="#s5">기타</a>
+      <a href="#s8">Rumor Player</a>
       <a href="#s7">리포트</a>
       <a href="#about">방법·한계</a>
     </nav>
@@ -489,6 +494,13 @@ dialog{overscroll-behavior:contain}
     <div id="repList" class="replist"></div>
     <p class="note" id="repNote"></p>
   </div>
+  <div class="tool" id="s8">
+    <p class="eyebrow">08 · Rumor Player</p>
+    <h2>KBO 입단설이 도는 선수</h2>
+    <p class="sub">기사·커뮤니티에서 "온다더라" 하고 이름이 오르내린 선수입니다. <b>확정된 영입이 아니며 틀릴 수 있습니다.</b> 이름이 이 분석의 후보 풀에 있으면 지표와 닮은 유형을 바로 볼 수 있습니다.</p>
+    <div id="rumList" class="replist"></div>
+    <p class="note" id="rumNote"></p>
+  </div>
 </main>
 
 <!-- ========== 근거 (신뢰) ========== -->
@@ -521,6 +533,7 @@ dialog{overscroll-behavior:contain}
 
 <script src="data.js"></script>
 <script src="reports.js" onerror="void 0"></script>
+<script src="rumors.js" onerror="void 0"></script>
 <script>
 "use strict";
 const D = window.DATA;
@@ -902,7 +915,7 @@ function openDetail(kind, key){
     ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
     : `${role} · 2026 ${({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]]||rec["소속"]} (스탯캐스트 합산 ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"}) · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
   const fid = isPast ? rec.mykbo_id : rec.player_id;
-  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p><p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b></p></div>
+  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p><p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b>${(()=>{ const rm = rumorOf(rec, kind); return rm ? ` <span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}" style="margin-left:2px">Rumor · ${esc(rm.status||"루머")}</span>` : ""; })()}</p></div>
     <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="dlgClose">닫기</button></div></div>`;
   /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
   const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
@@ -1019,6 +1032,45 @@ function renderReports(){
   const list = REPORTS.slice().sort((a,b)=> String(b.date||"").localeCompare(String(a.date||"")));
   $("repList").innerHTML = list.length ? list.map(x=>repCard(x,true)).join("") : `<p class="note">아직 승인된 노트가 없습니다. 선수 상세 창에서 첫 노트를 남겨 보세요.</p>`;
   $("repNote").textContent = list.length ? `${list.length}건. 카드를 누르면 해당 선수의 상세가 열립니다.` : "";
+}
+
+/* ================= Rumor Player: 입단설이 도는 선수 (docs/rumors.js 에 이름만 추가) ================= */
+const RUMORS = Array.isArray(window.RUMORS) ? window.RUMORS : [];
+const RUM_ST = {"루머":"r0","언론 보도":"r1","공식 발표":"r2"};
+const nkey = x => plain(x).replace(/[^a-z0-9가-힣]/g,"");
+function findRumorRec(name, hint){
+  const k = nkey(name); if (!k) return null;
+  const hit = [];
+  for (const kind of ["cand","past"]) for (const r0 of ["투수","타자"]) {
+    for (const rec of (kind==="cand" ? D.cands[r0] : D.past[r0])) {
+      const keys = [rec["한글명"], enName(rec), rec.player_name].filter(Boolean).map(nkey);
+      if (keys.includes(k)) hit.push({rec, kind, r0});
+    }
+  }
+  if (hint && hint.id){ const h = hit.find(x=> String(x.kind==="cand"?x.rec.player_id:x.rec.mykbo_id)===String(hint.id)); if (h) return h; }
+  const c = hit.filter(x=>x.kind==="cand");
+  return c.length===1 ? c[0] : (c.length===0 && hit.length===1 ? hit[0] : null);
+}
+function rumorOf(rec, kind){
+  const id = String(kind==="cand" ? rec.player_id : rec.mykbo_id);
+  return RUMORS.find(x=>{ const m = findRumorRec(x.name, x); return m && m.kind===kind && String(kind==="cand"?m.rec.player_id:m.rec.mykbo_id)===id; });
+}
+function renderRumors(){
+  const list = RUMORS.slice().sort((a,b)=> String(b.date||"").localeCompare(String(a.date||"")));
+  $("rumList").innerHTML = list.length ? list.map(x=>{
+    const m = findRumorRec(x.name, x), st = x.status||"루머", link = safeUrl(x.src);
+    let meta = "";
+    if (m){
+      const age = m.rec["출생연도"]!=null ? (m.kind==="cand" ? BASE-m.rec["출생연도"] : m.rec["KBO첫해"]-m.rec["출생연도"]) : null;
+      meta = `${m.r0} · ${m.kind==="cand" ? "2026 후보" : "지난 KBO 사례"}${age!=null?` · ${age}세`:""} · 유형 ${esc(typName(m.rec))}`;
+    } else meta = "이 분석의 후보 풀에 없음 (기록 비교 불가)";
+    const attr = m ? ` data-kind="${m.kind}" data-key="${esc(m.kind==="cand"?m.rec.player_id:m.rec.mykbo_id)}" data-role="${m.r0}"` : "";
+    return `<div class="rep"${attr}><div class="who">${m?nameHTML(m.rec):esc(x.name)}<span class="rum-st ${RUM_ST[st]||"r0"}">${esc(st)}</span></div>
+      <div class="meta">${meta}</div>
+      ${x.note?`<p class="one">${esc(x.note)}</p>`:""}
+      <div class="by">${x.team?`${esc(x.team)} · `:""}${x.date?esc(x.date):""}${link?` · <a href="${esc(link)}" target="_blank" rel="noopener noreferrer nofollow">${esc(x.srcName||"출처")}</a>`:""}</div></div>`;
+  }).join("") : `<p class="note">아직 없습니다.</p>`;
+  $("rumNote").textContent = list.length ? `${list.length}명. 카드를 누르면 상세가 열립니다. 상태: 루머 → 언론 보도 → 공식 발표 순으로 확실합니다.` : "";
 }
 
 /* ================= 랜딩(히어로·소개·근거) ================= */
@@ -1248,7 +1300,7 @@ function renderVal(){
 }
 
 /* ================= 이벤트 ================= */
-function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); renderReports(); }
+function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); renderReports(); renderRumors(); }
 document.addEventListener("click", e=>{
   const tr = e.target.closest("tr[data-team]");
   if (tr){ $("teamSel").value = tr.dataset.team; renderAll(); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"}); return; }
