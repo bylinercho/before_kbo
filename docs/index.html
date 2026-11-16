@@ -42,6 +42,8 @@ h3{font-size:15px;margin:20px 0 6px}
 .logo b{font-weight:300;letter-spacing:.12em}
 .logo.brand{display:inline-flex;align-items:center;padding:7px 16px;border-radius:999px;background:#f3f1ec;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .logo.brand img{display:block;height:22px;width:auto}
+.logo.brand.footlogo{padding:12px 26px}
+.logo.brand.footlogo img{height:40px}
 /* 표: 행 높이를 모두 같게, 첫 열(선수명) 말고는 가운데 정렬 */
 .tablewrap td{height:42px;padding-top:0;padding-bottom:0;vertical-align:middle}
 .tablewrap td:not(:first-child),.tablewrap th:not(:first-child){text-align:center}
@@ -508,10 +510,9 @@ dialog{overscroll-behavior:contain}
   <div class="wrap">
     <div class="cols">
       <div><a href="#s1">Past Cases</a><a href="#s2">Key Metrics</a><a href="#s3">Similar Types</a></div>
-      <div class="logo">BEFORE <b>KBO</b></div>
+      <a class="logo brand footlogo" href="#top" aria-label="Before KBO"><img src="img/logo.png" alt="Before KBO" width="230" height="40"></a>
       <div><a href="https://baseballsavant.mlb.com/" rel="noopener">Baseball Savant</a><a href="https://mykbostats.com/" rel="noopener">MyKBO Stats</a><a href="https://github.com/chadwickbureau/register" rel="noopener">Chadwick Register</a></div>
     </div>
-    <p class="fine">KBO·MLB·구단·선수와 무관한 개인 분석입니다. 자료 수집일 <span id="made"></span>.</p>
   </div>
 </footer>
 
@@ -565,7 +566,6 @@ const teamK = t => { for (const k in TEAM) if (String(t).startsWith(k.split(" ")
 const BASE = D["후보연도"] || 2026;
 
 let role = "투수", sortKey = null, sortDir = -1;
-$("made").textContent = D["만든날"];
 /* 재계약(N년): KBO에서 첫해부터 연속으로 뛴 시즌 수. 계약 정보가 아니라 시즌 기록에서 추정한 값이며, 2026까지 이어졌으면 "+"(진행 중) */
 for (const r0 of ["투수","타자"]) for (const r of D.past[r0]) {
   const ys = new Set((r.kbo||[]).map(k=>k.y)); let n = 0;
