@@ -238,7 +238,20 @@ dialog::backdrop{background:rgba(5,6,8,.72);backdrop-filter:blur(4px)}
 .close{border-radius:999px;border-color:var(--line);padding:6px 16px}
 .close:hover{background:var(--accent);border-color:var(--accent);color:#16110d}
 
-/* 상세 창: 섹션 구분 (제목 위 구분선 + 넉넉한 여백 + 강조 막대) */
+/* 스크롤바: 얇고 어두운 트랙, 마우스 올리면 주황 */
+html{scroll-behavior:smooth;scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
+*{scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#31343e;border-radius:999px;border:3px solid transparent;background-clip:content-box;transition:background .2s}
+::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:content-box;border:3px solid transparent}
+::-webkit-scrollbar-corner{background:transparent}
+html::-webkit-scrollbar-track{background:var(--bg)}
+dialog{overscroll-behavior:contain}
+.tall,.tablewrap{overscroll-behavior:contain}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* 상세 창: 섹션 구분(제목 위 구분선 + 넉넉한 여백 + 강조 막대) */
 #dlgBody h3{margin:34px 0 12px;padding:22px 0 0;border-top:1px solid var(--line);font-size:16px;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px}
 #dlgBody h3::before{content:"";align-self:center;width:4px;height:16px;border-radius:2px;background:var(--accent)}
 #dlgBody h3 .note{font-weight:400}
