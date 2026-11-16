@@ -250,6 +250,26 @@ dialog::backdrop{background:rgba(5,6,8,.72);backdrop-filter:blur(4px)}
 .tool.chapter[hidden]{display:none}
 @media (max-width:820px){.tabs{top:0;position:static;border-radius:14px}}
 
+/* 히어로 다듬기: 격자 배경·정돈된 타이포·유리 패널 통계 */
+.hero{padding:120px 0 104px}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(ellipse 65% 70% at 50% 28%,#000 10%,transparent 75%);mask-image:radial-gradient(ellipse 65% 70% at 50% 28%,#000 10%,transparent 75%)}
+.hero h1{font-weight:700;letter-spacing:-.04em;line-height:1.14;margin-bottom:22px}
+.hero p.lead{font-size:18px;color:#9aa0ac;margin:0 auto 38px;letter-spacing:-.01em}
+.hero .btn{padding:15px 38px;font-size:14px;box-shadow:0 10px 32px rgba(255,122,69,.28)}
+.hero .btn::after{content:"→";margin-left:10px;display:inline-block;transition:transform .2s}
+.hero .btn:hover::after{transform:translateX(4px)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;max-width:720px;margin:72px auto 0;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.stats div{padding:26px 10px;min-width:0}
+.stats div+div{border-left:1px solid var(--line)}
+.stats b{font-size:40px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;background:linear-gradient(180deg,#fff,#b9bdc7);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stats span{display:block;margin-top:6px;font-size:12px;color:var(--muted);letter-spacing:.04em}
+@media (prefers-reduced-motion:no-preference){
+  .hero .wrap>*{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  .hero .wrap>*:nth-child(2){animation-delay:.08s}.hero .wrap>*:nth-child(3){animation-delay:.16s}.hero .wrap>*:nth-child(4){animation-delay:.26s}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+}
+@media (max-width:820px){.hero{padding:76px 0 64px}.hero p.lead{font-size:16px}.stats{margin-top:48px}.stats b{font-size:28px}.stats div{padding:18px 6px}.stats span{font-size:11px}}
+
 /* 스크롤바: 얇고 어두운 트랙, 마우스 올리면 주황 */
 html{scroll-behavior:smooth;scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
 *{scrollbar-color:#3a3e4a transparent;scrollbar-width:thin}
@@ -301,7 +321,7 @@ dialog{overscroll-behavior:contain}
     <path d="M0 300 C240 230 420 360 680 290 S1020 230 1200 290 L1200 380 L0 380Z" fill="var(--band2)" opacity=".7"/>
   </svg>
   <div class="wrap">
-    <h1>KBO에 오기 전, 이 선수들은 <span style="white-space:nowrap"><span class="hl">어떤 기록</span>이었을까</span></h1>
+    <h1><span style="white-space:nowrap">KBO에 오기 전, 이 선수들은</span><br><span style="white-space:nowrap"><span class="hl">어떤 기록</span>이었을까</span></h1>
     <p class="lead">입단 전 5년 기록으로 비슷한 유형을 찾습니다.</p>
     <a class="btn" href="#s3">닮은 유형 찾아보기</a>
     <div class="stats">
@@ -1019,7 +1039,7 @@ function renderLanding(){
   const all = D.past["투수"].concat(D.past["타자"]), ys = all.map(r=>r["KBO첫해"]);
   $("statPast").textContent = all.length;
   $("statYears").textContent = Math.max(...ys) - Math.min(...ys) + 1;
-  $("statCand").textContent = D.cands["투수"].length + D.cands["타자"].length;
+  $("statCand").textContent = (D.cands["투수"].length + D.cands["타자"].length).toLocaleString("en-US");
 }
 
 /* ================= 4. 기타: 웨이버 공시·방출 ================= */
