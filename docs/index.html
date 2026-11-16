@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Before KBO — 입단 전 5년으로 보는 KBO 외국인 선수</title>
+<script>try{document.documentElement.dataset.theme = localStorage.getItem("bk_theme")==="classic" ? "classic" : "paper";}catch(e){document.documentElement.dataset.theme="paper";}</script>
+<link rel="stylesheet" href="theme-paper.css">
 <style>
 /* 2026-11-15 디자인 개편: 어둡고 무게감 있는 톤을 기본으로 한다(밝은 모드 없음).
    차콜 배경 + 따뜻한 오프화이트 글자 + 주황 포인트. 그래프 색(레벨·성공·막대)도 같은 팔레트에서 고른다. */
@@ -40,6 +42,10 @@ h3{font-size:15px;margin:20px 0 6px}
 .logo b{font-weight:300;letter-spacing:.12em}
 .logo.brand{display:inline-flex;align-items:center;padding:7px 16px;border-radius:999px;background:#f3f1ec;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .logo.brand img{display:block;height:22px;width:auto}
+.stamp{display:none}
+.themebtn{font:inherit;font-size:12px;letter-spacing:.06em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:3px 12px;cursor:pointer;align-self:center}
+.themebtn:hover{color:var(--ink);border-color:var(--ink)}
+nav{align-items:center}
 .bio{margin:6px 0 0;font-size:13.5px;color:var(--ink);letter-spacing:.01em}
 .awards{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}
 .aw{display:inline-flex;align-items:center;cursor:help}
@@ -324,6 +330,7 @@ dialog{overscroll-behavior:contain}
   <div class="wrap">
     <a class="logo brand" href="#top" aria-label="Before KBO"><img src="img/logo.png" alt="Before KBO" width="130" height="22"></a>
     <nav aria-label="링크">
+      <button type="button" class="themebtn" id="themeBtn" title="디자인 전환"></button>
       <a href="https://github.com/bylinercho/before_kbo" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
     </nav>
   </div>
@@ -336,6 +343,7 @@ dialog{overscroll-behavior:contain}
     <path d="M0 300 C240 230 420 360 680 290 S1020 230 1200 290 L1200 380 L0 380Z" fill="var(--band2)" opacity=".7"/>
   </svg>
   <div class="wrap">
+    <div class="stamp" aria-hidden="true">SCOUTING<br>REPORT</div>
     <h1>Who came. Who's next.</h1>
     <p class="lead">Pre-KBO records of past imports, and who looks similar among 2026 candidates.</p>
     <a class="btn" href="#s3">Find similar types</a>
@@ -1382,6 +1390,19 @@ fillScatterSel(); renderAll(); renderLanding();
   document.addEventListener("mousemove", e=>{ if (!tip.hidden) place(e); });
   document.addEventListener("mouseout", e=>{ const r = e.relatedTarget; if (!r || !r.closest || !r.closest("[data-tip]")) tip.hidden = true; });
 })();
+
+/* ================= 디자인 전환 (Paper ↔ Classic). 선택은 이 브라우저에 저장 ================= */
+function paintThemeBtn(){
+  const t = document.documentElement.dataset.theme;
+  $("themeBtn").textContent = t==="paper" ? "Classic view" : "Report view";
+}
+$("themeBtn").addEventListener("click", ()=>{
+  const next = document.documentElement.dataset.theme==="paper" ? "classic" : "paper";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("bk_theme", next); } catch(e){}
+  paintThemeBtn();
+});
+paintThemeBtn();
 
 /* ================= 챕터 탭 ================= */
 const CHAPTERS = ["s1","s2","s6","s3","s4","s5","s8","s7"];
