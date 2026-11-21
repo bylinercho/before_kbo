@@ -616,6 +616,14 @@ function pastRows(r0, ignoreType, ignoreTeam){
   return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b && (!tm || FR[r["팀"]]===tm) && (!needNext || r["KBO첫해"]<BASE) && (ty==="" || typOf(r)===+ty));
 }
 const zf = (f,x)=>{ const [m,s]=D.scale[role][f]; return (x-m)/s; };
+/* 오각형은 "바깥쪽 = 평균보다 좋음"으로 그린다. 낮을수록 좋은 지표(-1)는 부호를 뒤집는다. 0은 좋고 나쁨이 없는 지표(값이 클수록 바깥).
+   거리·닮은 사례 계산(zf)에는 영향이 없고 그림과 편차 표시에만 쓴다. */
+const GOOD = {"투수":{k_pct:1,bb_pct:-1,hr_pct:-1,era:-1,gs_pct:0}, "타자":{k_pct:-1,bb_pct:1,hr_pct:1,iso:1,avg:1}};
+const SGOOD = {"투수":{velocity:1,k_percent:1,bb_percent:-1,swing_miss_percent:1,hardhit_percent:-1,xwoba:-1,launch_angle:0,release_extension:1,arm_angle:0},
+               "타자":{launch_speed:1,hardhit_percent:1,barrels_per_bbe_percent:1,xwoba:1,k_percent:-1,bb_percent:1,swing_miss_percent:-1,launch_angle:0}};
+const dirOf = (r0,f,sc)=> (((sc?SGOOD:GOOD)[r0]||{})[f]===-1) ? -1 : 1;
+const zo = (f,x)=> dirOf(role,f,false) * zf(f,x);
+const labO = (r0,f,sc)=> labelFor(r0,f) + (dirOf(r0,f,sc)<0 ? " ↓" : "");
 function distance(a,b){
   const feats = D.feats[role]; let sum=0,n=0; const dz={};
   for (const f of feats){
@@ -946,7 +954,7 @@ function openDetail(kind, key){
   h += `<h3>입단 전 5년 기록의 모양 <span class="note">— 평균 대비 편차${ADJ?" (환경 보정: 같은 해·같은 레벨 리그 평균=100)":""}</span></h3>
         <div class="row"><label>비교 대상 <select id="cmpSel"><option value="succ">성공 사례 평균</option><option value="avg">전체 평균</option></select></label></div>
         <div class="two"><div id="radarBox"></div><div id="radarTbl"></div></div>
-        <p class="note">바깥쪽일수록 평균보다 높다는 뜻이며 좋고 나쁨이 아닙니다.</p>`;
+        <p class="note">바깥쪽일수록 평균보다 좋다는 뜻입니다. ↓ 표시 지표(ERA·볼넷%·홈런% 허용 등)는 낮을수록 좋아서 뒤집어 그렸고, 좋고 나쁨이 없는 지표(선발 비율 등)는 값이 클수록 바깥쪽입니다.</p>`;
 
   const feat4 = role==="투수" ? ["k_pct","bb_pct","hr_pct","era"] : ["k_pct","bb_pct","iso","avg"];
   const y0 = isPast ? rec["KBO첫해"]-5 : BASE-4, y1 = isPast ? rec["KBO첫해"]-1 : BASE;
@@ -968,7 +976,7 @@ function openDetail(kind, key){
   if (rec.ars) h += arsSection(rec);
   if (rec.sc) h += `<h3>스탯캐스트 보조 지표 <span class="note">— ${rec.sc.y} ${rec.sc.lv}, 공 ${rec.sc.n}개 기준</span></h3>
         <div class="two"><div id="scBox"></div><div id="scTbl"></div></div>
-        <p class="note">보조 지표입니다(유사도 계산에는 쓰지 않음).</p>`;
+        <p class="note">보조 지표입니다(유사도 계산에는 쓰지 않음). 바깥쪽일수록 좋고, ↓ 표시는 낮을수록 좋은 지표입니다.</p>`;
 
   if (isPast){
     const near = nearest(rec, D.cands[role], 5, c=> $("noKbo").checked && c["KBO경력"]);
@@ -998,20 +1006,20 @@ function drawRadar(){
   if (cmp==="succ"){ const S = pastRows().filter(isSuccess); other = S.length? meanVec(S) : null; otherName="성공 사례 평균"; }
   else { other = {}; feats.forEach(f=> other[f]=D.scale[role][f][0]); otherName="전체 평균"; }
   const series = [{name:"이 선수", vec:mine, cls:"rd-a"}]; if (other) series.push({name:otherName, vec:other, cls:"rd-b"});
-  $("radarBox").innerHTML = radarSVG(series, feats, zf, f=>labelFor(role,f));
+  $("radarBox").innerHTML = radarSVG(series, feats, zo, f=>labO(role,f,false));
   let t = `<table><thead><tr><th class="l">지표</th><th>이 선수</th><th>${otherName}</th><th>편차</th></tr></thead><tbody>`;
   for (const f of feats){
     if (mine[f]==null) continue;
-    const z = zf(f,mine[f]);
-    t += `<tr title="${esc(HINT[f]||"")}"><td class="l">${esc(labelFor(role,f))}</td><td>${fF(f,mine[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${z>=0?"+":""}${z.toFixed(2)}</td></tr>`;
+    const z = zo(f,mine[f]);
+    t += `<tr title="${esc(HINT[f]||"")}"><td class="l">${esc(labO(role,f,false))}</td><td>${fF(f,mine[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${z>=0?"+":""}${z.toFixed(2)}</td></tr>`;
   }
-  $("radarTbl").innerHTML = t + `</tbody></table><p class="note">편차 = (값 − 전체 평균) ÷ 표준편차</p>`;
+  $("radarTbl").innerHTML = t + `</tbody></table><p class="note">편차 = (값 − 전체 평균) ÷ 표준편차, 좋은 쪽이 +입니다. ↓ 표시는 낮을수록 좋은 지표라 부호를 뒤집었습니다.</p>`;
 }
 function drawSc(){
-  const sc = cur.rec.sc, feats = D.sfeats[role], zs = (f,x)=>{ const [m,s]=D.sscale[role][f]; return (x-m)/s; };
-  $("scBox").innerHTML = radarSVG([{name:"이 선수", vec:sc, cls:"rd-a"}], feats, zs, f=>labelFor(role,f));
+  const sc = cur.rec.sc, feats = D.sfeats[role], zs = (f,x)=>{ const [m,s]=D.sscale[role][f]; return dirOf(role,f,true)*(x-m)/s; };
+  $("scBox").innerHTML = radarSVG([{name:"이 선수", vec:sc, cls:"rd-a"}], feats, zs, f=>labO(role,f,true));
   $("scTbl").innerHTML = `<table><thead><tr><th class="l">지표</th><th>값</th><th>편차</th></tr></thead><tbody>` +
-    feats.map(f=>`<tr><td class="l">${esc(labelFor(role,f))}</td><td>${fF(f,sc[f])}</td><td>${(zs(f,sc[f])>=0?"+":"")+zs(f,sc[f]).toFixed(2)}</td></tr>`).join("") + `</tbody></table>`;
+    feats.map(f=>`<tr><td class="l">${esc(labO(role,f,true))}</td><td>${fF(f,sc[f])}</td><td>${(zs(f,sc[f])>=0?"+":"")+zs(f,sc[f]).toFixed(2)}</td></tr>`).join("") + `</tbody></table>`;
 }
 
 /* ================= 스카우팅 노트(방문자 리포트) ================= */
@@ -1211,7 +1219,7 @@ function openCompare(){
   const kboLine = x => (isP(x) ? (r0==="투수" ? `첫해 ${fmt(x.KBO_이닝,1)}이닝 ERA ${fmt(x.KBO_ERA,2)}` : `첫해 ${fmt(x.KBO_타수,0)}타수 OPS ${fmt(x.KBO_OPS,3)}`) + ` · 재계약 ${x.stay_n}년${x.stay_plus?"+":""} · ${tag(x).replace(/<[^>]+>/g,"")}` : "2026 MLB·트리플A 후보 (KBO 기록 없음)") + ilLine(x);
   h += `<p class="note">A: ${kboLine(A)}<br>B: ${kboLine(B)}</p>`;
   $("cmpBody").innerHTML = h;
-  $("cmpRadar").innerHTML = radarSVG([{name:"A", vec:A, cls:"rd-a"},{name:"B", vec:B, cls:"rd-c"}], feats, zf, f=>labelFor(r0,f));
+  $("cmpRadar").innerHTML = radarSVG([{name:"A", vec:A, cls:"rd-a"},{name:"B", vec:B, cls:"rd-c"}], feats, zo, f=>labO(r0,f,false));
   $("cmpClose").onclick = ()=> $("cmpDlg").close();
   if ($("dlg").open) $("dlg").close();
   if (!$("cmpDlg").open) $("cmpDlg").showModal();
