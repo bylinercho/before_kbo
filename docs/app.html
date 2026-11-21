@@ -13,9 +13,6 @@
 <link rel="apple-touch-icon" href="img/icons/apple-touch-icon.png">
 <title>Before KBO — 입단 전 5년으로 보는 KBO 외국인 선수</title>
 <script>try{document.documentElement.dataset.theme = localStorage.getItem("bk_theme")==="classic" ? "classic" : "paper";}catch(e){document.documentElement.dataset.theme="paper";}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&display=swap">
 <link rel="stylesheet" href="theme-paper.css">
 <style>
 /* 2026-11-15 디자인 개편: 어둡고 무게감 있는 톤을 기본으로 한다(밝은 모드 없음).
@@ -401,6 +398,10 @@ dialog{overscroll-behavior:contain}
 
 <style>
 /* ===== 앱형 레이아웃 (app.html 전용) ===== */
+/* 글꼴: 고정폭 코딩 글꼴 대신 폰 기본 글꼴(아이폰=애플 SD 산돌고딕, 안드로이드=Noto Sans)을 쓴다 */
+html[data-theme]{--font-base:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;--font-brand:var(--font-base)}
+html[data-theme] body,html[data-theme] button,html[data-theme] input,html[data-theme] select,html[data-theme] textarea,html[data-theme] table,html[data-theme] dialog{font-family:var(--font-base)}
+table,.stats b{font-variant-numeric:tabular-nums}
 html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 html.noscroll,html.noscroll body{overflow:hidden}
 body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}

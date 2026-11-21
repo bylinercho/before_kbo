@@ -31,6 +31,10 @@ rep('<meta name="viewport" content="width=device-width, initial-scale=1">',
 <link rel="icon" type="image/png" sizes="192x192" href="img/icons/icon-192.png">
 <link rel="apple-touch-icon" href="img/icons/apple-touch-icon.png">''')
 
+# 구글 폰트(고정폭 글꼴)는 앱에서 받지 않는다
+t = re.sub(r'<link rel="preconnect"[^>]*>\n', "", t)
+t = re.sub(r'<link rel="stylesheet" href="https://fonts.googleapis.com[^>]*>\n', "", t)
+
 # ---------- 2) 헤더: 로고 + 투수/타자 + 설정 ----------
 a = t.index('<header class="top">')
 b = t.index("</header>") + len("</header>")
@@ -163,6 +167,10 @@ rep("</body>", '''<script>if ("serviceWorker" in navigator && location.protocol 
 CSS = r'''
 <style>
 /* ===== 앱형 레이아웃 (app.html 전용) ===== */
+/* 글꼴: 고정폭 코딩 글꼴 대신 폰 기본 글꼴(아이폰=애플 SD 산돌고딕, 안드로이드=Noto Sans)을 쓴다 */
+html[data-theme]{--font-base:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;--font-brand:var(--font-base)}
+html[data-theme] body,html[data-theme] button,html[data-theme] input,html[data-theme] select,html[data-theme] textarea,html[data-theme] table,html[data-theme] dialog{font-family:var(--font-base)}
+table,.stats b{font-variant-numeric:tabular-nums}
 html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 html.noscroll,html.noscroll body{overflow:hidden}
 body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
