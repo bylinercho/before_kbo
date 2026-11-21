@@ -623,7 +623,13 @@ const SGOOD = {"투수":{velocity:1,k_percent:1,bb_percent:-1,swing_miss_percent
                "타자":{launch_speed:1,hardhit_percent:1,barrels_per_bbe_percent:1,xwoba:1,k_percent:-1,bb_percent:1,swing_miss_percent:-1,launch_angle:0}};
 const dirOf = (r0,f,sc)=> (((sc?SGOOD:GOOD)[r0]||{})[f]===-1) ? -1 : 1;
 const zo = (f,x)=> dirOf(role,f,false) * zf(f,x);
-const labO = (r0,f,sc)=> labelFor(r0,f) + (dirOf(r0,f,sc)<0 ? " ↓" : "");
+/* 오각형 축 이름: 뒤집은(낮을수록 좋은) 지표는 "억제·회피"처럼 높을수록 좋은 말로 바꾼다. 화살표는 쓰지 않는다 */
+const RADAR_NAME = {"투수":{bb_pct:"볼넷 억제",hr_pct:"홈런 억제"}, "타자":{k_pct:"삼진 회피"}};
+const SRADAR_NAME = {"투수":{bb_percent:"볼넷 억제",hardhit_percent:"강한 타구 억제",xwoba:"xwOBA 억제"}, "타자":{k_percent:"삼진 회피",swing_miss_percent:"헛스윙 회피"}};
+const labO = (r0,f,sc)=>{
+  const nm = ((sc?SRADAR_NAME:RADAR_NAME)[r0]||{})[f];
+  return nm ? nm + (!sc && ADJ && ADJF.has(f) ? " 지수" : "") : labelFor(r0,f);
+};
 function distance(a,b){
   const feats = D.feats[role]; let sum=0,n=0; const dz={};
   for (const f of feats){
@@ -954,7 +960,7 @@ function openDetail(kind, key){
   h += `<h3>입단 전 5년 기록의 모양 <span class="note">— 평균 대비 편차${ADJ?" (환경 보정: 같은 해·같은 레벨 리그 평균=100)":""}</span></h3>
         <div class="row"><label>비교 대상 <select id="cmpSel"><option value="succ">성공 사례 평균</option><option value="avg">전체 평균</option></select></label></div>
         <div class="two"><div id="radarBox"></div><div id="radarTbl"></div></div>
-        <p class="note">바깥쪽일수록 평균보다 좋다는 뜻입니다. ↓ 표시 지표(ERA·볼넷%·홈런% 허용 등)는 낮을수록 좋아서 뒤집어 그렸고, 좋고 나쁨이 없는 지표(선발 비율 등)는 값이 클수록 바깥쪽입니다.</p>`;
+        <p class="note">바깥쪽일수록 평균보다 좋다는 뜻입니다. 낮을수록 좋은 지표(투수 ERA·볼넷·홈런 허용, 타자 삼진)는 뒤집어 그렸고, 좋고 나쁨이 없는 지표(선발 비율 등)는 값이 클수록 바깥쪽입니다.</p>`;
 
   const feat4 = role==="투수" ? ["k_pct","bb_pct","hr_pct","era"] : ["k_pct","bb_pct","iso","avg"];
   const y0 = isPast ? rec["KBO첫해"]-5 : BASE-4, y1 = isPast ? rec["KBO첫해"]-1 : BASE;
@@ -976,7 +982,7 @@ function openDetail(kind, key){
   if (rec.ars) h += arsSection(rec);
   if (rec.sc) h += `<h3>스탯캐스트 보조 지표 <span class="note">— ${rec.sc.y} ${rec.sc.lv}, 공 ${rec.sc.n}개 기준</span></h3>
         <div class="two"><div id="scBox"></div><div id="scTbl"></div></div>
-        <p class="note">보조 지표입니다(유사도 계산에는 쓰지 않음). 바깥쪽일수록 좋고, ↓ 표시는 낮을수록 좋은 지표입니다.</p>`;
+        <p class="note">보조 지표입니다(유사도 계산에는 쓰지 않음). 바깥쪽일수록 좋습니다(낮을수록 좋은 지표는 뒤집어 그렸습니다).</p>`;
 
   if (isPast){
     const near = nearest(rec, D.cands[role], 5, c=> $("noKbo").checked && c["KBO경력"]);
@@ -1013,7 +1019,7 @@ function drawRadar(){
     const z = zo(f,mine[f]);
     t += `<tr title="${esc(HINT[f]||"")}"><td class="l">${esc(labO(role,f,false))}</td><td>${fF(f,mine[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${z>=0?"+":""}${z.toFixed(2)}</td></tr>`;
   }
-  $("radarTbl").innerHTML = t + `</tbody></table><p class="note">편차 = (값 − 전체 평균) ÷ 표준편차, 좋은 쪽이 +입니다. ↓ 표시는 낮을수록 좋은 지표라 부호를 뒤집었습니다.</p>`;
+  $("radarTbl").innerHTML = t + `</tbody></table><p class="note">편차 = (값 − 전체 평균) ÷ 표준편차, 좋은 쪽이 +입니다(낮을수록 좋은 지표는 부호를 뒤집었습니다).</p>`;
 }
 function drawSc(){
   const sc = cur.rec.sc, feats = D.sfeats[role], zs = (f,x)=>{ const [m,s]=D.sscale[role][f]; return dirOf(role,f,true)*(x-m)/s; };
