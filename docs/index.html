@@ -430,9 +430,9 @@ dialog{overscroll-behavior:contain}
       <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
       <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
     <label title="KBO 첫해 소속 팀 기준">팀 <select id="teamSel"></select></label>
-      <label title="기록 모양이 비슷한 선수끼리 묶은 유형(08번 군집). 지난 사례와 후보 모두에 적용됩니다">유형 <select id="typSel"></select></label>
-      <label title="삼진%·볼넷%·홈런%·ERA·ISO·타율을 '같은 해·같은 레벨 리그 평균=100' 지수로 바꿔 비교합니다. MLB와 트리플A 사이의 실력 차는 보정하지 않습니다"><input type="checkbox" id="adjOn"> 환경 보정</label>
-      <label title="2026 입단자는 다음 해 기록이 없어 '첫해 성적'과 '커리어하이 시즌' 외의 방식에서는 제외됩니다. 커리어하이 시즌은 KBO에서 뛴 시즌 중 한 시즌이라도 기준을 넘으면 성공입니다.">성공 방식 <select id="critMode">
+      <label>유형 <select id="typSel"></select></label>
+      <label><input type="checkbox" id="adjOn"> 환경 보정</label>
+      <label>성공 방식 <select id="critMode">
         <option value="first">첫해 성적</option><option value="stay">다음 해 잔류</option>
         <option value="first+stay">첫해 성적 + 잔류</option><option value="two">첫 2시즌 합산 성적</option><option value="career">커리어하이 시즌</option></select></label>
       <span id="critP">
@@ -460,7 +460,6 @@ dialog{overscroll-behavior:contain}
   <div class="tool" id="s1">
     <p class="eyebrow">01 · Past Cases</p>
     <h2>입단 전 5년 기록과 KBO 첫해 성적</h2>
-    <p class="sub">선수를 누르면 그래프가 열리고, 머리글을 누르면 정렬됩니다. 재계약 N년 = KBO 연속 시즌 수(+는 2026년 진행 중).</p>
     <div class="tablewrap tall" style="margin-top:12px"><table id="pastTable"></table></div>
     <details style="margin-top:10px"><summary>비교에서 빠진 선수 보기</summary><div class="note" id="excluded"></div></details>
   </div>
@@ -468,7 +467,6 @@ dialog{overscroll-behavior:contain}
   <div class="tool" id="s2">
     <p class="eyebrow">02 · Key Metrics</p>
     <h2>성공한 선수와 아닌 선수는 어디서 갈렸나</h2>
-    <p class="sub">입단 전 5년 기록의 평균 차이입니다. 오른쪽(주황)이 성공 쪽이 더 높음.</p>
     <div id="gap" style="margin-top:12px"></div>
     <p class="note" id="gapNote"></p>
 
@@ -489,7 +487,6 @@ dialog{overscroll-behavior:contain}
   <div class="tool" id="s6">
     <p class="eyebrow">03 · By Team</p>
     <h2>구단은 어떤 외국인을 데려왔나</h2>
-    <p class="sub">KBO 첫해 소속 구단별로 입단 전 5년 프로필의 평균을 비교합니다. 구단을 누르면 그 구단만 봅니다.</p>
     <div class="tablewrap" style="margin-top:10px"><table id="teamTable"></table></div>
     <div class="legend" id="teamLegend" style="margin-top:6px"></div>
     <p class="note" id="teamNote"></p>
@@ -498,12 +495,11 @@ dialog{overscroll-behavior:contain}
   <div class="tool" id="s3">
     <p class="eyebrow">04 · Similar Types</p>
     <h2>지금 닮은 유형은? (2026 MLB·트리플A 선수 중)</h2>
-    <p class="sub">기준 선수와 최근 5시즌 기록 모양이 비슷한 2026년 미국 선수를 찾습니다(MLB·트리플A 합쳐 공 500개/200타석 이상, 미국 밖 선수 제외).</p>
     <div class="row">
       <label>기준 <select id="refSel"></select></label>
       <label>소속 <select id="lvSel"><option value="">전체</option><option value="AAA·MLB 오감">트리플A·MLB 오가는 선수</option><option value="AAA만">트리플A만</option><option value="MLB만">MLB만</option></select></label>
       <label>나이 상한 <input type="number" id="ageMax" value="40" min="20" max="45"></label>
-      <label title="번호로 확인된 선수 + MyKBO 외국인 명단(2010~)과 이름이 같은 선수. 이름만 같은 다른 사람이 빠질 수 있음"><input type="checkbox" id="noKbo" checked> KBO 경력(이름 기준 의심 포함) 선수 빼기</label>
+      <label title="이름 기준 의심 포함"><input type="checkbox" id="noKbo" checked> KBO 경력(이름 기준 의심 포함) 선수 빼기</label>
       <label>이름 검색 <input type="search" id="q" placeholder="예: Sabato, 치리노스"></label>
     </div>
     <div class="drawbox" id="drawBox" hidden>
@@ -511,7 +507,7 @@ dialog{overscroll-behavior:contain}
       <div class="drawgrid">
         <div class="drawsvg"><svg id="drawSvg" viewBox="0 0 380 345" role="img" aria-label="직접 그리는 레이더 그래프"></svg></div>
         <div class="drawside">
-          <p class="note">점을 끌어서 모양을 그리세요. 바깥쪽일수록 평균보다 좋은 쪽이고, 안쪽 점선 도형이 평균입니다. 지표 이름을 누르면 그 지표는 빼고 찾습니다(다시 누르면 넣습니다).</p>
+          <p class="note">점을 끌어 모양을 그리세요. 지표 이름을 누르면 빼고 찾습니다.</p>
           <div class="drawbtns"><button class="btn mini" id="drawAvg" type="button">평균으로</button><button class="btn mini" id="drawSucc" type="button">성공 사례 평균으로</button></div>
           <h4>내 모양과 닮은 지난 KBO 사례 TOP5</h4>
           <div id="drawPast"></div>
@@ -533,14 +529,14 @@ dialog{overscroll-behavior:contain}
     </div>
     <div class="tablewrap"><table id="candTable"></table></div>
     <p class="note" id="candNote"></p>
-    <h3>관심 선수 <span class="note">— 상세 창의 ☆로 담습니다. 이 브라우저에만 저장됩니다.</span></h3>
+    <h3>관심 선수</h3>
     <div id="favBox"></div>
   </div>
 
   <div class="tool" id="s4">
     <p class="eyebrow">05 · Validation</p>
     <h2>이 지표로 성공을 가려낼 수 있을까?</h2>
-    <p class="sub">입단 전 5년 지표 5개로 성공 여부를 교차검증으로 예측해 봤습니다. 회색 띠는 "성공·실패를 무작위로 섞었을 때" 같은 방법이 내는 값의 범위라서, <b>점이 띠 안이면 우연과 구별되지 않습니다.</b></p>
+    <p class="sub">회색 띠 안이면 우연과 구별되지 않습니다.</p>
     <div class="tablewrap" style="margin-top:10px"><table id="valTable"></table></div>
     <p class="note" id="valNote"></p>
   </div>
@@ -548,14 +544,12 @@ dialog{overscroll-behavior:contain}
   <div class="tool" id="s7">
     <p class="eyebrow">07 · Reports</p>
     <h2>스카우팅 노트</h2>
-    <p class="sub">방문자가 남긴 선수 평가입니다. <b>개인 의견이며 이 사이트의 분석 결과가 아닙니다.</b> 운영자가 검수해 승인한 글만 올라오고, 선수 상세 창 맨 아래에서 노트를 남길 수 있습니다.</p>
     <div id="repList" class="replist"></div>
     <p class="note" id="repNote"></p>
   </div>
   <div class="tool" id="s8">
     <p class="eyebrow">06 · Rumor Player</p>
     <h2>KBO 입단설이 도는 선수</h2>
-    <p class="sub">기사·커뮤니티에서 "온다더라" 하고 이름이 오르내린 선수입니다. <b>확정된 영입이 아니며 틀릴 수 있습니다.</b> 이름이 이 분석의 후보 풀에 있으면 지표와 닮은 유형을 바로 볼 수 있습니다.</p>
     <div id="rumList" class="replist"></div>
     <p class="note" id="rumNote"></p>
   </div>
@@ -832,7 +826,7 @@ function renderScatter(){
     s += `<circle class="pt" data-kind="past" data-key="${r.mykbo_id}" cx="${X(xval(r,f))}" cy="${Y(yfn(r))}" r="${rr.toFixed(1)}" fill="${ok?"var(--accent)":"transparent"}" stroke="${ok?"var(--accent)":"var(--muted)"}" stroke-width="1.5" fill-opacity="${ok?0.7:1}"><title>${esc(nameTxt(r))} (${r["KBO첫해"]}) —${esc(labelFor(role,f))} ${fmt(xval(r,f),xd)}, ${esc(ylab)} ${fmt(yfn(r),yd)}</title></circle>`;
   });
   $("scatter").innerHTML = s + `</svg><div class="legend"><span><i style="background:var(--accent)"></i>성공 기준 충족</span><span><i style="border:1.5px solid var(--muted)"></i>그 외</span><span>점 크기 = ${role==="투수"?"이닝":"타수"}, 점선 = 추세선</span></div>`;
-  $("scatNote").innerHTML = `${n}명, 상관계수 r = <b>${corr.toFixed(2)}</b>. |r|이 0.2~0.3 안팎이면 우연과 구별하기 어렵습니다. 점을 누르면 상세가 열립니다.`;
+  $("scatNote").innerHTML = `${n}명, r = <b>${corr.toFixed(2)}</b>`;
 }
 
 /* ================= 1. 지난 사례 표 ================= */
@@ -893,12 +887,12 @@ function renderPast(){
   $("pastTable").innerHTML = h + "</tbody>";
   $("pastTable").querySelectorAll("th").forEach(th=> th.onclick = ()=>{ const k=th.dataset.k; if (sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} renderPast(); });
   const ok = rows.filter(r=>r["판정"]==="성공").length;
-  $("critNote").textContent = `${role} ${rows.length}명 중 ${ok}명이 "${MODE_NOTE[$("critMode").value]}" 기준을 넘었습니다.${NEEDS_NEXT($("critMode").value)?" (2026 입단자는 제외)":""} ⓘ는 주의 사항, MLB%는 5년 중 MLB 비중입니다.`;
+  $("critNote").textContent = `${role} ${rows.length}명 중 ${ok}명 성공`;
   const a=+$("yFrom").value, b=+$("yTo").value;
   const tm = $("teamSel").value;
   const ex = D.excluded[role].filter(e=>e["KBO첫해"]>=a && e["KBO첫해"]<=b && (!tm || FR[e["팀"]]===tm));
   const reasons = {}; ex.forEach(e=>{ (reasons[e["이유"]] = reasons[e["이유"]]||[]).push(e); });
-  $("excluded").innerHTML = `<p>${role} ${ex.length}명이 빠졌습니다(대부분 미국 밖 출신으로 보이나 개별 확인은 안 했습니다).</p>` +
+  $("excluded").innerHTML = `<p>${ex.length}명 제외</p>` +
     Object.entries(reasons).map(([k,v])=>`<p><b>${esc(k)}</b> (${v.length}명)<br>${v.sort((x,y)=>x["KBO첫해"]-y["KBO첫해"]).map(e=>`${e["KBO첫해"]} ${e["한글명"]?esc(e["한글명"])+" ":""}${esc(e["영문명"])}`).join(" · ")}</p>`).join("");
 }
 
@@ -923,7 +917,7 @@ function renderGap(){
       <span>${d2>=0?"+":""}${d2.toFixed(2)} <span class="note">(${ms2.toFixed(0)}일 vs ${mn2.toFixed(0)}일)</span></span></div>`;
   }
   $("gap").innerHTML = h || "<p class='note'>성공 또는 비성공 선수가 없어 비교할 수 없습니다. 기준을 바꿔 보세요.</p>";
-  $("gapNote").innerHTML = `성공 ${S.length}명 vs 그 외 ${N.length}명. <b>±0.3~0.5 정도의 차이는 우연으로도 흔합니다.</b>`;
+  $("gapNote").innerHTML = `성공 ${S.length}명 · 그 외 ${N.length}명`;
 }
 
 /* ================= 3-1. 범위 필터 (기록 수준 하한·상한) ================= */
@@ -1087,7 +1081,7 @@ function drawPastList(ref, pool){
   const top = P.map(p=>({p, dist: dSc() ? distSc(ref.vec, p.sc, ref.skip) : (distance(ref.vec,p,ref.skip)||{}).dist})).filter(x=>x.dist!=null && !isNaN(x.dist)).sort((a,b)=>a.dist-b.dist).slice(0,5);
   $("drawPast").innerHTML = top.map(n=>`<div class="hrow link" data-kind="past" data-key="${n.p.mykbo_id}" data-role="${role}"><span class="who">${nameHTML(n.p)}</span><span class="what">${n.p["KBO첫해"]} ${esc(teamK(n.p["팀"]))} · ${resultLine(n.p)}</span>${tag(n.p)}<span class="tagk">거리 ${n.dist.toFixed(2)}</span></div>`).join("") || `<p class="note">비교할 지난 사례가 없습니다.</p>`;
   const far = top.length && top[0].dist > (dSc() ? 1.0 : 0.8);
-  $("drawWarn").textContent = (dSc() ? `스탯캐스트 기록이 있는 지난 사례 ${P.length}명 중에서 비교합니다(기록이 없는 사례는 빠집니다). ` : "") + (far ? "이 모양과 비슷한 선수는 드뭅니다. 가장 가까운 선수도 꽤 차이가 납니다." : "");
+  $("drawWarn").textContent = (dSc() ? `지난 사례 ${P.length}명 중 비교. ` : "") + (far ? "비슷한 선수가 드뭅니다." : "");
 }
 
 function renderCands(){
@@ -1127,7 +1121,7 @@ function renderCands(){
       <td class="l">${nn? `${nameHTML(nn.p)} (${nn.p["KBO첫해"]}) ${tag(nn.p)}` : "-"}</td></tr>`;
   });
   $("candTable").innerHTML = h + (top.length?"":`<tr><td colspan="11" class="l note">조건에 맞는 선수가 없습니다.</td></tr>`) + "</tbody>";
-  $("candNote").innerHTML = `기준: <b>${esc(ref.name)}</b>${(ref.skip && ref.skip.size) ? ` (뺀 지표: ${[...ref.skip].map(f=>esc(labO(role,f,dSc()))).join(", ")})` : ""}. 거리가 작을수록 닮은 유형입니다. 후보가 KBO에 온다는 뜻은 아닙니다.${q?" (이름 검색 중에는 필터를 쓰지 않습니다.)":""}${(!q && rfActive().length)?` 범위 필터 적용: ${esc(rfActive().join(" / "))} → 후보 ${res.length}명.`:""}`;
+  $("candNote").innerHTML = `기준: <b>${esc(ref.name)}</b>${(ref.skip && ref.skip.size) ? ` (뺀 지표: ${[...ref.skip].map(f=>esc(labO(role,f,dSc()))).join(", ")})` : ""}${(!q && rfActive().length)?` · 후보 ${res.length}명`:""}`;
 }
 
 /* ================= 상세 창 ================= */
@@ -1153,36 +1147,32 @@ function openDetail(kind, key){
     <p class="dh-ctx">${ctx}</p>
     <p class="dh-links" title="검색 결과로 이동하며, 같은 이름의 다른 선수가 나올 수 있습니다">영상 찾기 ▸ <a href="${yt(enName(rec)+" "+vq[0]+(isPast?"":" 2026"))}" target="_blank" rel="noopener noreferrer">YouTube(영문)</a>${rec["한글명"]?` · <a href="${yt(rec["한글명"]+" "+vq[1])}" target="_blank" rel="noopener noreferrer">YouTube(한글)</a>`:""}</p></div>
     <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="histBtn" title="경력과 함께 뛴 사람들">History</button><button class="close" id="dlgClose">닫기</button></div></div>`;
-  if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
-  if (!isPast && rec["KBO경력"]) h += `<div class="box note">이름이 KBO 외국인 명단과 같아 경력자로 의심됩니다(동명이인일 수 있음).</div>`;
-  if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
+  if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(String(rec["주의"]).replace(/\(일본 등[^)]*\)/,""))}</div>`;
+  if (!isPast && rec["KBO경력"]) h += `<div class="box note">KBO 경력자로 의심(동명이인 가능)</div>`;
+  if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(String(rec["주의"]).replace(/\(일본 등[^)]*\)/,""))}</div>`;
 
-  h += `<h3>입단 전 5년 기록의 모양 <span class="note">— 평균 대비 편차${ADJ?" (환경 보정: 같은 해·같은 레벨 리그 평균=100)":""}</span></h3>
+  h += `<h3>입단 전 5년 기록의 모양</h3>
         <div class="row"><label>비교 대상 <select id="cmpSel"><option value="succ">성공 사례 평균</option><option value="avg">전체 평균</option></select></label></div>
         <div class="two"><div id="radarBox"></div><div id="radarTbl"></div></div>
-        <p class="note">바깥쪽일수록 평균보다 좋다는 뜻입니다. 낮을수록 좋은 지표(투수 ERA·볼넷·홈런 허용, 타자 삼진)는 뒤집어 그렸고, 좋고 나쁨이 없는 지표(선발 비율 등)는 값이 클수록 바깥쪽입니다.</p>`;
+        <p class="note">바깥쪽일수록 좋음</p>`;
 
   const feat4 = role==="투수" ? ["k_pct","bb_pct","hr_pct","era"] : ["k_pct","bb_pct","iso","avg"];
   const y0 = isPast ? rec["KBO첫해"]-5 : BASE-4, y1 = isPast ? rec["KBO첫해"]-1 : BASE;
-  h += `<h3>시즌별 추이 <span class="note">— ${y0}~${y1}</span></h3>
+  h += `<h3>시즌별 추이</h3>
         <div class="legend">${["MLB","AAA","AA","A+","A","MEX"].map(l=>`<span><i style="background:${LVCOL[l]}"></i>${l==="MEX"?"멕시칸 리그":l}</span>`).join("")}<span>점 크기 = 표본, 점선 = 전체 평균</span></div>
-        <div class="trgrid">${feat4.map(f=>trendSVG(f, rec.hist||[], y0, y1, isPast?rec["KBO첫해"]:null)).join("")}</div>
-        <p class="note">레벨마다 수준이 달라 같은 숫자의 의미가 다릅니다. 점에 마우스를 올리면 표본이 보입니다.</p>`;
+        <div class="trgrid">${feat4.map(f=>trendSVG(f, rec.hist||[], y0, y1, isPast?rec["KBO첫해"]:null)).join("")}</div>`;
 
   if (isPast){
     const kb = rec.kbo||[];
-    h += `<h3>KBO 성적 <span class="note">— MyKBO Stats, ${role==="투수"?"ERA":"OPS"}</span></h3>${kboBarsSVG(kb)}
-          <p class="note">${role==="투수"
-            ? `첫해 ${fmt(rec.KBO_이닝,1)}이닝, ${rec.KBO_승??"-"}승 ${rec.KBO_패??"-"}패, ERA ${fmt(rec.KBO_ERA,2)}, WHIP ${fmt(rec.KBO_WHIP,2)}, 삼진 ${rec.KBO_삼진??"-"}개, 볼넷 ${rec.KBO_볼넷??"-"}개.`
-            : `첫해 ${fmt(rec.KBO_타수,0)}타수, 타율 ${fmt(rec.KBO_타율,3)}, OPS ${fmt(rec.KBO_OPS,3)}, 홈런 ${rec.KBO_홈런??"-"}개, 볼넷 ${rec.KBO_볼넷??"-"}개, 삼진 ${rec.KBO_삼진??"-"}개.`}
-            재계약: KBO 연속 ${rec.stay_n}년${rec.stay_plus?"+(2026년 진행 중)":""}.${wvOf(rec.mykbo_id).length?` 웨이버·방출 기록: ${esc(wvText(rec.mykbo_id))}.`:""}</p>`;
+    h += `<h3>KBO 성적</h3>${kboBarsSVG(kb)}
+          <p class="note">${role==="투수" ? `첫해 ${fmt(rec.KBO_이닝,1)}이닝 ERA ${fmt(rec.KBO_ERA,2)}` : `첫해 ${fmt(rec.KBO_타수,0)}타수 OPS ${fmt(rec.KBO_OPS,3)}`} · 재계약 ${rec.stay_n}년${rec.stay_plus?"+":""}</p>`;
   }
 
   h += ilSection(rec, y0, y1);
   if (rec.ars) h += arsSection(rec);
-  if (rec.sc) h += `<h3>스탯캐스트 보조 지표 <span class="note">— ${rec.sc.y} ${rec.sc.lv}, 공 ${rec.sc.n}개 기준</span></h3>
+  if (rec.sc) h += `<h3>스탯캐스트 보조 지표</h3>
         <div class="two"><div id="scBox"></div><div id="scTbl"></div></div>
-        <p class="note">보조 지표입니다(유사도 계산에는 쓰지 않음). 바깥쪽일수록 좋습니다(낮을수록 좋은 지표는 뒤집어 그렸습니다).</p>`;
+        `;
 
   if (isPast){
     const near = nearest(rec, D.cands[role], 5, c=> $("noKbo").checked && c["KBO경력"]);
@@ -1192,7 +1182,7 @@ function openDetail(kind, key){
     const near = nearest(rec, pool, 5), succ = near.filter(n=>isSuccess(n.p)).length, base = pool.filter(isSuccess).length;
     h += `<h3>이 선수와 닮은 지난 KBO 사례 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th class="l">데뷔</th><th>거리</th><th class="l">판정</th></tr></thead><tbody>` +
       near.map(n=>`<tr class="clickable" data-kind="past" data-key="${n.p.mykbo_id}"><td class="l">${nameHTML(n.p)}</td><td class="l">${n.p["KBO첫해"]} ${teamK(n.p["팀"])} · ${resultLine(n.p)}</td><td>${n.dist.toFixed(2)}</td><td class="l">${tag(n.p)}</td></tr>`).join("") + `</tbody></table></div>
-      <div class="box">닮은 사례 ${near.length}명 중 <b>${succ}명</b>이 성공 기준을 넘었습니다(전체 ${pool.length}명 중 ${base}명). 5명뿐이라 우연일 수 있습니다.</div>`;
+      <div class="box">${near.length}명 중 <b>${succ}명</b> 성공 (전체 ${base}/${pool.length})</div>`;
   }
   h += reportSection(rec, role, kind, fid);
   $("dlgBody").innerHTML = h;
@@ -1220,7 +1210,7 @@ function drawRadar(){
     const z = zo(f,mine[f]);
     t += `<tr title="${esc(HINT[f]||"")}"><td class="l">${esc(labO(role,f,false))}</td><td>${fF(f,mine[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${z>=0?"+":""}${z.toFixed(2)}</td></tr>`;
   }
-  $("radarTbl").innerHTML = t + `</tbody></table><p class="note">편차 = (값 − 전체 평균) ÷ 표준편차, 좋은 쪽이 +입니다(낮을수록 좋은 지표는 부호를 뒤집었습니다).</p>`;
+  $("radarTbl").innerHTML = t + `</tbody></table>`;
 }
 function drawSc(){
   const sc = cur.rec.sc, feats = D.sfeats[role], cmp = $("cmpSel").value;
@@ -1236,7 +1226,7 @@ function drawSc(){
   $("scBox").innerHTML = radarSVG(series, feats, zs, f=>labO(role,f,true));
   $("scTbl").innerHTML = `<table><thead><tr><th class="l">지표</th><th>이 선수</th><th>${otherName}</th><th>편차</th></tr></thead><tbody>` +
     feats.map(f=>{ const z = zs(f,sc[f]); return `<tr><td class="l">${esc(labO(role,f,true))}</td><td>${fF(f,sc[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${(z>=0?"+":"")+z.toFixed(2)}</td></tr>`; }).join("") + `</tbody></table>` +
-    (cmp==="succ" ? `<p class="note">성공 사례 평균은 스탯캐스트 기록이 있는 성공 사례 ${nS}명 기준입니다.</p>` : "");
+    (cmp==="succ" ? `<p class="note">성공 사례 ${nS}명</p>` : "");
 }
 
 /* ================= History: 경력 타임라인 + 함께 뛴 사람들 (docs/careers.js, tools/15_careers.py) ================= */
@@ -1279,15 +1269,15 @@ function histFun(rec, c, isPast){
   if (!c) return "";
   let h = "";
   const kboSpan = f => `KBO ${f.kbo[0]}${f.kbo[1]!==f.kbo[0] ? "~"+(f.kbo[1]>=BASE?"현재":f.kbo[1]) : (f.kbo[0]>=BASE?"(현재)":"")}`;
-  h += `<h3>KBO 외국인 선수와 겹친 경력 <span class="note">— 같은 시즌, 같은 팀에 이름이 있던 사람</span></h3>`;
+  h += `<h3>KBO 외국인 선수와 겹친 경력</h3>`;
   h += c.fk.length ? c.fk.map(f=>hRow(f, `<span class="who">${kName(f)}</span><span class="what">${tyTxt(f.ty)}</span><span class="tagk">${kboSpan(f)}</span>`, true)).join("")
                    + (c.nfk>c.fk.length ? `<p class="note">외 ${c.nfk-c.fk.length}명</p>` : "")
-                   : `<p class="note">겹치는 기록이 없습니다. (이 사이트에 있는 KBO 외국인 270명 기준)</p>`;
-  h += `<h3>코리안리거와 함께 뛴 기록 <span class="note">— 한국에서 태어난 MLB·마이너 선수</span></h3>`;
+                   : `<p class="note">겹치는 기록 없음</p>`;
+  h += `<h3>코리안리거와 함께 뛴 기록</h3>`;
   h += c.kl.length ? c.kl.map(k=>hRow(k, `<span class="who">${k.ko?esc(k.ko)+" ":""}<span class="en">${esc(k.en)}</span></span><span class="what">${tyTxt(k.ty)}</span>`, false)).join("")
                    + (c.nkl>c.kl.length ? `<p class="note">외 ${c.nkl-c.kl.length}명</p>` : "")
-                   : `<p class="note">겹치는 기록이 없습니다.</p>`;
-  return h + `<p class="note">"함께 뛰었다"는 같은 시즌 같은 팀에 기록이 있다는 뜻입니다. 같은 시기에 함께 로스터에 있었는지는 확인하지 않았습니다.</p>`;
+                   : `<p class="note">겹치는 기록 없음</p>`;
+  return h + `<p class="note">같은 시즌 같은 팀 기록 기준</p>`;
 }
 async function openHistory(kind, fid){
   const rec = recOf(role, kind, fid); if (!rec) return;
@@ -1303,7 +1293,7 @@ async function openHistory(kind, fid){
   let h = `<div class="dlghead"><div class="dh-main"><h2>${nameHTML(rec)}${awardBadges(rec)} <span class="note">History</span></h2>
     <p class="dh-facts">${facts.map(x=>`<span>${x}</span>`).join("")}</p></div>
     <div class="dlgbtns"><button class="close" id="histBack">← 상세로</button><button class="close" id="dlgClose">닫기</button></div></div>`;
-  h += `<h3>경력 타임라인 <span class="note">— MLB 공식 기록의 소속팀${isPast?" + KBO":""}</span></h3>` + histTimeline(rec, c, isPast);
+  h += `<h3>경력 타임라인</h3>` + histTimeline(rec, c, isPast);
   h += histFun(rec, c, isPast);
   $("dlgBody").innerHTML = h; $("dlg").scrollTop = 0;
   $("histBack").onclick = ()=> openDetail(kind, fid);
@@ -1337,15 +1327,15 @@ function reportFormUrl(rec, r0, kind, fid){
 function reportSection(rec, r0, kind, fid){
   const mine = REPORTS.filter(x=> repKey(x.role,x.kind,x.id)===repKey(r0,kind,fid));
   const fu = reportFormUrl(rec, r0, kind, fid);
-  return `<h3>스카우팅 노트 <span class="note">— 방문자 의견 ${mine.length}건</span></h3>
-    ${mine.length ? `<div class="replist">${mine.map(x=>repCard(x,false)).join("")}</div>` : `<p class="note">아직 올라온 노트가 없습니다.</p>`}
+  return `<h3>스카우팅 노트</h3>
+    ${mine.length ? `<div class="replist">${mine.map(x=>repCard(x,false)).join("")}</div>` : `<p class="note">아직 없습니다.</p>`}
     <p>${fu ? `<a class="btn mini repbtn" href="${esc(fu)}" target="_blank" rel="noopener noreferrer">노트 남기기</a>` : `<span class="btn mini repbtn" style="opacity:.5;cursor:default">노트 남기기 (준비 중)</span>`}</p>
-    <p class="note">제출한 글은 운영자가 검수한 뒤 올라옵니다. 개인 의견이며 근거 없는 비방, 개인정보는 반려됩니다.</p>`;
+    <p class="note">검수 후 게시됩니다.</p>`;
 }
 function renderReports(){
   const list = REPORTS.slice().sort((a,b)=> String(b.date||"").localeCompare(String(a.date||"")));
-  $("repList").innerHTML = list.length ? list.map(x=>repCard(x,true)).join("") : `<p class="note">아직 승인된 노트가 없습니다. 선수 상세 창에서 첫 노트를 남겨 보세요.</p>`;
-  $("repNote").textContent = list.length ? `${list.length}건. 카드를 누르면 해당 선수의 상세가 열립니다.` : "";
+  $("repList").innerHTML = list.length ? list.map(x=>repCard(x,true)).join("") : `<p class="note">아직 없습니다.</p>`;
+  $("repNote").textContent = list.length ? `${list.length}건` : "";
 }
 
 /* ================= Rumor Player: 입단설이 도는 선수 (docs/rumors.js 에 이름만 추가) ================= */
@@ -1384,7 +1374,7 @@ function renderRumors(){
       ${x.note?`<p class="one">${esc(x.note)}</p>`:""}
       <div class="by">${x.team?`${esc(x.team)} · `:""}${x.date?esc(x.date):""}${link?` · <a href="${esc(link)}" target="_blank" rel="noopener noreferrer nofollow">${esc(x.srcName||"출처")}</a>`:""}</div></div>`;
   }).join("") : `<p class="note">아직 없습니다.</p>`;
-  $("rumNote").textContent = list.length ? `${list.length}명. 카드를 누르면 상세가 열립니다. 상태: 루머 → 언론 보도 → 공식 발표 순으로 확실합니다.` : "";
+  $("rumNote").textContent = list.length ? `${list.length}명` : "";
 }
 
 /* ================= KBO 시상 이력: 이름 옆 트로피 아이콘 (docs/awards.js) ================= */
@@ -1414,12 +1404,12 @@ function renderLanding(){
 /* ================= 부상자 명단(IL) 이력 · 구종 구성 (상세 창) ================= */
 function ilSection(rec, y0, y1){
   const il = rec.il || {n:0,days:0,max:0,tj:0,stints:[]};
-  let h = `<h3>부상자 명단(IL) 이력 <span class="note">— MLB 공식 선수 이동 기록, ${y0}~${y1}</span></h3>`;
-  if (!il.n) return h + `<p class="note">기록된 등재가 없습니다. 부상이 없었다는 뜻이 아니라, 마이너 기록 누락이나 API에 없는 경우일 수 있습니다.</p>`;
+  let h = `<h3>부상자 명단(IL) 이력</h3>`;
+  if (!il.n) return h + `<p class="note">기록 없음</p>`;
   h += `<p style="margin:4px 0"><b>${il.n}회</b> · 합계 <b>${il.days}일</b> · 최장 ${il.max}일${il.tj?` · <span class="tag warn">토미존 수술 기록</span>`:""}</p>
     <div class="tablewrap"><table><thead><tr><th class="l">등재~복귀</th><th>일수</th><th>명단</th><th class="l">부상 내용(기록된 것)</th></tr></thead><tbody>` +
     il.stints.map(s=>`<tr><td class="l">${esc(s.s)} ~ ${esc(s.e)}${s.o?' <span class="note" title="복귀 기록이 없어 시즌 말로 보았습니다">(복귀 미기록)</span>':""}</td><td>${s.d}</td><td>${s.k}일</td><td class="l">${esc(s.t||"내용 없음(마이너 등)")}</td></tr>`).join("") +
-    `</tbody></table></div><p class="note">일수는 등재~복귀 기간이라 비시즌이 포함돼 실제 결장보다 길 수 있습니다. 마이너 부상은 빠졌을 수 있습니다.</p>`;
+    `</tbody></table></div>`;
   return h;
 }
 const ARS_NAME = {ff:"포심", si:"싱커", fc:"커터", sl:"슬라이더", ch:"체인지업", cu:"커브", fs:"스플리터", kn:"너클볼", st:"스위퍼", sv:"슬러브"};
@@ -1430,9 +1420,9 @@ function arsSection(rec){
   let x = 0, bar = `<svg viewBox="0 0 600 30" role="img" aria-label="구종 구성">`;
   keys.forEach((k,i)=>{ const w = a.use[k]/tot*600; bar += `<rect x="${x.toFixed(1)}" y="2" width="${w.toFixed(1)}" height="26" fill="${ARS_COL[i%ARS_COL.length]}"><title>${ARS_NAME[k]||k} ${a.use[k]}%</title></rect>`; x += w; });
   bar += `</svg>`;
-  return `<h3>구종 구성 <span class="note">— ${a.y}년 MLB, 구종별 사용 비율</span></h3>${bar}
+  return `<h3>구종 구성</h3>${bar}
     <div class="legend" style="margin-top:6px">${keys.map((k,i)=>`<span><i style="background:${ARS_COL[i%ARS_COL.length]}"></i>${ARS_NAME[k]||k} ${a.use[k]}%</span>`).join("")}</div>
-    <p class="note">패스트볼 계열(포심·싱커·커터) ${grp(["ff","si","fc"]).toFixed(0)}% · 브레이킹볼(슬라이더·커브·스위퍼·슬러브) ${grp(["sl","cu","st","sv"]).toFixed(0)}% · 오프스피드(체인지업·스플리터·너클볼) ${grp(["ch","fs","kn"]).toFixed(0)}%. MLB 기록이 있는 시즌만 나옵니다(트리플A 구종 자료는 없음). 유사도 계산에는 쓰지 않습니다.</p>`;
+    <p class="note">패스트볼 ${grp(["ff","si","fc"]).toFixed(0)}% · 브레이킹볼 ${grp(["sl","cu","st","sv"]).toFixed(0)}% · 오프스피드 ${grp(["ch","fs","kn"]).toFixed(0)}%</p>`;
 }
 
 /* ================= 관심 선수 (localStorage, 이 브라우저에만 저장) ================= */
@@ -1464,7 +1454,7 @@ function cmpToggle(r0,k,id){
 }
 function renderCmpBar(){
   $("cmpBar").hidden = !CMP.length;
-  $("cmpItems").innerHTML = CMP.map((c,i)=>{ const rec = recOf(c.r,c.k,c.id); return rec ? `<b style="color:${i?"var(--mlb)":"var(--accent)"}">${i?"B":"A"}</b> ${esc(nameTxt(rec))}` : ""; }).join(" vs ") + (CMP.length===1?' <span class="note">(한 명 더 담으면 비교할 수 있습니다. 같은 투수/타자끼리만 가능)</span>':"");
+  $("cmpItems").innerHTML = CMP.map((c,i)=>{ const rec = recOf(c.r,c.k,c.id); return rec ? `<b style="color:${i?"var(--mlb)":"var(--accent)"}">${i?"B":"A"}</b> ${esc(nameTxt(rec))}` : ""; }).join(" vs ");
   $("cmpGo").disabled = CMP.length<2;
 }
 function openCompare(){
@@ -1474,10 +1464,10 @@ function openCompare(){
   const feats = D.feats[r0], d = distance(A,B), isP = x=>x["KBO첫해"]!=null;
   const yr = x => isP(x) ? [x["KBO첫해"]-5, x["KBO첫해"]-1, x["KBO첫해"]] : [BASE-4, BASE, null];
   let h = `<div class="dlghead"><div><h2><span style="color:var(--accent)">${nameHTML(A)}</span> vs <span style="color:var(--mlb)">${nameHTML(B)}</span></h2>
-    <p class="sub">${r0} · 기록 모양의 거리 ${d?d.dist.toFixed(2):"-"} (작을수록 닮음)${ADJ?" · 환경 보정 지수 기준":""}</p></div><button class="close" id="cmpClose">닫기</button></div>`;
+    <p class="sub">${r0} · 거리 ${d?d.dist.toFixed(2):"-"}</p></div><button class="close" id="cmpClose">닫기</button></div>`;
   h += `<div class="two"><div id="cmpRadar"></div><div><table><thead><tr><th class="l">지표</th><th style="color:var(--accent)">A</th><th style="color:var(--mlb)">B</th><th>차이(편차)</th></tr></thead><tbody>` +
     feats.map(f=>`<tr><td class="l">${esc(labelFor(r0,f))}</td><td>${A[f]!=null?fF(f,A[f]):"-"}</td><td>${B[f]!=null?fF(f,B[f]):"-"}</td><td>${d&&d.dz[f]!=null?(d.dz[f]>=0?"+":"")+d.dz[f].toFixed(2):"-"}</td></tr>`).join("") +
-    `</tbody></table><p class="note">차이 = (A − B)를 전체 표준편차로 나눈 값</p></div></div>`;
+    `</tbody></table></div></div>`;
   const feat4 = r0==="투수" ? ["k_pct","bb_pct","hr_pct","era"] : ["k_pct","bb_pct","iso","avg"];
   h += `<h3>시즌별 추이</h3><div class="cmpgrid"><div class="cmpcol"><h4 style="color:var(--accent)">A · ${esc(nameTxt(A))}</h4></div><div class="cmpcol"><h4 style="color:var(--mlb)">B · ${esc(nameTxt(B))}</h4></div>`;
   for (const f of feat4){ const [a0,a1,ak]=yr(A), [b0,b1,bk]=yr(B);
@@ -1523,7 +1513,7 @@ function renderTeams(){
   const allRow = `<tr style="font-weight:600"><td class="l">전체</td><td>${rows.length}</td>${M.map(([k,,,d])=>`<td>${allV[k].m==null?"-":fmt(allV[k].m,d)}</td>`).join("")}<td>${rows.filter(isSuccess).length}/${rows.length}</td><td></td></tr>`;
   $("teamTable").innerHTML = h + allRow + "</tbody>";
   $("teamLegend").innerHTML = types.map((ty,i)=>`<span><i style="background:${ARS_COL[i%ARS_COL.length]}"></i>${esc(ty.name)}</span>`).join("");
-  $("teamNote").innerHTML = `구단별 표본이 ${teams.length?Math.min(...teams.map(t=>t.rs.length)):0}~${teams.length?Math.max(...teams.map(t=>t.rs.length)):0}명이라 <b>차이는 우연일 수 있습니다.</b> ▲▼는 구단 평균이 전체 평균과 표준오차 2배 이상 다른 칸(표본 5명 이상)인데, 비교하는 칸이 ${cells}개라 우연으로도 몇 개는 나옵니다(이번에는 ${hl}개). 구단은 KBO 첫해 소속 기준이고 넥센→키움, SK→SSG는 묶었습니다.`;
+  $("teamNote").innerHTML = `구단별 표본 ${teams.length?Math.min(...teams.map(t=>t.rs.length)):0}~${teams.length?Math.max(...teams.map(t=>t.rs.length)):0}명`;
 }
 
 /* ================= 유형 선택·유형별 성공 비율 ================= */
@@ -1546,7 +1536,7 @@ function renderTypes(){
   }
   $("typPanel").innerHTML = h || "<p class='note'>유형 정보가 없습니다.</p>";
   const sils = typList().map(t=>t.sil).filter(x=>x!=null);
-  $("typNote").innerHTML = `붉은 선 = 전체 성공 비율(${base.toFixed(0)}%). 유형은 기록 모양을 K-평균으로 묶은 것이라 <b>경계가 뚜렷하지 않고</b>${sils.length?`(실루엣 점수 ${Math.min(...sils).toFixed(2)}~${Math.max(...sils).toFixed(2)}, 0.5 이상이면 뚜렷)`:""}, 유형 안 표본이 작아 비율 차이는 우연일 수 있습니다. 투수는 선발(등판 중 선발 50% 이상)과 불펜을 먼저 나눕니다.`;
+  $("typNote").innerHTML = `붉은 선 = 전체 성공 비율(${base.toFixed(0)}%)`;
 }
 
 /* ================= 4. 검증: 입단 전 지표로 성공을 가려낼 수 있나 ================= */
@@ -1573,8 +1563,7 @@ function renderVal(){
       <td class="l">${esc(labelBase(role,best[0]))} <span class="note">AUC ${best[1][0].toFixed(2)}, p=${best[1][1].toFixed(2)}</span></td></tr>`;
   }
   $("valTable").innerHTML = h + "</tbody>";
-  $("valNote").innerHTML = V.length ? `${cells}개 조합 × 2가지 방법 중 p&lt;0.05인 것은 <b>${sig}개</b>입니다.${minUni?` 가장 눈에 띄는 단일 지표는 ${esc(labelBase(role,minUni.f))}(${esc(MODE_NOTE[minUni.crit])}, ${minUni.feat}) AUC ${minUni.auc.toFixed(2)}, p=${minUni.p.toFixed(2)}인데, 80번 안팎을 비교했으니 우연으로도 흔한 수준입니다.`:""}
-    AUC 0.5=무관, 1=완벽. 점선=0.5, 회색 띠=라벨을 섞었을 때 범위(교차검증은 신호가 없어도 0.5보다 낮게 나오는 편향이 있음). 일부 조합에서 띠보다 아래인 것은 "신호 없음"과 맞는 결과이며 원인은 확인하지 못했습니다. 성공 기준은 임시이고 표본이 작습니다.` : "";
+  $("valNote").innerHTML = V.length ? `p<0.05: <b>${sig}</b> / ${cells*2}개 조합` : "";
 }
 
 /* ================= 이벤트 ================= */
