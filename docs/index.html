@@ -63,8 +63,19 @@ h3{font-size:15px;margin:20px 0 6px}
 .hrow .what{color:var(--muted);font-size:13px}
 .hrow .tagk{margin-left:auto;font-size:12px;color:var(--accent);border:1px solid var(--accent);padding:0 9px;border-radius:999px}
 .stamp{display:none}
-.themebtn{font:inherit;font-size:12px;letter-spacing:.06em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:3px 12px;cursor:pointer;align-self:center}
-.themebtn:hover{color:var(--ink);border-color:var(--ink)}
+/* LIGHT / DARK 스위치: 알약 + 미끄러지는 손잡이. LIGHT = Paper(크림), DARK = 네이비 */
+.themebtn{position:relative;display:inline-block;flex:none;width:84px;height:30px;padding:0;border:2px solid var(--tg-edge);border-radius:999px;background:var(--tg-bg);color:var(--tg-fg);cursor:pointer;align-self:center;overflow:hidden;font:700 11px/1 "Pretendard","Malgun Gothic",system-ui,sans-serif;letter-spacing:.12em;transition:background .25s,border-color .25s,color .25s}
+.themebtn:hover{filter:brightness(1.06)}
+.themebtn:focus-visible{outline:2px solid var(--tg-edge);outline-offset:2px}
+.tg-text{position:absolute;top:50%;transform:translateY(-50%);transition:opacity .2s;pointer-events:none}
+.tg-light{left:11px}.tg-dark{right:11px}
+.tg-knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);display:grid;place-items:center;transition:transform .28s cubic-bezier(.3,.7,.3,1)}
+html[data-theme="paper"] .themebtn{--tg-bg:#b3262b;--tg-fg:#fff;--tg-edge:#2a2720}
+html[data-theme="paper"] .tg-knob{transform:translateX(54px)}
+html[data-theme="paper"] .tg-dark,html[data-theme="paper"] .i-moon{display:none}
+html:not([data-theme="paper"]) .themebtn{--tg-bg:#ff7a45;--tg-fg:#16110d;--tg-edge:#ffb089}
+html:not([data-theme="paper"]) .tg-knob{transform:translateX(0)}
+html:not([data-theme="paper"]) .tg-light,html:not([data-theme="paper"]) .i-sun{display:none}
 nav{align-items:center}
 /* 상세 창 머리: 이름 → 기본 정보 → 유형·배지 → 보조 설명 → 영상 */
 .dlgin:focus{outline:none}
@@ -364,7 +375,13 @@ dialog{overscroll-behavior:contain}
   <div class="wrap">
     <a class="logo brand" href="#top" aria-label="Before KBO"><img src="img/logo.png" alt="Before KBO" width="130" height="22"></a>
     <nav aria-label="링크">
-      <button type="button" class="themebtn" id="themeBtn" title="디자인 전환"></button>
+      <button type="button" class="themebtn" id="themeBtn" role="switch" aria-checked="false" aria-label="라이트 모드 (누르면 다크)" title="LIGHT / DARK">
+        <span class="tg-text tg-light">LIGHT</span><span class="tg-text tg-dark">DARK</span>
+        <span class="tg-knob" aria-hidden="true">
+          <svg class="i-sun" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#c77700" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="#f2a900" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.9 1.9M16.8 16.8l1.9 1.9M5.3 18.7l1.9-1.9M16.8 7.2l1.9-1.9"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" width="15" height="15"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="#1b2c4a"/></svg>
+        </span>
+      </button>
       <a href="https://github.com/bylinercho/before_kbo" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
     </nav>
   </div>
@@ -1543,8 +1560,10 @@ fillScatterSel(); renderAll(); renderLanding();
 
 /* ================= 디자인 전환 (Paper ↔ Classic). 선택은 이 브라우저에 저장 ================= */
 function paintThemeBtn(){
-  const t = document.documentElement.dataset.theme;
-  $("themeBtn").textContent = t==="paper" ? "Classic view" : "Report view";
+  const dark = document.documentElement.dataset.theme !== "paper";   // LIGHT = paper, DARK = classic
+  const b = $("themeBtn");
+  b.setAttribute("aria-checked", dark ? "true" : "false");
+  b.setAttribute("aria-label", dark ? "다크 모드 (누르면 라이트)" : "라이트 모드 (누르면 다크)");
 }
 $("themeBtn").addEventListener("click", ()=>{
   const next = document.documentElement.dataset.theme==="paper" ? "classic" : "paper";

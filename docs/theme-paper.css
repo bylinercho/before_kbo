@@ -26,8 +26,6 @@ html[data-theme="paper"] .logo.brand img{height:26px}
 html[data-theme="paper"] .logo.brand.footlogo img{height:54px}
 html[data-theme="paper"] nav a{color:var(--ink);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase}
 html[data-theme="paper"] nav a:hover{border-bottom-color:var(--accent)}
-html[data-theme="paper"] .themebtn{color:var(--ink);border:1px solid var(--rule);border-radius:0;background:transparent}
-html[data-theme="paper"] .themebtn:hover{background:var(--ink);color:var(--paper)}
 
 /* 히어로: 서식 머리글 */
 html[data-theme="paper"] .hero{background:transparent;text-align:left;padding:84px 0 64px;border-bottom:2px solid var(--rule)}
