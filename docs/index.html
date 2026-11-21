@@ -59,6 +59,8 @@ nav{align-items:center}
 .dlgin:focus{outline:none}
 .dh-main h2{margin:0 0 8px}
 .dh-facts{display:flex;flex-wrap:wrap;gap:4px 0;margin:0;font-size:14px;color:var(--ink)}
+.dh-facts span{display:inline-flex;align-items:center}
+.flag{display:inline-block;height:13px;width:auto;margin-right:6px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.28);vertical-align:-1px}
 .dh-facts span+span::before{content:"·";margin:0 9px;color:var(--muted)}
 .dh-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0}
 .dh-tags .rum-st{margin:0}
@@ -796,11 +798,14 @@ function bioLine(rec){
   if (b.ht) p.push(`${b.ht}cm${b.wt?` ${b.wt}kg`:""}`);
   return p.length ? `<p class="bio">${p.join(" · ")}</p>` : "";
 }
+/* 출생국 → 국기 파일(docs/flags/, flag-icons 4x3 SVG). 목록에 없는 나라는 국기 없이 이름만 */
+const FLAG = {"미국":"us","도미니카공화국":"do","베네수엘라":"ve","쿠바":"cu","캐나다":"ca","푸에르토리코":"pr","멕시코":"mx","일본":"jp","파나마":"pa","콜롬비아":"co","호주":"au","한국":"kr","대만":"tw","퀴라소":"cw","니카라과":"ni","아루바":"aw","바하마":"bs","영국":"gb","이탈리아":"it","브라질":"br","독일":"de","포르투갈":"pt","페루":"pe","슬로바키아":"sk","네덜란드":"nl","온두라스":"hn"};
+const flagHTML = c => FLAG[c] ? `<img class="flag" src="flags/${FLAG[c]}.svg" alt="" width="18" height="14"> ` : "";
 function factsLine(rec, age, isPast){
   const b = rec.bio || {}, p = [role];
   if (b.pos && b.pos!=="P") p.push(`${POS_KO[b.pos]||b.pos}(${b.pos})`);
   if (b.thr || b.bat) p.push(`${b.thr?HAND[b.thr]+"투":""}${b.bat?HAND[b.bat]+"타":""}`);
-  if (b.ctry) p.push(esc(b.ctry));
+  if (b.ctry) p.push(`${flagHTML(b.ctry)}${esc(b.ctry)}`);
   if (b.ht) p.push(`${b.ht}cm${b.wt?` ${b.wt}kg`:""}`);
   if (age!=null) p.push(isPast ? `입단 때 ${age}세` : `${age}세`);
   return `<p class="dh-facts">${p.map(x=>`<span>${x}</span>`).join("")}</p>`;
