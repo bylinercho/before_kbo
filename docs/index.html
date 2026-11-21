@@ -67,6 +67,14 @@ h3{font-size:15px;margin:20px 0 6px}
 .dh{fill:var(--accent);stroke:#fff;stroke-width:2;cursor:grab}
 .dv{fill:var(--ink);font-weight:700;paint-order:stroke;stroke:var(--bg);stroke-width:3px}
 @media (max-width:820px){.drawgrid{grid-template-columns:1fr}}
+.mi{display:block;height:18px;width:auto}
+.mate{display:inline-flex;margin-left:5px;vertical-align:middle;cursor:help}
+.mate.link{cursor:pointer}
+.mate.link:hover .mi{transform:scale(1.18)}
+.more{margin-left:6px;font-size:11px;color:var(--muted)}
+.timeline td.mates,.timeline th.mh{text-align:right;white-space:nowrap}
+.timeline th.mh{display:table-cell}
+.timeline th.mh .mi{display:inline-block;vertical-align:middle;margin-left:5px}
 .lvtag{display:inline-block;min-width:36px;text-align:center;padding:0 8px;border:1px solid var(--c,var(--line));color:var(--c,var(--muted));border-radius:999px;font-size:11.5px;font-weight:700;line-height:1.5}
 .tablewrap table.timeline td.l{text-align:left}
 .tablewrap table.timeline td.yr{font-weight:700;vertical-align:top;padding-top:11px}
@@ -1241,43 +1249,36 @@ function careerOf(rec){
   const C = window.CAREERS; if (!C || !C.P) return null;
   const c = C.P[String(rec.mlbam ?? rec.player_id)]; if (!c) return null;
   const nm = i => i>=0 ? C.T[i] : "";
-  return {...c, st: c.st.map(([y,ss])=>[y, ss.map(([l,t,p])=>[C.L[l], nm(t), nm(p)])])};
+  return {...c, st: c.st.map(([y,ss])=>[y, ss.map(([l,t,p,m,more])=>({lv:C.L[l], team:nm(t), parent:nm(p), mates:(m||[]).map(i=>C.M[i]), more:more||0}))])};
 }
 const lvTag = lv => `<span class="lvtag" style="--c:${LVCOL[lv]||"var(--muted)"}">${esc(lv)}</span>`;
-const kName = x => `${x.ko ? esc(x.ko)+" " : ""}<span class="en">${esc(x.en)}</span>`;
-const yrsTxt = ys => ys.length>2 ? `${ys[0]}~${ys[ys.length-1]}` : ys.join("·");
+/* 경력 표 오른쪽에 붙는 아이콘: 태극 = 코리안리거, 야구공 = KBO 외국인(같은 시즌 같은 팀에 기록이 있는 사람) */
+const ICON_TG = `<img class="mi" src="img/taegeuk.png" alt="코리안리거" width="18" height="18">`;
+const ICON_BALL = `<svg class="mi" viewBox="0 0 24 24" role="img" aria-label="KBO 외국인"><circle cx="12" cy="12" r="10.5" fill="#fff" stroke="#2a2720" stroke-width="1.4"/><path d="M6.6 4.4c3.2 2.6 3.2 12.6 0 15.2M17.4 4.4c-3.2 2.6-3.2 12.6 0 15.2" fill="none" stroke="#c62828" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+function mateIcon(m, y, team){
+  if (m[0]==="K"){
+    const nm = m[2] ? `${esc(m[2])} <span class="mut">${esc(m[1])}</span>` : esc(m[1]);
+    return `<span class="mate" data-tip="${esc(`<b>${nm}</b><br>코리안리거 · ${y} ${esc(team)}`)}">${ICON_TG}</span>`;
+  }
+  const [, id, role, en, ko, first, last] = m;
+  const kb = `KBO ${first}${last!==first ? "~"+(last>=BASE?"현재":last) : (first>=BASE?"(현재)":"")}`;
+  const nm = `${ko ? esc(ko)+" " : ""}<span class="mut">${esc(en)}</span>`;
+  return `<span class="mate link" data-kind="past" data-key="${esc(id)}" data-role="${esc(role)}" data-tip="${esc(`<b>${nm}</b><br>${kb} · ${y} ${esc(team)}`)}">${ICON_BALL}</span>`;
+}
 function histTimeline(rec, c, isPast){
   const by = new Map();
-  for (const [y, stints] of (c ? c.st : [])) by.set(y, stints.map(s=>({lv:s[0], team:s[1], parent:s[2]})));
-  if (isPast) for (const k of (rec.kbo||[])) { const a = by.get(k.y) || []; a.push({lv:"KBO", team:teamK(k["팀"]), parent:k["팀"]}); by.set(k.y, a); }
+  for (const [y, stints] of (c ? c.st : [])) by.set(y, stints.map(s=>({...s})));
+  if (isPast) for (const k of (rec.kbo||[])) { const a = by.get(k.y) || []; a.push({lv:"KBO", team:teamK(k["팀"]), parent:k["팀"], mates:[], more:0}); by.set(k.y, a); }
   if (!by.size) return `<p class="note">경력 자료가 없습니다.</p>`;
   let rows = "";
   for (const y of [...by.keys()].sort((a,b)=>a-b)){
     const st = by.get(y);
     st.forEach((s,i)=>{
-      rows += `<tr${s.lv==="KBO"?' class="kbo"':""}>${i===0?`<td class="yr" rowspan="${st.length}">${y}</td>`:""}<td>${s.lv==="KBO"?`<span class="lvtag" style="--c:var(--accent)">KBO</span>`:lvTag(s.lv)}</td><td class="l">${esc(s.team)}${s.parent?` <span class="note">(${esc(s.parent)})</span>`:""}</td></tr>`;
+      const mates = s.mates.map(m=>mateIcon(m, y, s.team)).join("") + (s.more ? `<span class="more">+${s.more}</span>` : "");
+      rows += `<tr${s.lv==="KBO"?' class="kbo"':""}>${i===0?`<td class="yr" rowspan="${st.length}">${y}</td>`:""}<td>${s.lv==="KBO"?`<span class="lvtag" style="--c:var(--accent)">KBO</span>`:lvTag(s.lv)}</td><td class="l">${esc(s.team)}${s.parent?` <span class="note">(${esc(s.parent)})</span>`:""}</td><td class="mates">${mates}</td></tr>`;
     });
   }
-  return `<div class="tablewrap"><table class="timeline"><thead><tr><th>시즌</th><th>레벨</th><th class="l">소속팀</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-function hRow(x, body, link){
-  const attr = link ? ` data-kind="past" data-key="${esc(x.id)}" data-role="${esc(x.role)}"` : "";
-  return `<div class="hrow${link?" link":""}"${attr}>${body}</div>`;
-}
-const tyTxt = ty => ty.slice(0,2).map(([t,ys])=>`${yrsTxt(ys)} ${esc(t)}`).join(" · ") + (ty.length>2 ? " 외" : "");
-function histFun(rec, c, isPast){
-  if (!c) return "";
-  let h = "";
-  const kboSpan = f => `KBO ${f.kbo[0]}${f.kbo[1]!==f.kbo[0] ? "~"+(f.kbo[1]>=BASE?"현재":f.kbo[1]) : (f.kbo[0]>=BASE?"(현재)":"")}`;
-  h += `<h3>KBO 외국인 선수와 겹친 경력</h3>`;
-  h += c.fk.length ? c.fk.map(f=>hRow(f, `<span class="who">${kName(f)}</span><span class="what">${tyTxt(f.ty)}</span><span class="tagk">${kboSpan(f)}</span>`, true)).join("")
-                   + (c.nfk>c.fk.length ? `<p class="note">외 ${c.nfk-c.fk.length}명</p>` : "")
-                   : `<p class="note">겹치는 기록 없음</p>`;
-  h += `<h3>코리안리거와 함께 뛴 기록</h3>`;
-  h += c.kl.length ? c.kl.map(k=>hRow(k, `<span class="who">${k.ko?esc(k.ko)+" ":""}<span class="en">${esc(k.en)}</span></span><span class="what">${tyTxt(k.ty)}</span>`, false)).join("")
-                   + (c.nkl>c.kl.length ? `<p class="note">외 ${c.nkl-c.kl.length}명</p>` : "")
-                   : `<p class="note">겹치는 기록 없음</p>`;
-  return h + `<p class="note">같은 시즌 같은 팀 기록 기준</p>`;
+  return `<div class="tablewrap"><table class="timeline"><thead><tr><th>시즌</th><th>레벨</th><th class="l">소속팀</th><th class="mh" data-tip="${esc("태극 = 코리안리거<br>야구공 = KBO 외국인<br>(같은 시즌 같은 팀)")}">${ICON_TG}${ICON_BALL}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 async function openHistory(kind, fid){
   const rec = recOf(role, kind, fid); if (!rec) return;
@@ -1294,7 +1295,6 @@ async function openHistory(kind, fid){
     <p class="dh-facts">${facts.map(x=>`<span>${x}</span>`).join("")}</p></div>
     <div class="dlgbtns"><button class="close" id="histBack">← 상세로</button><button class="close" id="dlgClose">닫기</button></div></div>`;
   h += `<h3>경력 타임라인</h3>` + histTimeline(rec, c, isPast);
-  h += histFun(rec, c, isPast);
   $("dlgBody").innerHTML = h; $("dlg").scrollTop = 0;
   $("histBack").onclick = ()=> openDetail(kind, fid);
   $("dlgClose").onclick = ()=> $("dlg").close();

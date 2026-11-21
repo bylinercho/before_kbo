@@ -11,7 +11,7 @@
 
 만드는 것
 1. 경력: 선수마다 시즌·레벨(MLB/AAA/AA/A+/A/R)·팀. 마이너 팀의 모구단(parent org)도 붙인다.
-2. 겹침(재미 요소): "같은 시즌에 같은 팀(팀 번호가 같음)에서 기록이 있는" 사람을 찾는다.
+2. 겹침(재미 요소): 경력 표의 각 줄(시즌·팀)마다 "같은 시즌에 같은 팀(팀 번호가 같음)에서 기록이 있는" 사람을 붙인다.
    - KBO 외국인: data/kbo_cohort.csv 에서 미국 기록과 연결된 선수(2015~2026 입단) 가운데 겹치는 사람.
    - 코리안리거: 한국에서 태어난 MLB·마이너 선수.
    "함께 뛰었다"는 같은 시즌 같은 팀에 이름이 있다는 뜻이다. 같은 날 같이 로스터에 있었는지는 알 수 없다.
@@ -37,7 +37,7 @@ RAW = "data/raw/careers"
 SPORTS = {1: "MLB", 11: "AAA", 12: "AA", 13: "A+", 14: "A", 15: "A-", 16: "R"}
 ORDER = {"MLB": 0, "AAA": 1, "AA": 2, "A+": 3, "A": 4, "A-": 5, "R": 6}
 KR_SEASONS = range(2008, 2027)
-MAX_LIST = 6  # 겹침 목록은 종류별로 이만큼만 담는다
+MATE_CAP = 6  # 경력 표 한 줄에 붙이는 사람은 이만큼만 담는다(나머지는 +N)
 
 
 def get(url, params, tries=3):
@@ -193,6 +193,7 @@ def main():
     out = {}
     TN, TI = [], {}    # 팀 이름 목록(번호로 가리켜 용량을 줄인다)
     LVN = list(ORDER)  # 레벨 번호: 0=MLB ... 6=R
+    MP, MI = [], {}    # 함께 뛴 사람 목록: ["K", 영문명, 한글명] 또는 ["F", MyKBO번호, 역할, 영문명, 한글명, KBO첫해, KBO마지막해]
 
     def tix(name):
         if not name:
@@ -202,54 +203,63 @@ def main():
             TN.append(name)
         return TI[name]
 
+    def mix(key, entry):
+        if key not in MI:
+            MI[key] = len(MP)
+            MP.append(entry)
+        return MI[key]
+
+    def mates_of(pid, season, team_id):
+        """같은 시즌 같은 팀에 기록이 있는 코리안리거·KBO 외국인(코리안리거 먼저, 그다음 KBO 최근 순). 최대 MATE_CAP명"""
+        hit = []
+        for o in by_team[(season, team_id)]:
+            if o == pid:
+                continue
+            if o in kr_ids:
+                hit.append((0, 0, kr_name.get(o, ""), ("K", o)))
+            elif o in F:
+                hit.append((1, -F[o]["last"], F[o]["en"], ("F", o)))
+        hit.sort()
+        ids = []
+        for _, _, _, key in hit[:MATE_CAP]:
+            if key[0] == "K":
+                ids.append(mix(key, ["K", kr_name.get(key[1], ""), kn.get(key[1], "")]))
+            else:
+                f = F[key[1]]
+                ids.append(mix(key, ["F", f["myk"], f["role"], f["en"], f["ko"], f["first"], f["last"]]))
+        return ids, max(0, len(hit) - MATE_CAP)
+
     g = {i: d for i, d in car.groupby("id")}
+    n_with = n_refs = 0
     for pid in subjects:
         d = g.get(pid)
         if d is None:
             continue
         seasons = defaultdict(list)
         for r in d.itertuples():
-            seasons[int(r.season)].append([r.level, r.team, r.parent if r.level != "MLB" else ""])
-        st = [[y, [[LVN.index(x[0]), tix(x[1]), tix(x[2])] for x in sorted(v, key=lambda x: ORDER[x[0]])]] for y, v in sorted(seasons.items())]
-
-        def overlaps(pool):
-            """겹친 사람 → {팀 이름: {함께한 시즌}}"""
-            hit = defaultdict(lambda: defaultdict(set))
-            for r in d.itertuples():
-                for o in by_team[(int(r.season), int(r.team_id))]:
-                    if o != pid and o in pool:
-                        hit[o][r.team].add(int(r.season))
-            return hit
-
-        def pack(v):
-            """팀별 [팀, [시즌...]] (오래 함께한 팀, 최근 팀 순)와 함께한 시즌 수"""
-            ty = sorted(([t, sorted(ys)] for t, ys in v.items()), key=lambda x: (-len(x[1]), -x[1][-1]))
-            return ty[:3], len({y for ys in v.values() for y in ys}), max(y for ys in v.values() for y in ys)
-
-        fk = []
-        for o, v in overlaps(set(F) - {pid}).items():
-            f = F[o]; ty, n, last = pack(v)
-            fk.append({"id": f["myk"], "role": f["role"], "en": f["en"], "ko": f["ko"], "ty": ty, "n": n, "last": last, "kbo": [f["first"], f["last"]]})
-        fk.sort(key=lambda x: (-x["n"], -x["last"]))
-        kl = []
-        for o, v in overlaps(kr_ids - {pid}).items():
-            ty, n, last = pack(v)
-            kl.append({"id": o, "en": kr_name.get(o, ""), "ko": kn.get(o, ""), "ty": ty, "n": n, "last": last})
-        kl.sort(key=lambda x: (-x["n"], -x["last"]))
-
+            seasons[int(r.season)].append((r.level, r.team, r.parent if r.level != "MLB" else "", int(r.team_id)))
+        st, any_mate = [], False
+        for y, v in sorted(seasons.items()):
+            row = []
+            for lv, team, parent, tid in sorted(v, key=lambda x: ORDER[x[0]]):
+                ids, more = mates_of(pid, y, tid)
+                item = [LVN.index(lv), tix(team), tix(parent), ids]
+                if more:
+                    item.append(more)
+                row.append(item)
+                n_refs += len(ids); any_mate = any_mate or bool(ids)
+            st.append([y, row])
+        n_with += any_mate
         pr = ppl.loc[pid] if pid in ppl.index else None
         out[str(pid)] = {
             "md": (pr["mlbDebutDate"] if pr is not None and isinstance(pr["mlbDebutDate"], str) else ""),
             "st": st,
-            "fk": fk[:MAX_LIST], "nfk": len(fk),
-            "kl": kl[:MAX_LIST], "nkl": len(kl),
         }
     with open("docs/careers.js", "w", encoding="utf-8") as f:
-        f.write("// tools/15_careers.py 가 만든 파일. 직접 고치지 않는다. T=팀 이름 목록, L=레벨 이름, P=선수번호별 자료(st 안의 [레벨, 팀, 모구단]은 번호)\nwindow.CAREERS = ")
-        json.dump({"T": TN, "L": LVN, "P": out}, f, ensure_ascii=False, separators=(",", ":"))
+        f.write("// tools/15_careers.py 가 만든 파일. 직접 고치지 않는다. T=팀 이름, L=레벨 이름, M=함께 뛴 사람, P=선수번호별 자료(st의 [레벨, 팀, 모구단, 함께 뛴 사람 번호들, 더 있는 수]는 번호)\nwindow.CAREERS = ")
+        json.dump({"T": TN, "L": LVN, "M": MP, "P": out}, f, ensure_ascii=False, separators=(",", ":"))
         f.write(";\n")
-    n_fk = sum(1 for v in out.values() if v["fk"]); n_kl = sum(1 for v in out.values() if v["kl"])
-    print(f"docs/careers.js: 선수 {len(out)}명, KBO 외국인 겹침 {n_fk}명, 코리안리거 겹침 {n_kl}명,",
+    print(f"docs/careers.js: 선수 {len(out)}명, 함께 뛴 사람이 있는 선수 {n_with}명, 행에 붙은 표시 {n_refs}개, 사람 목록 {len(MP)}명,",
           os.path.getsize("docs/careers.js"), "바이트")
 
 
