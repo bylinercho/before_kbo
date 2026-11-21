@@ -1,0 +1,1812 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f8f5ea">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Before KBO">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="img/icons/icon-192.png">
+<link rel="apple-touch-icon" href="img/icons/apple-touch-icon.png">
+<title>Before KBO — 입단 전 5년으로 보는 KBO 외국인 선수</title>
+<script>try{document.documentElement.dataset.theme = localStorage.getItem("bk_theme")==="classic" ? "classic" : "paper";}catch(e){document.documentElement.dataset.theme="paper";}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&display=swap">
+<link rel="stylesheet" href="theme-paper.css">
+<style>
+/* 2026-11-15 디자인 개편: 어둡고 무게감 있는 톤을 기본으로 한다(밝은 모드 없음).
+   차콜 배경 + 따뜻한 오프화이트 글자 + 주황 포인트. 그래프 색(레벨·성공·막대)도 같은 팔레트에서 고른다. */
+:root{
+  color-scheme:dark;
+  --bg:#0b1424; --band:#0f1a2e; --band2:#16253d; --card:#121f36; --ink:#e8ecf3; --muted:#8e9bb3; --line:#25344d;
+  --accent:#ff7a45; --mlb:#e5b04a; --aa:#4fc3b0; --ap:#9b8cff; --a:#8e9bb3; --mex:#e35d5d;
+  --good:#52d39b; --bad:#ff6b6b; --warn-bg:#2a2214; --warn-line:#6b5420;
+  --bar:#ff9a66; --bar2:#5b86d6;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+/* KBO 다이아고딕 (KBO 제공 글꼴, fonts/KBO-Dia-Gothic_License.pdf 참고). 파일은 수정하지 않고 그대로 쓴다.
+   라이선스상 로고·브랜드명·슬로건에는 쓸 수 없어서 .logo 와 히어로 제목(h1)은 기존 글꼴을 유지한다. */
+@font-face{font-family:"KBO Dia Gothic";src:url("fonts/KBO-Dia-Gothic_light.woff") format("woff");font-weight:100 400;font-style:normal;font-display:swap}
+@font-face{font-family:"KBO Dia Gothic";src:url("fonts/KBO-Dia-Gothic_medium.woff") format("woff");font-weight:500 600;font-style:normal;font-display:swap}
+@font-face{font-family:"KBO Dia Gothic";src:url("fonts/KBO-Dia-Gothic_bold.woff") format("woff");font-weight:700 900;font-style:normal;font-display:swap}
+:root{--font-base:"KBO Dia Gothic","Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif; --font-brand:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--font-base)}
+button,input,select,textarea{font-family:inherit}
+.logo,.hero h1{font-family:var(--font-brand)}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.3}
+h2{font-size:22px;margin:0 0 4px}
+h3{font-size:15px;margin:20px 0 6px}
+.sub{color:var(--muted);margin:0}
+.note{font-size:12.5px;color:var(--muted)}
+
+/* ---------- 헤더 ---------- */
+.top{position:sticky;top:0;z-index:20;background:var(--band);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
+.logo{font-weight:800;letter-spacing:.12em;font-size:17px;text-decoration:none}
+.logo b{font-weight:300;letter-spacing:.12em}
+.logo.brand{display:inline-flex;align-items:center;padding:7px 16px;border-radius:999px;background:#f3f1ec;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.logo.brand img{display:block;height:22px;width:auto}
+.logo.brand.footlogo{padding:14px 30px}
+.logo.brand.footlogo img{height:49px}
+/* 표: 행 높이를 모두 같게, 첫 열(선수명) 말고는 가운데 정렬 */
+.tablewrap td{height:42px;padding-top:0;padding-bottom:0;vertical-align:middle}
+.tablewrap td:not(:first-child),.tablewrap th:not(:first-child){text-align:center}
+.tablewrap .tag{line-height:1.25;vertical-align:middle}
+/* History 보기 */
+/* 직접 그리기 */
+.drawbox{margin:6px 0 14px;padding:14px 16px;border:1px solid var(--line);border-radius:12px}
+.drawgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:center}
+.drawsvg svg{width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.drawset{display:inline-flex;margin:0 0 10px;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.drawset button{font:inherit;font-size:12.5px;padding:5px 15px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.drawset button.on{background:var(--accent);color:#16110d;font-weight:700}
+.drawbtns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 6px}
+.drawside h4{margin:14px 0 6px;font-size:13.5px}
+.drawside .hrow{margin:6px 0;padding:8px 12px}
+.drawside .hrow .who{min-width:0}
+.dx{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:2 2}
+.dh{fill:var(--accent);stroke:#fff;stroke-width:2;cursor:grab}
+.dv{fill:var(--ink);font-weight:700;paint-order:stroke;stroke:var(--bg);stroke-width:3px}
+@media (max-width:820px){.drawgrid{grid-template-columns:1fr}}
+.mi{display:block;height:18px;width:auto}
+.mate{display:inline-flex;margin-left:5px;vertical-align:middle;cursor:help}
+.mate.link{cursor:pointer}
+.mate.link:hover .mi{transform:scale(1.18)}
+.more{margin-left:6px;font-size:11px;color:var(--muted)}
+.timeline td.mates,.timeline th.mh{text-align:right;white-space:nowrap}
+.timeline th.mh{display:table-cell}
+.timeline th.mh .mi{display:inline-block;vertical-align:middle;margin-left:5px}
+.lvtag{display:inline-block;min-width:36px;text-align:center;padding:0 8px;border:1px solid var(--c,var(--line));color:var(--c,var(--muted));border-radius:999px;font-size:11.5px;font-weight:700;line-height:1.5}
+.tablewrap table.timeline td.l{text-align:left}
+.tablewrap table.timeline td.yr{font-weight:700;vertical-align:top;padding-top:11px}
+.timeline tr.kbo td{background:rgba(255,122,69,.07)}
+.hrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding:10px 14px;margin:8px 0;border:1px solid var(--line);border-radius:10px}
+.hrow.link{cursor:pointer}
+.hrow.link:hover{border-color:var(--accent)}
+.hrow .who{font-weight:700;min-width:160px}
+.hrow .what{color:var(--muted);font-size:13px}
+.hrow .tagk{margin-left:auto;font-size:12px;color:var(--accent);border:1px solid var(--accent);padding:0 9px;border-radius:999px}
+.stamp{display:none}
+/* LIGHT / DARK 스위치: 알약 + 미끄러지는 손잡이. LIGHT = Paper(크림), DARK = 네이비 */
+.themebtn{position:relative;display:inline-block;flex:none;width:84px;height:30px;padding:0;border:2px solid var(--tg-edge);border-radius:999px;background:var(--tg-bg);color:var(--tg-fg);cursor:pointer;align-self:center;overflow:hidden;font:700 11px/1 "Pretendard","Malgun Gothic",system-ui,sans-serif;letter-spacing:.12em;transition:background .25s,border-color .25s,color .25s}
+.themebtn:hover{filter:brightness(1.06)}
+.themebtn:focus-visible{outline:2px solid var(--tg-edge);outline-offset:2px}
+.tg-text{position:absolute;top:50%;transform:translateY(-50%);transition:opacity .2s;pointer-events:none}
+.tg-light{left:11px}.tg-dark{right:11px}
+.tg-knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);display:grid;place-items:center;transition:transform .28s cubic-bezier(.3,.7,.3,1)}
+html[data-theme="paper"] .themebtn{--tg-bg:#b3262b;--tg-fg:#fff;--tg-edge:#2a2720}
+html[data-theme="paper"] .tg-knob{transform:translateX(54px)}
+html[data-theme="paper"] .tg-dark,html[data-theme="paper"] .i-moon{display:none}
+html:not([data-theme="paper"]) .themebtn{--tg-bg:#ff7a45;--tg-fg:#16110d;--tg-edge:#ffb089}
+html:not([data-theme="paper"]) .tg-knob{transform:translateX(0)}
+html:not([data-theme="paper"]) .tg-light,html:not([data-theme="paper"]) .i-sun{display:none}
+nav{align-items:center}
+/* 상세 창 머리: 이름 → 기본 정보 → 유형·배지 → 보조 설명 → 영상 */
+.dlgin:focus{outline:none}
+.dh-main h2{margin:0 0 8px}
+.dh-facts{display:flex;flex-wrap:wrap;gap:4px 0;margin:0;font-size:14px;color:var(--ink)}
+.dh-facts span{display:inline-flex;align-items:center}
+.flag{display:inline-block;height:13px;width:auto;margin-right:6px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.28);vertical-align:-1px}
+.dh-facts span+span::before{content:"·";margin:0 9px;color:var(--muted)}
+.dh-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0}
+.dh-tags .rum-st{margin:0}
+.pill{display:inline-block;padding:2px 13px;border:1px solid var(--line);border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,255,255,.04)}
+.dh-ctx{margin:12px 0 0;font-size:12.5px;color:var(--muted)}
+.dh-links{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.dh-links a{color:var(--muted)}
+.dh-links a:hover{color:var(--ink)}
+.bio{margin:6px 0 0;font-size:13.5px;color:var(--ink);letter-spacing:.01em}
+.awards{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}
+.aw{display:inline-flex;align-items:center;cursor:help}
+.aw img{display:block;width:auto}
+
+nav{display:flex;gap:26px;font-size:13px;letter-spacing:.04em}
+nav a{text-decoration:none;color:var(--muted);padding:4px 0;border-bottom:1px solid transparent}
+nav a:hover{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* ---------- 히어로 ---------- */
+.hero{position:relative;background:var(--band);overflow:hidden;text-align:center;padding:76px 0 84px}
+.hero svg.wave{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}
+.hero .wrap{position:relative}
+.eyebrow{font-size:12px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:0 0 14px}
+.hero h1{font-size:36px;letter-spacing:.01em;margin:0 auto 16px;max-width:760px}
+.hero p.lead{max-width:620px;margin:0 auto 26px;color:var(--muted);font-size:15px}
+.btn{display:inline-block;font:inherit;font-size:13px;letter-spacing:.08em;padding:11px 28px;border:1px solid var(--ink);background:transparent;color:var(--ink);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.ghost{border-color:var(--line);color:var(--muted);margin-left:8px}
+.btn.mini{padding:4px 12px;font-size:12px;letter-spacing:.02em}
+.en{color:var(--muted);font-size:12px;margin-left:3px}
+.rd-c{fill:color-mix(in srgb,var(--mlb) 22%,transparent);stroke:var(--mlb);stroke-width:2}
+#cmpBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:30;background:var(--card);border:1px solid var(--ink);padding:8px 14px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 4px 18px rgba(0,0,0,.25);max-width:96vw;flex-wrap:wrap}
+#cmpBar[hidden]{display:none}
+.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);padding:2px 8px;margin:2px 6px 2px 0;font-size:13px;cursor:pointer;background:var(--bg)}
+.chip:hover{border-color:var(--ink)}
+.chip .x{border:0;background:transparent;color:var(--muted);cursor:pointer;font:inherit;padding:0 2px}
+.cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.cmpcol h4{margin:6px 0 0;font-size:13px}
+.dlgbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.typrow{display:grid;grid-template-columns:230px 1fr 110px 90px;align-items:center;gap:10px;margin:4px 0;font-size:13.5px;cursor:pointer;padding:2px 4px}
+.typrow:hover{background:var(--band)}
+@media (max-width:700px){ .typrow{grid-template-columns:130px 1fr 80px} .typrow span:last-child{display:none} }
+.row.rf{margin:4px 0}
+.row.rf input[type=number]{width:78px}
+.stats{display:flex;justify-content:center;gap:44px;margin-top:40px;flex-wrap:wrap}
+.stats div{min-width:110px}
+.stats b{display:block;font-size:30px;font-weight:300;letter-spacing:.02em}
+.stats span{font-size:12px;color:var(--muted);letter-spacing:.06em}
+
+/* ---------- 폴드 아래 소제목 ---------- */
+.pitch{text-align:center;padding:64px 0 52px}
+.pitch h2{font-size:24px;max-width:700px;margin:0 auto 14px}
+.pitch p{max-width:680px;margin:0 auto;color:var(--muted)}
+
+/* ---------- 소개 ---------- */
+.legend span{display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%}
+
+/* ---------- 메뉴 카드 ---------- */
+.offer{padding:60px 0}
+.offer h2{text-align:center;margin-bottom:28px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.card{display:block;text-decoration:none;text-align:center}
+.card .img{aspect-ratio:1/1;background:var(--band);display:flex;align-items:center;justify-content:center;border:1px solid transparent;transition:border-color .15s}
+.card:hover .img{border-color:var(--ink)}
+.card .img svg{width:62%;height:auto}
+.card b{display:block;margin-top:14px;font-size:13px;letter-spacing:.14em}
+.card span{display:block;margin-top:4px;font-size:13px;color:var(--muted)}
+
+/* ---------- 도구 영역 ---------- */
+.tools{padding:20px 0 8px}
+.tool{background:var(--card);border:1px solid var(--line);padding:26px;margin:22px 0}
+.tool .eyebrow{margin-bottom:6px}
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);padding:12px 16px;margin:0 0 6px;font-size:14px}
+.warn ul{margin:6px 0 0;padding-left:18px}
+.row{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin:12px 0}
+label{font-size:14px;color:var(--muted)}
+select,input[type=number],input[type=search]{font:inherit;padding:5px 8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:0}
+input[type=number]{width:84px}
+input[type=search]{width:200px}
+.seg{display:inline-flex;border:1px solid var(--ink)}
+.seg button{font:inherit;font-size:13px;letter-spacing:.08em;border:0;background:transparent;color:var(--ink);padding:7px 20px;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.tablewrap{overflow-x:auto}
+.tall{max-height:560px;overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:600;background:var(--card);cursor:pointer;position:sticky;top:0;z-index:1;font-size:12.5px;letter-spacing:.04em}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+/* 가로로 스크롤해도 첫 열(선수 이름)이 보이도록 고정. 머리글(위쪽 고정)과 만나는 칸은 가장 위에 둔다 */
+.tablewrap td:first-child{position:sticky;left:0;z-index:1;background:var(--card);box-shadow:1px 0 0 var(--line)}
+.tablewrap th:first-child{position:sticky;left:0;z-index:3;box-shadow:1px 0 0 var(--line)}
+.tablewrap tr.clickable:hover td:first-child{background:var(--band)}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:var(--band)}
+.tag{display:inline-block;padding:0 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+.tag.good{color:var(--good);border-color:var(--good)}
+.tag.bad{color:var(--muted)}
+.tag.warn{color:var(--mlb);border-color:var(--mlb)}
+.gap{display:grid;grid-template-columns:130px 1fr 170px;align-items:center;gap:8px;margin:4px 0;font-size:13.5px}
+.gapbar{position:relative;height:14px;background:var(--band)}
+.gapbar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.gapbar i{position:absolute;top:2px;bottom:2px;background:var(--bar)}
+.gapbar i.neg{background:var(--bar2)}
+svg{max-width:100%;height:auto;display:block}
+svg text{fill:var(--ink);font-family:inherit}
+svg .m{fill:var(--muted)}
+svg .grid{stroke:var(--line);fill:none}
+svg .axis{stroke:var(--muted);fill:none}
+.rd-a{fill:color-mix(in srgb,var(--accent) 28%,transparent);stroke:var(--accent);stroke-width:2}
+.rd-b{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 3}
+.rd-zero{stroke:var(--muted);fill:none;stroke-dasharray:2 3}
+.pt{cursor:pointer}
+.pt:hover{stroke:var(--ink);stroke-width:2}
+
+/* ---------- 근거 / 부가 / 푸터 ---------- */
+footer{background:var(--band2);padding:34px 0 40px;font-size:13px}
+footer .cols{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center}
+footer .cols div:nth-child(1) a,footer .cols div:nth-child(3) a{display:block;color:var(--muted);text-decoration:none;margin:2px 0}
+footer .cols div:nth-child(1) a:hover,footer .cols div:nth-child(3) a:hover{color:var(--ink)}
+footer .cols div:nth-child(3){text-align:right}
+footer .fine{margin-top:20px;font-size:12px;color:var(--muted);text-align:center}
+
+/* ---------- 상세 창 ---------- */
+dialog{border:1px solid var(--ink);background:var(--card);color:var(--ink);width:min(940px,96vw);max-height:92vh;padding:0}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.dlgin{padding:20px 22px 26px}
+.dlghead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.dlghead h2{font-size:22px}
+.close{font:inherit;font-size:13px;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:5px 14px;cursor:pointer}
+.close:hover{background:var(--ink);color:var(--bg)}
+.two{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start}
+.trgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px 14px}
+.trt{font-size:13px;font-weight:600;margin-top:6px}
+.box{border:1px solid var(--line);padding:10px 12px;margin:10px 0;font-size:14px}
+
+@media (max-width:820px){
+  nav{gap:14px;font-size:12px}
+  .top .wrap{height:auto;padding-top:10px;padding-bottom:10px;flex-direction:column;gap:6px}
+  .hero{padding:52px 0 60px}
+  .hero h1{font-size:27px}
+  .cards{grid-template-columns:1fr;gap:20px}
+  .card .img{aspect-ratio:16/9}
+  .card .img svg{width:34%}
+  .gap{grid-template-columns:96px 1fr 120px}
+  .two{grid-template-columns:1fr}
+  input[type=search]{width:140px}
+  footer .cols{grid-template-columns:1fr;text-align:center}
+  footer .cols div:nth-child(3){text-align:center}
+  .tool{padding:18px}
+}
+
+/* ================= 어두운 프리미엄 톤: 위 기본 스타일을 덮어쓴다 ================= */
+.top{background:rgba(11,20,36,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+nav a:hover{color:var(--ink);border-bottom-color:var(--accent)}
+h2{font-weight:700;letter-spacing:-.015em}
+
+/* 히어로: 은은한 광원 + 크고 굵은 제목 */
+.hero{background:var(--bg);padding:108px 0 100px;border-bottom:1px solid var(--line)}
+.hero::before{content:"";position:absolute;inset:-25% -10% auto -10%;height:130%;pointer-events:none;
+  background:radial-gradient(900px 420px at 72% 0%,rgba(255,122,69,.24),transparent 65%),radial-gradient(700px 380px at 10% 100%,rgba(91,134,214,.15),transparent 65%)}
+.hero svg.wave{display:none}
+.eyebrow{color:var(--accent);letter-spacing:.22em;font-weight:600}
+.hero h1{font-size:clamp(32px,5.6vw,60px);font-weight:800;letter-spacing:-.025em;line-height:1.12;max-width:900px}
+.hl{background:linear-gradient(90deg,#ff7a45,#ffc27a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:16px;color:#aab6cb}
+.stats{gap:56px;margin-top:60px}
+.stats b{font-size:44px;font-weight:700;letter-spacing:-.02em}
+
+/* 버튼·입력 */
+.btn{border-radius:999px;padding:13px 34px;font-weight:600;letter-spacing:.06em;border:1px solid transparent;background:var(--accent);color:#16110d;transition:transform .15s,box-shadow .15s}
+.btn:hover{background:#ff8f5f;color:#16110d;transform:translateY(-1px);box-shadow:0 8px 28px rgba(255,122,69,.35)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--muted)}
+.btn.mini{padding:5px 14px;font-weight:500;background:transparent;border:1px solid var(--line);color:var(--ink);letter-spacing:.02em}
+.btn.mini:hover{background:var(--accent);border-color:var(--accent);color:#16110d;box-shadow:none;transform:none}
+select,input[type=number],input[type=search],input[type=text]{border-radius:8px;background:#0b1322;border-color:var(--line)}
+select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,122,69,.18)}
+.seg{border-radius:999px;overflow:hidden;border-color:var(--line)}
+.seg button.on{background:var(--accent);color:#16110d;font-weight:700}
+
+/* 구역·카드: 둥근 어두운 패널 */
+.pitch{padding:88px 0 68px}
+.pitch h2{font-size:clamp(22px,3.2vw,32px);font-weight:700;letter-spacing:-.02em}
+.tool{border-radius:16px}
+.tool{background:linear-gradient(180deg,#13213a,#0f1a2f);box-shadow:0 14px 44px rgba(0,0,0,.35);padding:30px}
+.card .img{border-radius:16px;border:1px solid var(--line);background:radial-gradient(260px 200px at 50% 0%,rgba(255,122,69,.16),transparent 70%),linear-gradient(180deg,#16253d,#0f1b30)}
+.card:hover .img{border-color:var(--accent);box-shadow:0 14px 44px rgba(255,122,69,.18)}
+.card b{letter-spacing:.16em}
+.warn{border-radius:12px}
+.box{border-radius:10px;background:#0e182b}
+footer{background:#08101d;border-top:1px solid var(--line)}
+
+/* 표·막대·태그 */
+th{color:#8190aa;border-bottom:1px solid #2c3b57}
+tr.clickable:hover td,.tablewrap tr.clickable:hover td:first-child,.typrow:hover{background:#1a2a45}
+.tag{border-radius:999px}
+.gapbar{background:var(--band2);border-radius:4px}
+.gapbar i{border-radius:3px}
+.chip{border-radius:999px;background:#0b1322}
+#cmpBar{border-radius:999px;border-color:var(--accent);background:#0f1b30}
+
+/* 상세·비교 창 */
+dialog{border:1px solid #2c3b57;border-radius:18px;background:linear-gradient(180deg,#13213a,#0e182b);box-shadow:0 30px 90px rgba(0,0,0,.65)}
+dialog::backdrop{background:rgba(4,9,18,.74);backdrop-filter:blur(4px)}
+.close{border-radius:999px;border-color:var(--line);padding:6px 16px}
+.close:hover{background:var(--accent);border-color:var(--accent);color:#16110d}
+
+/* 스카우팅 노트(방문자 리포트) */
+.replist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.rep{border:1px solid var(--line);border-radius:12px;background:#0e182b;padding:16px 18px}
+.rep[data-kind]{cursor:pointer;transition:border-color .15s,transform .15s}
+.rep[data-kind]:hover{border-color:var(--accent);transform:translateY(-1px)}
+.rep .who{font-weight:700;font-size:15px}
+.rep .one{margin:8px 0 10px;font-size:14.5px;line-height:1.55}
+.rep dl{margin:0;font-size:13px;line-height:1.55}
+.rep dt{color:var(--muted);font-size:11.5px;letter-spacing:.08em;margin-top:8px}
+.rep dd{margin:2px 0 0}
+.rep .by{margin-top:12px;font-size:12px;color:var(--muted)}
+.badge-op{display:inline-block;font-size:11px;letter-spacing:.04em;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
+.repbtn{display:inline-block;margin-top:6px}
+
+.rum-st{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);margin-left:6px;vertical-align:middle}
+.rum-st.r0{color:var(--muted)}.rum-st.r1{color:var(--mlb);border-color:var(--mlb)}.rum-st.r2{color:var(--aa);border-color:var(--aa)}
+.rep .meta{font-size:12.5px;color:var(--muted);margin-top:6px}
+
+/* 챕터 탭: 한 번에 한 챕터만 보인다 */
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(max-content,1fr);gap:6px;overflow-x:auto;margin:26px 0 0;padding:8px;border:1px solid var(--line);border-radius:999px;background:rgba(15,26,46,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);position:sticky;top:70px;z-index:15;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{font:inherit;font-size:13.5px;text-align:center;color:var(--muted);background:transparent;border:0;border-radius:999px;padding:9px 8px;cursor:pointer;white-space:nowrap;transition:color .15s,background .15s}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#16110d;font-weight:700}
+.tool.chapter[hidden]{display:none}
+@media (max-width:820px){.tabs{top:0;position:static;border-radius:14px}}
+
+/* 히어로: 심플 — 장식 없이 글자와 여백만 */
+.hero{padding:130px 0 110px}
+.hero::before,.hero::after{display:none}
+.hero h1{font-size:clamp(30px,4.6vw,46px);font-weight:600;letter-spacing:-.035em;line-height:1.25;margin-bottom:18px;max-width:none}
+.hero p.lead{font-size:17px;color:var(--muted);margin:0 auto 36px;max-width:760px}
+.hero .btn{padding:13px 32px;font-size:14px;font-weight:600;box-shadow:none}
+.hero .btn:hover{transform:none;box-shadow:none}
+.stats{display:flex;justify-content:center;gap:72px;max-width:none;margin:84px auto 0;border:0;border-radius:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.stats div{padding:0;min-width:0}
+.stats div+div{border-left:0}
+.stats b{font-size:34px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--ink)}
+.stats span{display:block;margin-top:6px;font-size:12px;color:var(--muted);letter-spacing:0}
+@media (max-width:820px){.hero{padding:80px 0 64px}.hero p.lead{font-size:16px}.stats{gap:28px;margin-top:52px}.stats b{font-size:26px}.stats span{font-size:11px}}
+
+/* 상세 창: 큰 그래프(오각형 확대, 추이 2×2) + 마우스오버 수치 */
+dialog{width:min(1040px,96vw)}
+#dlgBody .two{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:center}
+.trgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 26px}
+.trt{font-size:14px;font-weight:600;margin:4px 0 2px}
+@media (max-width:820px){#dlgBody .two{grid-template-columns:1fr}}
+@media (max-width:600px){.trgrid{grid-template-columns:1fr}}
+svg [data-tip]:hover{stroke:var(--ink);stroke-opacity:.55;stroke-width:1.5}
+svg rect[data-tip]:hover{opacity:.85}
+#tip{position:fixed;z-index:9999;pointer-events:none;max-width:260px;padding:9px 12px;border:1px solid #3b4a66;border-radius:10px;background:rgba(14,24,43,.96);box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:12.5px;line-height:1.6;color:var(--ink)}
+#tip[hidden]{display:none}
+#tip .mut{color:var(--muted)}
+
+/* 스크롤바: 얇고 어두운 트랙, 마우스 올리면 주황 */
+html{scroll-behavior:smooth;scrollbar-color:#3b4a66 transparent;scrollbar-width:thin}
+*{scrollbar-color:#3b4a66 transparent;scrollbar-width:thin}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#32415e;border-radius:999px;border:3px solid transparent;background-clip:content-box;transition:background .2s}
+::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:content-box;border:3px solid transparent}
+::-webkit-scrollbar-corner{background:transparent}
+html::-webkit-scrollbar-track{background:var(--bg)}
+dialog{overscroll-behavior:contain}
+.tall,.tablewrap{overscroll-behavior:contain}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* 상세 창: 섹션 구분(제목 위 구분선 + 넉넉한 여백 + 강조 막대) */
+#dlgBody h3{margin:34px 0 12px;padding:22px 0 0;border-top:1px solid var(--line);font-size:16px;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px}
+#dlgBody h3::before{content:"";align-self:center;width:4px;height:16px;border-radius:2px;background:var(--accent)}
+#dlgBody h3 .note{font-weight:400}
+#dlgBody .dlghead + p, #dlgBody .dlghead ~ p.note:first-of-type{margin-top:12px}
+#dlgBody .tablewrap,#dlgBody .legend,#dlgBody .trgrid,#dlgBody .two,#dlgBody .row{margin-top:10px;margin-bottom:10px}
+#dlgBody p.note{margin:10px 0 0;line-height:1.6}
+@media (max-width:820px){ nav{flex-wrap:wrap;justify-content:center;gap:4px 14px} nav a{white-space:nowrap} }
+/* 한글은 단어 단위로 줄바꿈(조사 앞에서 끊기지 않게). 아주 긴 문자열은 넘치지 않게 강제로 끊는다 */
+.hero h1,.hero p.lead,.pitch h2,.pitch p,.sub,h2,h3{word-break:keep-all;overflow-wrap:break-word}
+</style>
+
+<style>
+/* ===== 앱형 레이아웃 (app.html 전용) ===== */
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+html.noscroll,html.noscroll body{overflow:hidden}
+body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+.hero,footer,.tabs{display:none !important}
+html body .top .wrap{height:54px;flex-direction:row;padding-top:0;padding-bottom:0;gap:8px}
+.top .wrap nav{display:flex;align-items:center;gap:8px}
+.top .seg button{padding:8px 14px;min-height:36px}
+.setbtn{width:40px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;border-radius:999px;padding:0}
+html[data-theme="paper"] .setbtn{border:2px solid var(--rule);border-radius:0}
+.setbtn svg,.bnav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+input,select,textarea{font-size:16px}
+main.tools{padding-top:6px}
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg);border-top:2px solid var(--rule,var(--line));padding-bottom:env(safe-area-inset-bottom)}
+.bnav button{font:inherit;font-size:11px;color:var(--muted);background:none;border:0;min-height:56px;padding:7px 2px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;white-space:nowrap}
+.bnav button[aria-selected="true"]{color:var(--accent);font-weight:700}
+#cmpBar{bottom:calc(66px + env(safe-area-inset-bottom)) !important}
+/* 하단 시트 */
+.sheetwrap{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center}
+.sheetwrap[hidden]{display:none}
+.sheetbg{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .2s}
+.sheetwrap.on .sheetbg{opacity:1}
+.sheetpanel{position:relative;width:min(560px,100%);max-height:82dvh;overflow:auto;background:var(--paper,var(--card));color:var(--ink);border:2px solid var(--rule,var(--line));border-bottom:0;border-radius:18px 18px 0 0;padding:0 20px calc(24px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .22s ease;overscroll-behavior:contain}
+.sheetwrap.on .sheetpanel{transform:none}
+.sheethead{position:sticky;top:0;z-index:2;background:var(--paper,var(--card));padding:10px 0 8px;touch-action:none;margin:0 -20px;padding-left:20px;padding-right:20px}
+.grab{width:46px;height:5px;border-radius:3px;background:var(--line);margin:0 auto}
+.sheetx{position:absolute;right:10px;top:4px;width:40px;height:36px;border:0;background:none;color:var(--muted);font-size:18px;cursor:pointer}
+.sheettitle{margin:4px 0 12px;font-size:17px}
+.sheettip{font-size:15.5px;line-height:1.65;padding:6px 0 2px}
+.sheettip .mut,.morelist .mut{color:var(--muted);font-size:13px}
+.sheetpanel .go{margin-top:14px;width:100%;text-align:center;min-height:46px}
+.morelist>button{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:52px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;font-size:16px;color:var(--ink);text-align:left;cursor:pointer;padding:0 2px}
+.morerow{display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);font-size:16px}
+.morelinks{display:flex;flex-wrap:wrap;gap:6px 18px;padding-top:14px;font-size:13.5px}
+.morelinks a{color:var(--muted)}
+#s0 .row{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+#s0 .row label{display:flex;justify-content:space-between;align-items:center;gap:10px}
+/* 상세 창은 전체 화면 */
+html[data-theme] dialog#dlg,html[data-theme] dialog#cmpDlg{width:100vw !important;max-width:100vw !important;height:100dvh !important;max-height:100dvh !important;margin:0 !important;border:0 !important;border-radius:0 !important;box-shadow:none}
+.dlgin{padding:0 16px calc(32px + env(safe-area-inset-bottom))}
+.dlghead{position:sticky;top:0;z-index:5;background:var(--card);margin:0 -16px 12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.close{min-height:40px;padding:6px 16px}
+/* 손가락으로 누르기 쉬운 크기 */
+.mate{margin-left:0;padding:8px 3px}
+.mi{height:22px}
+.timeline{width:100%}
+.timeline td.l{white-space:normal;word-break:keep-all;overflow-wrap:anywhere;line-height:1.35}
+.timeline td.l .note{display:block}
+.timeline td.mates{white-space:normal;min-width:76px}
+.dlghead button,.close{white-space:nowrap}
+.more{padding:0 6px}
+tr.clickable td,.rep,.hrow{min-height:44px}
+@media (max-width:820px){
+  .wrap{padding:0 10px}
+  html[data-theme="paper"] .tool{padding:18px 12px 18px 28px;margin:14px 0}
+  html[data-theme="paper"] .tool::before,html[data-theme="paper"] .tool::after{left:8px;width:13px;height:13px}
+  .tablewrap.tall{max-height:none !important}
+  .tool .row select,.tool .row input[type=search]{max-width:calc(100vw - 110px);min-width:0}
+}
+@media (min-width:821px){ body{padding-bottom:0} .bnav{display:none} .top .wrap{max-width:1080px} .sheetwrap{align-items:center} .sheetpanel{border-radius:14px;border-bottom:2px solid var(--rule,var(--line));max-height:80dvh} }
+</style>
+</head>
+<body>
+
+<!-- ========== 헤더 ========== -->
+<header class="top">
+  <div class="wrap">
+    <a class="logo brand" href="#top" aria-label="Before KBO"><img src="img/logo.png" alt="Before KBO" width="110" height="19"></a>
+    <nav aria-label="보기">
+      <div class="seg" id="roleSeg"><button data-r="투수" class="on">투수</button><button data-r="타자">타자</button></div>
+      <button type="button" class="setbtn" id="setBtn" aria-label="보기 설정"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h10M17 7h4M3 17h4M11 17h10"/><circle cx="15" cy="7" r="2.3"/><circle cx="9" cy="17" r="2.3"/></svg></button>
+    </nav>
+  </div>
+</header>
+
+<!-- ========== 히어로 ========== -->
+<section class="hero" id="top">
+  <svg class="wave" viewBox="0 0 1200 380" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 250 C200 170 380 330 620 240 S1000 150 1200 230 L1200 380 L0 380Z" fill="var(--band2)" opacity=".55"/>
+    <path d="M0 300 C240 230 420 360 680 290 S1020 230 1200 290 L1200 380 L0 380Z" fill="var(--band2)" opacity=".7"/>
+  </svg>
+  <div class="wrap">
+    <div class="stamp" aria-hidden="true">SCOUTING<br>REPORT</div>
+    <h1>Who came. Who's next.</h1>
+    <p class="lead">Pre-KBO records of past imports, and who looks similar among 2026 candidates.</p>
+    <a class="btn" href="#s3">Find similar types</a>
+    <div class="stats">
+      <div><b id="statPast">-</b><span>Past cases</span></div>
+      <div><b id="statYears">-</b><span>Seasons covered</span></div>
+      <div><b id="statCand">-</b><span>2026 candidates</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 도구 영역 ========== -->
+<main class="wrap tools">
+  <div class="tabs" id="tabs" role="tablist" aria-label="챕터">
+    <button type="button" role="tab" data-tab="s1">Past Cases</button>
+    <button type="button" role="tab" data-tab="s2">Key Metrics</button>
+    <button type="button" role="tab" data-tab="s6">By Team</button>
+    <button type="button" role="tab" data-tab="s3">Similar Types</button>
+    <button type="button" role="tab" data-tab="s4">Validation</button>
+    <button type="button" role="tab" data-tab="s8">Rumor Player</button>
+    <button type="button" role="tab" data-tab="s7">Reports</button>
+  </div>
+
+  <div class="tool" id="s1">
+    <p class="eyebrow">01 · Past Cases</p>
+    <h2>입단 전 5년 기록과 KBO 첫해 성적</h2>
+    <div class="tablewrap tall" style="margin-top:12px"><table id="pastTable"></table></div>
+    <details style="margin-top:10px"><summary>비교에서 빠진 선수 보기</summary><div class="note" id="excluded"></div></details>
+  </div>
+
+  <div class="tool" id="s2">
+    <p class="eyebrow">02 · Key Metrics</p>
+    <h2>성공한 선수와 아닌 선수는 어디서 갈렸나</h2>
+    <div id="gap" style="margin-top:12px"></div>
+    <p class="note" id="gapNote"></p>
+
+    <h3>지표와 KBO 성적 비교</h3>
+    <div class="row">
+      <label>입단 전 지표(가로) <select id="xSel"></select></label>
+      <label>KBO 첫해 성적(세로) <select id="ySel"></select></label>
+      <label><input type="checkbox" id="enough" checked> <span id="enoughTxt"></span></label>
+    </div>
+    <div id="scatter"></div>
+    <p class="note" id="scatNote"></p>
+
+    <h3>유형별 성공 비율</h3>
+    <div id="typPanel"></div>
+    <p class="note" id="typNote"></p>
+  </div>
+
+  <div class="tool" id="s6">
+    <p class="eyebrow">03 · By Team</p>
+    <h2>구단은 어떤 외국인을 데려왔나</h2>
+    <div class="tablewrap" style="margin-top:10px"><table id="teamTable"></table></div>
+    <div class="legend" id="teamLegend" style="margin-top:6px"></div>
+    <p class="note" id="teamNote"></p>
+  </div>
+
+  <div class="tool" id="s3">
+    <p class="eyebrow">04 · Similar Types</p>
+    <h2>지금 닮은 유형은? (2026 MLB·트리플A 선수 중)</h2>
+    <div class="row">
+      <label>기준 <select id="refSel"></select></label>
+      <label>소속 <select id="lvSel"><option value="">전체</option><option value="AAA·MLB 오감">트리플A·MLB 오가는 선수</option><option value="AAA만">트리플A만</option><option value="MLB만">MLB만</option></select></label>
+      <label>나이 상한 <input type="number" id="ageMax" value="40" min="20" max="45"></label>
+      <label title="이름 기준 의심 포함"><input type="checkbox" id="noKbo" checked> KBO 경력(이름 기준 의심 포함) 선수 빼기</label>
+      <label>이름 검색 <input type="search" id="q" placeholder="예: Sabato, 치리노스"></label>
+    </div>
+    <div class="drawbox" id="drawBox" hidden>
+      <div class="drawset" id="drawSet" role="group" aria-label="그리기 기준"><button type="button" class="on" data-set="sc" aria-pressed="true">스탯캐스트 보조 지표</button><button type="button" data-set="main" aria-pressed="false">기본 5지표</button></div>
+      <div class="drawgrid">
+        <div class="drawsvg"><svg id="drawSvg" viewBox="0 0 380 345" role="img" aria-label="직접 그리는 레이더 그래프"></svg></div>
+        <div class="drawside">
+          <p class="note">점을 끌어 모양을 그리세요. 지표 이름을 누르면 빼고 찾습니다.</p>
+          <div class="drawbtns"><button class="btn mini" id="drawAvg" type="button">평균으로</button><button class="btn mini" id="drawSucc" type="button">성공 사례 평균으로</button></div>
+          <h4>내 모양과 닮은 지난 KBO 사례 TOP5</h4>
+          <div id="drawPast"></div>
+          <p class="note" id="drawWarn"></p>
+        </div>
+      </div>
+    </div>
+    <div class="row rf">
+      <span class="note">기록 수준 범위 필터</span>
+      <label>1 <select id="rf1Sel"></select> <input type="number" id="rf1Min" placeholder="하한" step="any"> ~ <input type="number" id="rf1Max" placeholder="상한" step="any"></label>
+      <button class="btn mini" id="rf1Fit" type="button">지난 사례 범위로</button>
+      <span class="note" id="rf1Hint"></span>
+    </div>
+    <div class="row rf">
+      <span class="note" style="visibility:hidden">기록 수준 범위 필터</span>
+      <label>2 <select id="rf2Sel"></select> <input type="number" id="rf2Min" placeholder="하한" step="any"> ~ <input type="number" id="rf2Max" placeholder="상한" step="any"></label>
+      <button class="btn mini" id="rf2Fit" type="button">지난 사례 범위로</button>
+      <span class="note" id="rf2Hint"></span>
+    </div>
+    <div class="tablewrap"><table id="candTable"></table></div>
+    <p class="note" id="candNote"></p>
+    <h3>관심 선수</h3>
+    <div id="favBox"></div>
+  </div>
+
+  <div class="tool" id="s4">
+    <p class="eyebrow">05 · Validation</p>
+    <h2>이 지표로 성공을 가려낼 수 있을까?</h2>
+    <p class="sub">회색 띠 안이면 우연과 구별되지 않습니다.</p>
+    <div class="tablewrap" style="margin-top:10px"><table id="valTable"></table></div>
+    <p class="note" id="valNote"></p>
+  </div>
+
+  <div class="tool" id="s7">
+    <p class="eyebrow">07 · Reports</p>
+    <h2>스카우팅 노트</h2>
+    <div id="repList" class="replist"></div>
+    <p class="note" id="repNote"></p>
+  </div>
+  <div class="tool" id="s8">
+    <p class="eyebrow">06 · Rumor Player</p>
+    <h2>KBO 입단설이 도는 선수</h2>
+    <div id="rumList" class="replist"></div>
+    <p class="note" id="rumNote"></p>
+  </div>
+</main>
+
+<!-- ========== 푸터 ========== -->
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div><a href="#s1">Past Cases</a><a href="#s2">Key Metrics</a><a href="#s3">Similar Types</a></div>
+      <a class="logo brand footlogo" href="#top" aria-label="Before KBO"><img src="img/logo.png" alt="Before KBO" width="230" height="40"></a>
+      <div><a href="https://baseballsavant.mlb.com/" rel="noopener">Baseball Savant</a><a href="https://mykbostats.com/" rel="noopener">MyKBO Stats</a><a href="https://github.com/chadwickbureau/register" rel="noopener">Chadwick Register</a></div>
+    </div>
+  </div>
+</footer>
+
+<div class="sheetwrap" id="setSheet" hidden><div class="sheetbg" data-close></div><div class="sheetpanel"><div class="sheethead"><div class="grab"></div><button type="button" class="sheetx" data-close aria-label="닫기">✕</button></div><div class="sheetbody" id="s0">
+    <h3 class="sheettitle">보기 설정</h3>
+  
+    <div class="row">
+      <label>입단 연도 <input type="number" id="yFrom" value="2015" min="2015" max="2026"> ~ <input type="number" id="yTo" value="2026" min="2015" max="2026"></label>
+    <label title="KBO 첫해 소속 팀 기준">팀 <select id="teamSel"></select></label>
+      <label>유형 <select id="typSel"></select></label>
+      <label><input type="checkbox" id="adjOn"> 환경 보정</label>
+      <label>성공 방식 <select id="critMode">
+        <option value="first">첫해 성적</option><option value="stay">다음 해 잔류</option>
+        <option value="first+stay">첫해 성적 + 잔류</option><option value="two">첫 2시즌 합산 성적</option><option value="career">커리어하이 시즌</option></select></label>
+      <span id="critP">
+        <label>기준: 이닝 ≥ <input type="number" id="pIP" value="144"></label>
+        <label>그리고 ERA ≤ <input type="number" id="pERA" value="3.50" step="0.05"></label>
+      </span>
+      <span id="critB" hidden>
+        <label>기준: 타수 ≥ <input type="number" id="bAB" value="446"></label>
+        <label>그리고 OPS ≥ <input type="number" id="bOPS" value="0.850" step="0.01"></label>
+      </span>
+    </div>
+    <p class="note" id="critNote"></p>
+  </div></div></div>
+<div class="sheetwrap" id="moreSheet" hidden><div class="sheetbg" data-close></div><div class="sheetpanel"><div class="sheethead"><div class="grab"></div><button type="button" class="sheetx" data-close aria-label="닫기">✕</button></div><div class="sheetbody">
+    <div class="morelist">
+      <button type="button" data-go="s6">구단별 <span class="mut">By Team</span></button>
+      <button type="button" data-go="s4">검증 <span class="mut">Validation</span></button>
+      <button type="button" data-go="s7">스카우팅 노트 <span class="mut">Reports</span></button>
+      <div class="morerow"><span>화면 모드</span><button type="button" class="themebtn" id="themeBtn" role="switch" aria-checked="false" aria-label="라이트 모드 (누르면 다크)" title="LIGHT / DARK">
+        <span class="tg-text tg-light">LIGHT</span><span class="tg-text tg-dark">DARK</span>
+        <span class="tg-knob" aria-hidden="true">
+          <svg class="i-sun" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#c77700" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="#f2a900" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.9 1.9M16.8 16.8l1.9 1.9M5.3 18.7l1.9-1.9M16.8 7.2l1.9-1.9"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" width="15" height="15"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="#1b2c4a"/></svg>
+        </span>
+      </button></div>
+      <div class="morelinks"><a href="https://github.com/bylinercho/before_kbo" rel="noopener">GitHub</a><a href="https://baseballsavant.mlb.com/" rel="noopener">Baseball Savant</a><a href="https://mykbostats.com/" rel="noopener">MyKBO Stats</a><a href="https://github.com/chadwickbureau/register" rel="noopener">Chadwick Register</a><a href="index.html">웹 버전</a></div>
+    </div>
+  </div></div></div>
+<div class="sheetwrap" id="sheet" hidden><div class="sheetbg" data-close></div><div class="sheetpanel"><div class="sheethead"><div class="grab"></div><button type="button" class="sheetx" data-close aria-label="닫기">✕</button></div><div class="sheetbody" id="sheetBody"></div></div></div>
+<nav class="bnav" id="bnav" aria-label="메뉴">
+  <button type="button" data-tab="s1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>사례</button>
+  <button type="button" data-tab="s2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>지표</button>
+  <button type="button" data-tab="s3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8.5 6.2-3.2 10H6.7l-3.2-10z"/></svg>닮은 선수</button>
+  <button type="button" data-tab="s8"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>루머</button>
+  <button type="button" data-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/></svg>더보기</button>
+</nav>
+<dialog id="dlg"><div class="dlgin" id="dlgBody" tabindex="-1" autofocus></div></dialog>
+<dialog id="cmpDlg"><div class="dlgin" id="cmpBody"></div></dialog>
+<div id="cmpBar" hidden>비교: <span id="cmpItems"></span> <button class="btn mini" id="cmpGo" type="button">비교 보기</button> <button class="btn mini" id="cmpClear" type="button">비우기</button></div>
+
+<script src="data.js"></script>
+<script src="reports.js" onerror="void 0"></script>
+<script src="rumors.js" onerror="void 0"></script>
+<script src="awards.js" onerror="void 0"></script><script>
+"use strict";
+const D = window.DATA;
+const LABEL = {
+  k_pct:"삼진%", bb_pct:"볼넷%", hr_pct:"홈런%", era:"ERA", gs_pct:"선발 비율%", iso:"ISO(장타력)", avg:"타율",
+  mlb_share:"MLB 비중%", age:"입단 때 나이", il_days:"5년 IL 일수", il_n:"5년 IL 등재 횟수",
+  velocity:"평균 구속(mph)", k_percent:"삼진%", bb_percent:"볼넷%", swing_miss_percent:"헛스윙%",
+  hardhit_percent:"강한 타구%", xwoba:"xwOBA", launch_angle:"평균 발사각", release_extension:"익스텐션(ft)",
+  arm_angle:"팔 각도", launch_speed:"평균 타구속도", barrels_per_bbe_percent:"배럴%"
+};
+const HINT = {k_pct:"투수는 상대 타자 중, 타자는 타석 중 비율. 높을수록 삼진이 많음", hr_pct:"투수는 허용한 홈런 비율, 타자는 친 홈런 비율", gs_pct:"등판 중 선발 비율. 100에 가까울수록 선발"};
+/* 환경 보정 모드: 켜면 삼진%·볼넷%·홈런%·ERA·ISO·타율이 "같은 해·같은 레벨 리그 평균=100" 지수로 바뀐다 */
+let ADJ = false;
+const ADJF = new Set(["k_pct","bb_pct","hr_pct","era","iso","avg"]);
+const labelBase = (role,f)=>{
+  if (f==="hardhit_percent") return role==="투수"?"강한 타구 허용%":"강한 타구%";
+  if (f==="xwoba") return role==="투수"?"xwOBA(허용)":"xwOBA";
+  if (role==="투수" && f==="bb_pct") return "볼넷%(허용)";
+  if (role==="투수" && f==="hr_pct") return "홈런%(허용)";
+  return LABEL[f]||f;
+};
+const labelFor = (role,f)=> labelBase(role,f) + (ADJ && ADJF.has(f) ? " 지수" : "");
+const TEAM = {"Doosan Bears":"두산","Hanwha Eagles":"한화","Kia Tigers":"KIA","Kiwoom Heroes":"키움","KT Wiz":"KT","LG Twins":"LG","Lotte Giants":"롯데","NC Dinos":"NC","Samsung Lions":"삼성","SSG Landers":"SSG","SK Wyverns":"SK","Nexen Heroes":"넥센","Lotte":"롯데"};
+/* 팀 필터: 구단명이 바뀐 팀은 같은 구단으로 묶는다 (넥센→키움 2019, SK→SSG 2021) */
+const FR = {"Doosan Bears":"두산","Hanwha Eagles":"한화","Kia Tigers":"KIA","Kiwoom Heroes":"키움","Nexen Heroes":"키움","KT Wiz":"KT","LG Twins":"LG","Lotte Giants":"롯데","NC Dinos":"NC","Samsung Lions":"삼성","SSG Landers":"SSG","SK Wyverns":"SSG"};
+const FR_LIST = [["두산","두산"],["롯데","롯데"],["삼성","삼성"],["키움","키움 (넥센 포함)"],["한화","한화"],["KIA","KIA"],["KT","KT"],["LG","LG"],["NC","NC"],["SSG","SSG (SK 포함)"]];
+const LVCOL = {MLB:"var(--mlb)", AAA:"var(--accent)", AA:"var(--aa)", "A+":"var(--ap)", A:"var(--a)", MEX:"var(--mex)"};
+const $ = id => document.getElementById(id);
+const fmt = (v,d=1)=> v==null ? "-" : Number(v).toFixed(d);
+const decOf = f => (ADJ && ADJF.has(f)) ? 0 : ((f==="xwoba"||f==="iso"||f==="avg") ? 3 : (f==="era" ? 2 : 1));
+const fF = (f,v)=> fmt(v,decOf(f));
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const flip = n => { const p = String(n).split(", "); return p.length===2 ? p[1]+" "+p[0] : n; };
+const plain = s => String(s).normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase();
+/* 이름 표기: 한국 등록명이 있으면 "치리노스 Yonny Chirinos", 없으면 영문만 */
+const enName = r => r["영문명"] || flip(r.player_name);
+const nameHTML = r => r["한글명"] ? `${esc(r["한글명"])} <span class="en">${esc(enName(r))}</span>` : esc(enName(r));
+const nameTxt = r => r["한글명"] ? `${r["한글명"]} ${enName(r)}` : enName(r);
+const teamK = t => { for (const k in TEAM) if (String(t).startsWith(k.split(" ")[0])) return TEAM[k]; return t; };
+const BASE = D["후보연도"] || 2026;
+
+let role = "투수", sortKey = null, sortDir = -1;
+/* 재계약(N년): KBO에서 첫해부터 연속으로 뛴 시즌 수. 계약 정보가 아니라 시즌 기록에서 추정한 값이며, 2026까지 이어졌으면 "+"(진행 중) */
+for (const r0 of ["투수","타자"]) for (const r of D.past[r0]) {
+  const ys = new Set((r.kbo||[]).map(k=>k.y)); let n = 0;
+  while (ys.has(r["KBO첫해"]+n)) n++;
+  r.stay_n = n; r.stay_plus = ys.has(BASE) && (r["KBO첫해"]+n-1===BASE);
+}
+/* 웨이버 공시·방출 사례(기사에서 확인한 것만, 전체 목록 아님) */
+const WV = {}; (D.waivers||[]).forEach(w=>{ (WV[String(w.mykbo_id)] = WV[String(w.mykbo_id)]||[]).push(w); });
+const wvOf = id => WV[String(id)] || [];
+const wvExplicit = id => wvOf(id).some(w=>w["구분"]==="웨이버 공시");
+const wvText = id => wvOf(id).map(w=>`${w["일자"]} ${w["구분"]==="웨이버 공시"?"웨이버 공시":"방출·퇴출"}(${w["당시구단"]})`).join(", ");
+
+/* ================= 공통 계산 ================= */
+function succFirst(r){
+  if (r["역할"]==="투수") return r.KBO_이닝!=null && r.KBO_ERA!=null && r.KBO_이닝 >= +$("pIP").value && r.KBO_ERA <= +$("pERA").value;
+  return r.KBO_타수!=null && r.KBO_OPS!=null && r.KBO_타수 >= +$("bAB").value && r.KBO_OPS >= +$("bOPS").value;
+}
+/* 첫 2시즌 합산: 두 해 모두 KBO 기록이 있고, 합산 이닝/타수가 기준의 2배 이상 + 합산 ERA/OPS(이닝·타수 가중 평균, OPS는 근사)가 기준을 만족 */
+function succTwo(r){
+  const k = r.kbo||[], y = r["KBO첫해"], a = k.find(x=>x.y===y), b = k.find(x=>x.y===y+1);
+  if (!a || !b) return false;
+  if (r["역할"]==="투수"){
+    const ip=(a.IP||0)+(b.IP||0); if (!ip) return false;
+    const era=((a.ERA||0)*(a.IP||0)+(b.ERA||0)*(b.IP||0))/ip;
+    return ip >= 2*(+$("pIP").value) && era <= +$("pERA").value;
+  }
+  const ab=(a.AB||0)+(b.AB||0); if (!ab) return false;
+  const ops=((a.OPS||0)*(a.AB||0)+(b.OPS||0)*(b.AB||0))/ab;
+  return ab >= 2*(+$("bAB").value) && ops >= +$("bOPS").value;
+}
+/* 커리어하이 시즌: KBO에서 뛴 시즌 가운데 한 시즌이라도 기준(투수 이닝·ERA, 타자 타수·OPS)을 넘으면 성공. 2026 진행 중 시즌도 포함 */
+function succCareer(r){
+  const k = r.kbo||[];
+  if (r["역할"]==="투수") return k.some(x=> x.IP!=null && x.ERA!=null && x.IP >= +$("pIP").value && x.ERA <= +$("pERA").value);
+  return k.some(x=> x.AB!=null && x.OPS!=null && x.AB >= +$("bAB").value && x.OPS >= +$("bOPS").value);
+}
+const MODE_NOTE = {first:"첫해 성적", stay:"다음 해에도 KBO 잔류", "first+stay":"첫해 성적 + 다음 해 잔류", two:"첫 2시즌 합산 성적", career:"커리어하이 시즌"};
+const NEEDS_NEXT = m => m==="stay" || m==="first+stay" || m==="two";   // 다음 해 기록이 필요한 방식(2026 입단자 제외)
+function isSuccess(r){
+  const m = $("critMode").value;
+  if (m==="stay") return r["다음해_KBO"]==="있음";
+  if (m==="first+stay") return succFirst(r) && r["다음해_KBO"]==="있음";
+  if (m==="two") return succTwo(r);
+  if (m==="career") return succCareer(r);
+  return succFirst(r);
+}
+/* 유형(군집): 08번이 기록 모양으로 묶은 것. 환경 보정 모드에서는 보정 지표로 묶은 유형(typA)을 쓴다 */
+const typList = r0 => D.types[ADJ?"adj":"raw"][r0||role] || [];
+const typOf = r => ADJ ? r.typA : r.typ;
+const typName = r => { const t = typList(r["역할"])[typOf(r)]; return t ? t.name : "-"; };
+function pastRows(r0, ignoreType, ignoreTeam){
+  const a = +$("yFrom").value, b = +$("yTo").value, rr = r0||role, tm = ignoreTeam ? "" : $("teamSel").value, needNext = NEEDS_NEXT($("critMode").value), ty = ignoreType ? "" : $("typSel").value;
+  return D.past[rr].filter(r=> r["KBO첫해"]>=a && r["KBO첫해"]<=b && (!tm || FR[r["팀"]]===tm) && (!needNext || r["KBO첫해"]<BASE) && (ty==="" || typOf(r)===+ty));
+}
+const zf = (f,x)=>{ const [m,s]=D.scale[role][f]; return (x-m)/s; };
+/* 오각형은 "바깥쪽 = 평균보다 좋음"으로 그린다. 낮을수록 좋은 지표(-1)는 부호를 뒤집는다. 0은 좋고 나쁨이 없는 지표(값이 클수록 바깥).
+   거리·닮은 사례 계산(zf)에는 영향이 없고 그림과 편차 표시에만 쓴다. */
+const GOOD = {"투수":{k_pct:1,bb_pct:-1,hr_pct:-1,era:-1,gs_pct:0}, "타자":{k_pct:-1,bb_pct:1,hr_pct:1,iso:1,avg:1}};
+const SGOOD = {"투수":{velocity:1,k_percent:1,bb_percent:-1,swing_miss_percent:1,hardhit_percent:-1,xwoba:-1,launch_angle:-1,release_extension:1,arm_angle:0},
+               "타자":{launch_speed:1,hardhit_percent:1,barrels_per_bbe_percent:1,xwoba:1,k_percent:-1,bb_percent:1,swing_miss_percent:-1,launch_angle:0}};
+const dirOf = (r0,f,sc)=> (((sc?SGOOD:GOOD)[r0]||{})[f]===-1) ? -1 : 1;
+const zo = (f,x)=> dirOf(role,f,false) * zf(f,x);
+/* 오각형 축 이름: 뒤집은(낮을수록 좋은) 지표는 "억제·회피"처럼 높을수록 좋은 말로 바꾼다. 화살표는 쓰지 않는다 */
+const RADAR_NAME = {"투수":{bb_pct:"볼넷 억제",hr_pct:"홈런 억제"}, "타자":{k_pct:"삼진 회피"}};
+const SRADAR_NAME = {"투수":{bb_percent:"볼넷 억제",hardhit_percent:"강한 타구 억제",xwoba:"xwOBA 억제",launch_angle:"발사각 억제"}, "타자":{k_percent:"삼진 회피",swing_miss_percent:"헛스윙 회피"}};
+const labO = (r0,f,sc)=>{
+  const nm = ((sc?SRADAR_NAME:RADAR_NAME)[r0]||{})[f];
+  return nm ? nm + (!sc && ADJ && ADJF.has(f) ? " 지수" : "") : labelFor(r0,f);
+};
+function distance(a,b,skip){
+  const feats = D.feats[role]; let sum=0,n=0; const dz={};
+  for (const f of feats){
+    if (skip && skip.has(f)) continue;   // 사용자가 뺀 지표는 거리에 넣지 않는다
+    if (a[f]==null || b[f]==null) continue;
+    const d = zf(f,a[f]) - zf(f,b[f]); dz[f]=d; sum+=d*d; n++;
+  }
+  return n >= feats.length-(skip?skip.size:0)-1 ? {dist:Math.sqrt(sum/n), dz} : null;
+}
+function nearest(vec, pool, k, skip){
+  const res=[];
+  for (const p of pool){ if (skip && skip(p)) continue; const d=distance(vec,p); if (d) res.push({p,dist:d.dist,dz:d.dz}); }
+  res.sort((a,b)=>a.dist-b.dist); return res.slice(0,k);
+}
+function meanVec(rows){
+  const out={}; D.feats[role].forEach(f=>{ const a=rows.map(r=>r[f]).filter(x=>x!=null); out[f]=a.length? a.reduce((s,x)=>s+x,0)/a.length : null; });
+  return out;
+}
+const tag = r => isSuccess(r) ? '<span class="tag good">성공</span>' : '<span class="tag bad">아님</span>';
+const resultLine = r => role==="투수" ? `${fmt(r.KBO_이닝,1)}이닝 ERA ${fmt(r.KBO_ERA,2)}` : `${fmt(r.KBO_타수,0)}타수 OPS ${fmt(r.KBO_OPS,3)}`;
+const volTxt = r => role==="투수" ? `상대 ${r.vol}명` : `${r.vol}타석`;
+
+/* ================= SVG 그래프 ================= */
+function radarSVG(series, feats, zfun, labfun){
+  feats = feats.filter(f=>series.every(s=>s.vec[f]!=null));
+  const n = feats.length; if (n<3) return "<p class='note'>그릴 수 있는 지표가 부족합니다.</p>";
+  const cx=190, cy=170, R=120, zmax=2.5;
+  const ang = i => -Math.PI/2 + i*2*Math.PI/n;
+  const rad = z => (Math.min(Math.max(z,-zmax),zmax)+zmax)/(2*zmax)*R;
+  const pt = (i,z)=> [cx+Math.cos(ang(i))*rad(z), cy+Math.sin(ang(i))*rad(z)];
+  const poly = zs => zs.map((z,i)=>pt(i,z).map(v=>v.toFixed(1)).join(",")).join(" ");
+  const dotCol = c => c==="rd-a" ? "var(--accent)" : c==="rd-c" ? "var(--mlb)" : "var(--muted)";
+  let h = `<svg viewBox="0 0 380 345" role="img" aria-label="지표별 편차 레이더 그래프">`;
+  for (const z of [-2,-1,1,2]) h += `<polygon class="grid" points="${poly(feats.map(()=>z))}"/>`;
+  h += `<polygon class="rd-zero" points="${poly(feats.map(()=>0))}"/>`;
+  let xmin = 0, xmax = 380;   // 긴 축 이름이 잘리지 않도록 그림 영역을 필요한 만큼만 넓힌다
+  feats.forEach((f,i)=>{
+    const x=cx+Math.cos(ang(i))*R, y=cy+Math.sin(ang(i))*R, c=Math.cos(ang(i));
+    h += `<line class="grid" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+    const lx=cx+Math.cos(ang(i))*(R+10), ly=cy+Math.sin(ang(i))*(R+10)+4;
+    const lab = labfun(f), anchor = Math.abs(c)<0.2?"middle":c>0?"start":"end";
+    const w = [...lab].reduce((a,ch)=> a + (ch.charCodeAt(0)>255 ? 13 : 7.5), 0);
+    const left = anchor==="end" ? lx-w : anchor==="start" ? lx : lx-w/2, right = anchor==="end" ? lx : anchor==="start" ? lx+w : lx+w/2;
+    xmin = Math.min(xmin, left-6); xmax = Math.max(xmax, right+6);
+    h += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="12" text-anchor="${anchor}">${esc(lab)}</text>`;
+  });
+  series.slice().reverse().forEach(s=>{ h += `<polygon class="${s.cls}" points="${poly(feats.map(f=>zfun(f,s.vec[f])))}"/>`; });
+  series.forEach(s=>{ feats.forEach((f,i)=>{ const [x,y]=pt(i,zfun(f,s.vec[f])); h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.6" fill="${dotCol(s.cls)}" pointer-events="none"/>`; }); });
+  /* 점에 마우스를 올리면 그 축의 세부 수치가 뜬다. 점은 선수 시리즈(주황 등)에만 둔다(평균 비교선 rd-b 제외) */
+  feats.forEach((f,i)=>{
+    const tip = `<b>${esc(labfun(f))}</b>` + series.map(s=>{ const z=zfun(f,s.vec[f]); return `<br><span style="color:${dotCol(s.cls)}">●</span> ${esc(s.name)} <b>${fF(f,s.vec[f])}</b> <span class="mut">(편차 ${z>=0?"+":""}${z.toFixed(2)})</span>`; }).join("");
+    series.filter(s=>s.cls!=="rd-b").forEach(s=>{
+      const [x,y]=pt(i,zfun(f,s.vec[f]));
+      h += `<circle data-tip="${esc(tip)}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="transparent"/>`;
+    });
+  });
+  return h.replace('viewBox="0 0 380 345"', `viewBox="${Math.floor(xmin)} 0 ${Math.ceil(xmax-xmin)} 345"`) + `</svg>`;
+}
+function trendSVG(f, hist, y0, y1, kboYear){
+  const W=340,H=178,L=48,Rr=14,T=24,B=26;
+  const pts = hist.filter(h=>h[f]!=null);
+  const title = `<div class="trt">${esc(labelFor(role,f))}</div>`;
+  if (!pts.length) return `<div>${title}<p class="note">기록 없음</p></div>`;
+  const ref = D.scale[role][f][0];
+  const vals = pts.map(p=>p[f]).concat([ref]); let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*0.2||1; lo-=pad; hi+=pad;
+  const X = y => L + (y-(y0-0.5))/((y1+0.5)-(y0-0.5))*(W-L-Rr);
+  const Y = v => T + (1-(v-lo)/(hi-lo))*(H-T-B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(labelFor(role,f))} 추이">`;
+  for (let y=y0; y<=y1; y++) s += `<line class="grid" x1="${X(y)}" x2="${X(y)}" y1="${T}" y2="${H-B}"/><text class="m" x="${X(y)}" y="${H-9}" font-size="11" text-anchor="middle">${y}</text>`;
+  s += `<line class="axis" stroke-dasharray="3 3" x1="${L}" x2="${W-Rr}" y1="${Y(ref)}" y2="${Y(ref)}"/><text class="m" x="${L-4}" y="${Y(ref)+3}" font-size="10" text-anchor="end">평균</text>`;
+  if (kboYear){ const kx=X(kboYear-0.5); s += `<line stroke="var(--bad)" stroke-dasharray="4 3" x1="${kx}" x2="${kx}" y1="${T-6}" y2="${H-B}"/><text x="${kx-3}" y="${T-8}" font-size="11" text-anchor="end" style="fill:var(--bad)">${kboYear} KBO 입단 →</text>`; }
+  const showVal = pts.length <= 8;
+  for (const lv of ["MEX","A","A+","AA","AAA","MLB"]){
+    const g = pts.filter(p=>p.lv===lv).sort((a,b)=>a.y-b.y), col = LVCOL[lv];
+    if (g.length>1) s += `<polyline fill="none" stroke="${col}" stroke-width="1.3" stroke-opacity=".7" points="${g.map(p=>X(p.y).toFixed(1)+","+Y(p[f]).toFixed(1)).join(" ")}"/>`;
+    g.forEach(p=>{
+      const px=X(p.y), py=Y(p[f]), r = 3 + Math.min(p.vol,500)/500*3.5;
+      const dv = p[f]-ref, tip = `<b>${p.y} · ${lv==="MEX"?"멕시칸 리그":lv}</b><br>${esc(labelFor(role,f))} <b>${fF(f,p[f])}</b><br><span class="mut">${role==="투수"?"상대 타자 ":""}${p.vol}${role==="투수"?"명":"타석"} · 전체 평균 대비 ${dv>=0?"+":""}${fF(f,dv)}</span>`;
+      s += `<circle cx="${px}" cy="${py}" r="${r.toFixed(1)}" fill="${col}" pointer-events="none"/><circle cx="${px}" cy="${py}" r="${(r+8).toFixed(1)}" fill="transparent" data-tip="${esc(tip)}"/>`;
+      if (showVal) s += `<text x="${px}" y="${py-r-4}" font-size="10.5" text-anchor="middle" pointer-events="none">${fF(f,p[f])}</text>`;
+    });
+  }
+  return `<div>${title}${s}</svg></div>`;
+}
+function kboBarsSVG(rows){
+  const isP = role==="투수", key = isP?"ERA":"OPS", thr = isP ? +$("pERA").value : +$("bOPS").value;
+  const vals = rows.map(r=>r[key]).filter(v=>v!=null); if (!vals.length) return "";
+  const max = Math.max(...vals, thr) * 1.15, bw = 44, gap = 22, W = Math.max(280, rows.length*(bw+gap)+50), H=190, T=26, B=46;
+  const Y = v => T + (1-v/max)*(H-T-B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="max-width:${Math.max(W,280)}px" role="img" aria-label="KBO 연도별 ${key}">`;
+  s += `<line class="axis" x1="30" x2="${W-6}" y1="${H-B}" y2="${H-B}"/>`;
+  s += `<line stroke="var(--good)" stroke-dasharray="4 3" x1="30" x2="${W-6}" y1="${Y(thr)}" y2="${Y(thr)}"/><text x="${W-6}" y="${Y(thr)-4}" font-size="10" text-anchor="end" style="fill:var(--good)">성공 기준 ${thr}</text>`;
+  rows.forEach((r,i)=>{
+    const x = 40 + i*(bw+gap), v=r[key]; if (v==null) return;
+    const tip = `<b>${r.y} · ${esc(teamK(r["팀"]))}</b><br>${key} <b>${isP?fmt(v,2):fmt(v,3)}</b><br><span class="mut">${isP?fmt(r.IP,0)+"이닝":fmt(r.AB,0)+"타수"}</span>`;
+    s += `<rect x="${x}" y="${Y(v)}" width="${bw}" height="${H-B-Y(v)}" fill="var(--bar)" data-tip="${esc(tip)}"></rect>`;
+    s += `<text x="${x+bw/2}" y="${Y(v)-4}" font-size="11" text-anchor="middle">${isP?fmt(v,2):fmt(v,3)}</text>`;
+    s += `<text class="m" x="${x+bw/2}" y="${H-B+14}" font-size="11" text-anchor="middle">${r.y}</text>`;
+    s += `<text class="m" x="${x+bw/2}" y="${H-B+27}" font-size="10" text-anchor="middle">${isP?fmt(r.IP,0)+"이닝":fmt(r.AB,0)+"타수"}</text>`;
+    s += `<text class="m" x="${x+bw/2}" y="${H-B+39}" font-size="10" text-anchor="middle">${esc(teamK(r["팀"]))}</text>`;
+  });
+  return s + "</svg>";
+}
+
+/* ================= 산점도 ================= */
+const YM = {
+  "투수": {"ERA":["ERA (낮을수록 좋음)",r=>r.KBO_ERA,2],"WHIP":["WHIP (낮을수록 좋음)",r=>r.KBO_WHIP,2],
+           "K9":["9이닝당 삼진",r=>r.KBO_이닝? r.KBO_삼진/r.KBO_이닝*9:null,1],"BB9":["9이닝당 볼넷",r=>r.KBO_이닝? r.KBO_볼넷/r.KBO_이닝*9:null,1],"IP":["이닝",r=>r.KBO_이닝,0]},
+  "타자": {"OPS":["OPS",r=>r.KBO_OPS,3],"HR":["홈런",r=>r.KBO_홈런,0],"KR":["삼진/타수",r=>r.KBO_타수? r.KBO_삼진/r.KBO_타수:null,3],"AB":["타수",r=>r.KBO_타수,0]}
+};
+const xval = (r,f)=> f==="il_days" ? (r.il?r.il.days:null) : f==="age" ? (r["출생연도"]!=null ? r["KBO첫해"]-r["출생연도"] : null) : (f==="mlb_share" ? r.mlb_share*100 : r[f]);
+function fillScatterSel(){
+  $("xSel").innerHTML = D.feats[role].concat(["mlb_share","age","il_days"]).map(f=>`<option value="${f}">${esc(labelFor(role,f))}</option>`).join("");
+  $("ySel").innerHTML = Object.entries(YM[role]).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("");
+  $("enoughTxt").textContent = role==="투수" ? "표본 충분한 선수만 (KBO 첫해 50이닝 이상)" : "표본 충분한 선수만 (KBO 첫해 150타수 이상)";
+}
+function renderScatter(){
+  const f = $("xSel").value, yk = $("ySel").value, [ylab,yfn,yd] = YM[role][yk];
+  let rows = pastRows().filter(r=>xval(r,f)!=null && yfn(r)!=null);
+  if ($("enough").checked) rows = rows.filter(r=> role==="투수" ? r.KBO_이닝>=50 : r.KBO_타수>=150);
+  if (rows.length<3){ $("scatter").innerHTML="<p class='note'>그릴 선수가 너무 적습니다.</p>"; $("scatNote").textContent=""; return; }
+  const xs=rows.map(r=>xval(r,f)), ys=rows.map(yfn);
+  const ext = a => { const lo=Math.min(...a), hi=Math.max(...a), p=(hi-lo)*0.08||1; return [lo-p,hi+p]; };
+  const [x0,x1]=ext(xs), [y0,y1]=ext(ys), W=640,H=340,L=56,Rr=16,T=14,B=44;
+  const X=v=>L+(v-x0)/(x1-x0)*(W-L-Rr), Y=v=>T+(1-(v-y0)/(y1-y0))*(H-T-B), xd = (f==="age"||f==="mlb_share")?0:decOf(f);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="산점도">`;
+  for (let i=0;i<=4;i++){
+    const xv=x0+(x1-x0)*i/4, yv=y0+(y1-y0)*i/4;
+    s += `<line class="grid" x1="${X(xv)}" x2="${X(xv)}" y1="${T}" y2="${H-B}"/><text class="m" x="${X(xv)}" y="${H-B+15}" font-size="11" text-anchor="middle">${fmt(xv,xd)}</text>`;
+    s += `<line class="grid" x1="${L}" x2="${W-Rr}" y1="${Y(yv)}" y2="${Y(yv)}"/><text class="m" x="${L-6}" y="${Y(yv)+4}" font-size="11" text-anchor="end">${fmt(yv,yd)}</text>`;
+  }
+  s += `<text class="m" x="${(L+W-Rr)/2}" y="${H-6}" font-size="12" text-anchor="middle">${esc(labelFor(role,f))} (입단 전)</text>`;
+  s += `<text class="m" x="14" y="${(T+H-B)/2}" font-size="12" text-anchor="middle" transform="rotate(-90 14 ${(T+H-B)/2})">${esc(ylab)} (KBO 첫해)</text>`;
+  const n=rows.length, mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  let sxy=0,sxx=0,syy=0; rows.forEach((r,i)=>{ sxy+=(xs[i]-mx)*(ys[i]-my); sxx+=(xs[i]-mx)**2; syy+=(ys[i]-my)**2; });
+  const corr = sxy/Math.sqrt(sxx*syy), slope=sxy/sxx, ic=my-slope*mx;
+  s += `<line stroke="var(--muted)" stroke-dasharray="5 4" x1="${X(x0)}" y1="${Y(ic+slope*x0)}" x2="${X(x1)}" y2="${Y(ic+slope*x1)}"/>`;
+  rows.forEach(r=>{
+    const ok=isSuccess(r), size = role==="투수" ? r.KBO_이닝 : r.KBO_타수/2.2, rr = 3.5 + Math.min(size,180)/180*5.5;
+    s += `<circle class="pt" data-kind="past" data-key="${r.mykbo_id}" cx="${X(xval(r,f))}" cy="${Y(yfn(r))}" r="${rr.toFixed(1)}" fill="${ok?"var(--accent)":"transparent"}" stroke="${ok?"var(--accent)":"var(--muted)"}" stroke-width="1.5" fill-opacity="${ok?0.7:1}"><title>${esc(nameTxt(r))} (${r["KBO첫해"]}) —${esc(labelFor(role,f))} ${fmt(xval(r,f),xd)}, ${esc(ylab)} ${fmt(yfn(r),yd)}</title></circle>`;
+  });
+  $("scatter").innerHTML = s + `</svg><div class="legend"><span><i style="background:var(--accent)"></i>성공 기준 충족</span><span><i style="border:1.5px solid var(--muted)"></i>그 외</span><span>점 크기 = ${role==="투수"?"이닝":"타수"}, 점선 = 추세선</span></div>`;
+  $("scatNote").innerHTML = `${n}명, r = <b>${corr.toFixed(2)}</b>`;
+}
+
+/* ================= 1. 지난 사례 표 ================= */
+/* 선수 신상(MLB Stats API): 포지션·투구손·타격손·출생국·키·몸무게. 없으면 "-" 또는 생략 */
+const HAND = {R:"우",L:"좌",S:"양"};
+const POS_KO = {P:"투수",C:"포수","1B":"1루수","2B":"2루수","3B":"3루수",SS:"유격수",LF:"좌익수",CF:"중견수",RF:"우익수",OF:"외야수",IF:"내야수",DH:"지명타자",TWP:"투타겸업"};
+const bioPos = r => (r.bio && r.bio.pos) || "-";
+const bioBat = r => (r.bio && r.bio.bat && HAND[r.bio.bat]) || "-";
+function bioLine(rec){
+  const b = rec.bio; if (!b) return "";
+  const p = [];
+  if (b.pos && b.pos!=="P") p.push(`${POS_KO[b.pos]||b.pos}(${b.pos})`);
+  if (b.thr || b.bat) p.push(`${b.thr?HAND[b.thr]+"투":""}${b.bat?HAND[b.bat]+"타":""}`);
+  if (b.ctry) p.push(esc(b.ctry));
+  if (b.ht) p.push(`${b.ht}cm${b.wt?` ${b.wt}kg`:""}`);
+  return p.length ? `<p class="bio">${p.join(" · ")}</p>` : "";
+}
+/* 출생국 → 국기 파일(docs/flags/, flag-icons 4x3 SVG). 목록에 없는 나라는 국기 없이 이름만 */
+const FLAG = {"미국":"us","도미니카공화국":"do","베네수엘라":"ve","쿠바":"cu","캐나다":"ca","푸에르토리코":"pr","멕시코":"mx","일본":"jp","파나마":"pa","콜롬비아":"co","호주":"au","한국":"kr","대만":"tw","퀴라소":"cw","니카라과":"ni","아루바":"aw","바하마":"bs","영국":"gb","이탈리아":"it","브라질":"br","독일":"de","포르투갈":"pt","페루":"pe","슬로바키아":"sk","네덜란드":"nl","온두라스":"hn"};
+const flagHTML = c => FLAG[c] ? `<img class="flag" src="flags/${FLAG[c]}.svg" alt="" width="18" height="14"> ` : "";
+function factsLine(rec, age, isPast){
+  const b = rec.bio || {}, p = [role];
+  if (b.pos && b.pos!=="P") p.push(`${POS_KO[b.pos]||b.pos}(${b.pos})`);
+  if (b.thr || b.bat) p.push(`${b.thr?HAND[b.thr]+"투":""}${b.bat?HAND[b.bat]+"타":""}`);
+  if (b.ctry) p.push(`${flagHTML(b.ctry)}${esc(b.ctry)}`);
+  if (b.ht) p.push(`${b.ht}cm${b.wt?` ${b.wt}kg`:""}`);
+  if (age!=null) p.push(isPast ? `입단 때 ${age}세` : `${age}세`);
+  return `<p class="dh-facts">${p.map(x=>`<span>${x}</span>`).join("")}</p>`;
+}
+function renderPast(){
+  const rows = pastRows();
+  const cols = role==="투수"
+    ? [["영문명","선수",null],["KBO첫해","데뷔",0],["팀","팀",null],["vol","상대 타자",0],["mlb_share","MLB%",0],
+       ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["hr_pct","홈런%",2],["era","ERA",2],
+       ["KBO_이닝","KBO 이닝",1],["KBO_ERA","KBO ERA",2],["판정","판정",null],["stay_n","재계약",0]]
+    : [["영문명","선수",null],["포지션","포지션",null],["타","타",null],["KBO첫해","데뷔",0],["팀","팀",null],["vol","타석",0],["mlb_share","MLB%",0],
+       ["k_pct","삼진%",1],["bb_pct","볼넷%",1],["iso","ISO",3],["avg","타율",3],
+       ["KBO_타수","KBO 타수",0],["KBO_OPS","KBO OPS",3],["판정","판정",null],["stay_n","재계약",0]];
+  if (ADJ) cols.forEach(c=>{ if (ADJF.has(c[0])) { c[1] += " 지수"; c[2] = 0; } });
+  rows.forEach(r=>{ r["판정"] = isSuccess(r) ? "성공" : "아님"; r["포지션"] = bioPos(r); r["타"] = bioBat(r); });
+  if (sortKey) rows.sort((a,b)=>{ const x=a[sortKey], y=b[sortKey]; if (x==null) return 1; if (y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir; });
+  else rows.sort((a,b)=> b["KBO첫해"]-a["KBO첫해"] || String(a["영문명"]).localeCompare(b["영문명"]));
+  let h = "<thead><tr>" + cols.map(c=>`<th data-k="${c[0]}" class="${c[2]==null?"l":""}">${c[1]}${sortKey===c[0]?(sortDir>0?" ▲":" ▼"):""}</th>`).join("") + "</tr></thead><tbody>";
+  for (const r of rows){
+    h += `<tr class="clickable" data-kind="past" data-key="${r.mykbo_id}">` + cols.map(c=>{
+      const k=c[0]; let v=r[k];
+      if (k==="팀") v = teamK(v);
+      else if (k==="mlb_share") v = fmt(v*100,0);
+      else if (k==="stay_n") v = `${r.stay_n}년${r.stay_plus?"+":""}`;
+      else if (k==="typ") v = `<span class="note" style="white-space:nowrap">${esc(typName(r))}</span>`;
+      else if (k==="판정") v = `<span class="tag ${v==="성공"?"good":"bad"}">${v}</span>`;
+      else if (k==="영문명") v = nameHTML(r) + awardBadges(r) + (wvOf(r.mykbo_id).length ? ` <span class="tag warn" title="${esc(wvText(r.mykbo_id))}">${wvExplicit(r.mykbo_id)?"웨이버":"방출"}</span>` : "") + (r["주의"] ? ` <span title="${esc(r["주의"])}" style="cursor:help;color:var(--muted)">ⓘ</span>` : "");
+      else if (c[2]!=null) v = fmt(v,c[2]);
+      else if (v==null || v==="") v = "-";
+      return `<td class="${c[2]==null?"l":""}">${v}</td>`;
+    }).join("") + "</tr>";
+  }
+  $("pastTable").innerHTML = h + "</tbody>";
+  $("pastTable").querySelectorAll("th").forEach(th=> th.onclick = ()=>{ const k=th.dataset.k; if (sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} renderPast(); });
+  const ok = rows.filter(r=>r["판정"]==="성공").length;
+  $("critNote").textContent = `${role} ${rows.length}명 중 ${ok}명 성공`;
+  const a=+$("yFrom").value, b=+$("yTo").value;
+  const tm = $("teamSel").value;
+  const ex = D.excluded[role].filter(e=>e["KBO첫해"]>=a && e["KBO첫해"]<=b && (!tm || FR[e["팀"]]===tm));
+  const reasons = {}; ex.forEach(e=>{ (reasons[e["이유"]] = reasons[e["이유"]]||[]).push(e); });
+  $("excluded").innerHTML = `<p>${ex.length}명 제외</p>` +
+    Object.entries(reasons).map(([k,v])=>`<p><b>${esc(k)}</b> (${v.length}명)<br>${v.sort((x,y)=>x["KBO첫해"]-y["KBO첫해"]).map(e=>`${e["KBO첫해"]} ${e["한글명"]?esc(e["한글명"])+" ":""}${esc(e["영문명"])}`).join(" · ")}</p>`).join("");
+}
+
+/* ================= 2. 갈린 지표 ================= */
+function renderGap(){
+  const rows = pastRows(), S = rows.filter(isSuccess), N = rows.filter(r=>!isSuccess(r));
+  const ms = meanVec(S), mn = meanVec(N); let h = "";
+  for (const f of D.feats[role]){
+    if (ms[f]==null || mn[f]==null) continue;
+    const sd = D.scale[role][f][1], d = (ms[f]-mn[f])/sd, w = Math.min(Math.abs(d),1)*50;
+    h += `<div class="gap" title="${esc(HINT[f]||"")}"><span>${labelFor(role,f)}</span>
+      <div class="gapbar"><i class="${d<0?"neg":""}" style="${d>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div>
+      <span>${d>=0?"+":""}${d.toFixed(2)} <span class="note">(${fF(f,ms[f])} vs ${fF(f,mn[f])})</span></span></div>`;
+  }
+  /* 부상 이력(5년 IL 일수): 지난 사례+후보 전체의 표준편차로 같은 눈금에 올린다 */
+  if (S.length && N.length){
+    const all = D.past[role].concat(D.cands[role]).map(r=>r.il?r.il.days:0), mu = all.reduce((a,b)=>a+b,0)/all.length;
+    const sd = Math.sqrt(all.reduce((a,b)=>a+(b-mu)**2,0)/(all.length-1)) || 1, av = a=>a.reduce((s,x)=>s+x,0)/a.length;
+    const ms2 = av(S.map(r=>r.il?r.il.days:0)), mn2 = av(N.map(r=>r.il?r.il.days:0)), d2 = (ms2-mn2)/sd, w2 = Math.min(Math.abs(d2),1)*50;
+    h += `<div class="gap" title="입단 전 5년 동안 부상자 명단에 있던 일수(MLB 이동 기록 기준)"><span>5년 IL 일수</span>
+      <div class="gapbar"><i class="${d2<0?"neg":""}" style="${d2>=0?`left:50%;width:${w2}%`:`right:50%;width:${w2}%`}"></i></div>
+      <span>${d2>=0?"+":""}${d2.toFixed(2)} <span class="note">(${ms2.toFixed(0)}일 vs ${mn2.toFixed(0)}일)</span></span></div>`;
+  }
+  $("gap").innerHTML = h || "<p class='note'>성공 또는 비성공 선수가 없어 비교할 수 없습니다. 기준을 바꿔 보세요.</p>";
+  $("gapNote").innerHTML = `성공 ${S.length}명 · 그 외 ${N.length}명`;
+}
+
+/* ================= 3-1. 범위 필터 (기록 수준 하한·상한) ================= */
+const METRICS = r0 => D.feats[r0].concat(["mlb_share","vol","il_days","il_n"], r0==="투수" ? ["kmbb"] : []);
+const mLabel = f => f==="vol" ? (role==="투수"?"최근 5년 상대 타자 수":"최근 5년 타석 수") : f==="kmbb" ? (ADJ?"삼진−볼넷 (지수 차)":"삼진−볼넷%") : f==="mlb_share" ? "MLB 비중%" : labelFor(role,f);
+const mVal = (r,f) => f==="il_days" ? (r.il?r.il.days:null) : f==="il_n" ? (r.il?r.il.n:null) : f==="mlb_share" ? (r.mlb_share==null?null:r.mlb_share*100) : f==="kmbb" ? (r.k_pct==null||r.bb_pct==null?null:r.k_pct-r.bb_pct) : r[f];
+const mDec = f => (f==="vol"||f==="il_days"||f==="il_n") ? 0 : (f==="mlb_share"||f==="kmbb") ? 1 : decOf(f);
+function pct(arr,p){ const a=arr.slice().sort((x,y)=>x-y), i=(a.length-1)*p, lo=Math.floor(i), hi=Math.ceil(i); return a[lo]+(a[hi]-a[lo])*(i-lo); }
+function fillRf(){
+  for (const n of [1,2]){
+    const sel = $("rf"+n+"Sel"), prev = sel.value;
+    sel.innerHTML = `<option value="">사용 안 함</option>` + METRICS(role).map(f=>`<option value="${f}">${esc(mLabel(f))}</option>`).join("");
+    if ([...sel.options].some(o=>o.value===prev)) sel.value = prev; else { sel.value=""; $("rf"+n+"Min").value=""; $("rf"+n+"Max").value=""; }
+    rfHint(n);
+  }
+}
+function rfValues(n){ const f=$("rf"+n+"Sel").value; return f ? pastRows().map(r=>mVal(r,f)).filter(x=>x!=null) : []; }
+function rfHint(n){
+  const f=$("rf"+n+"Sel").value, el=$("rf"+n+"Hint"), v=rfValues(n);
+  el.textContent = (f && v.length>=5) ? `지난 사례 ${v.length}명: 10% ${fmt(pct(v,.1),mDec(f))} · 중앙 ${fmt(pct(v,.5),mDec(f))} · 90% ${fmt(pct(v,.9),mDec(f))}` : "";
+}
+function rfFit(n){
+  const f=$("rf"+n+"Sel").value, v=rfValues(n); if (!f || v.length<5) return;
+  const d = mDec(f);
+  $("rf"+n+"Min").value = pct(v,.1).toFixed(d); $("rf"+n+"Max").value = pct(v,.9).toFixed(d);
+  renderCands();
+}
+function passRf(c){
+  for (const n of [1,2]){
+    const f=$("rf"+n+"Sel").value; if (!f) continue;
+    const v=mVal(c,f), lo=$("rf"+n+"Min").value, hi=$("rf"+n+"Max").value;
+    if (v==null) return false;
+    if (lo!=="" && v < +lo) return false;
+    if (hi!=="" && v > +hi) return false;
+  }
+  return true;
+}
+function rfActive(){
+  const a=[]; for (const n of [1,2]){ const f=$("rf"+n+"Sel").value, lo=$("rf"+n+"Min").value, hi=$("rf"+n+"Max").value; if (f && (lo!==""||hi!=="")) a.push(`${mLabel(f)} ${lo!==""?lo:"−∞"}~${hi!==""?hi:"∞"}`); }
+  return a;
+}
+
+/* ================= 3. 닮은 후보 ================= */
+function fillRefs(){
+  const sel = $("refSel"), prev = sel.value, rows = pastRows().slice().sort((a,b)=>b["KBO첫해"]-a["KBO첫해"]||String(a["영문명"]).localeCompare(b["영문명"]));
+  let h = `<option value="__succ">성공 사례 평균 (${rows.filter(isSuccess).length}명)</option><option value="__draw">직접 그리기</option>`;
+  rows.forEach(r=>{ h += `<option value="${r.mykbo_id}">${r["KBO첫해"]} ${esc(nameTxt(r))} (${teamK(r["팀"])}${isSuccess(r)?", 성공":""})</option>`; });
+  sel.innerHTML = h; if ([...sel.options].some(o=>o.value===prev)) sel.value = prev;
+}
+function refVector(){
+  const v = $("refSel").value, rows = pastRows();
+  if (v==="__succ"){ const S = rows.filter(isSuccess); return S.length ? {name:"성공 사례 평균", vec:meanVec(S)} : null; }
+  if (v==="__draw") return {name:"내가 그린 모양", vec:drawVec(), draw:true, skip:drawExcl()};
+  const r = rows.find(x=>String(x.mykbo_id)===v); return r ? {name:nameTxt(r), vec:r} : null;
+}
+/* ================= 직접 그리기: 모양을 그려서 닮은 선수 찾기 ================= */
+/* 그리는 값은 "그래프 값"(바깥쪽 = 좋음). 계산에 쓸 때는 원래 방향으로 되돌려 지표값으로 바꾼다.
+   기준은 스탯캐스트 보조 지표("sc", 기본) 또는 기본 5지표("main")이다. */
+let drawSet = "sc";
+const dSc = ()=> drawSet==="sc";
+const dFeats = ()=> dSc() ? D.sfeats[role] : D.feats[role];
+const dScale = ()=> dSc() ? D.sscale[role] : D.scale[role];
+const DRAW = {};
+const EXCL = {};   // 그리기 기준·투수/타자별로 뺀 지표 {"투수:sc": Set([...])}
+const drawExcl = ()=>{ const k = role+":"+drawSet; return EXCL[k] || (EXCL[k] = new Set()); };
+const drawVals = ()=>{ const k = role+":"+drawSet; if (!DRAW[k]) DRAW[k] = Object.fromEntries(dFeats().map(f=>[f,0])); return DRAW[k]; };
+function drawVec(){   // 그린 모양 → 지표값(평균 + 표준편차 × 원래 방향의 편차)
+  const v = {}, d = drawVals();
+  dFeats().forEach(f=>{ const [m,sd] = dScale()[f]; v[f] = m + sd * dirOf(role,f,dSc()) * d[f]; });
+  return v;
+}
+function distSc(vec, sc, skip){   // 스탯캐스트 지표 거리: 기본 거리와 같은 방식(표준화 값 차이의 제곱평균 제곱근)
+  const feats = D.sfeats[role], S = D.sscale[role]; let sum = 0, n = 0;
+  if (!sc) return null;
+  for (const f of feats){ if (skip && skip.has(f)) continue; if (vec[f]==null || sc[f]==null) continue; const d = (vec[f]-sc[f])/S[f][1]; sum += d*d; n++; }
+  return n >= feats.length-(skip?skip.size:0)-1 ? Math.sqrt(sum/n) : null;
+}
+const DRG = {cx:190, cy:170, R:120, zmax:2.5};
+const clampZ = z => Math.round(Math.max(-DRG.zmax, Math.min(DRG.zmax, z))*10)/10;
+function paintDraw(){
+  const svg = $("drawSvg"), feats = dFeats(), n = feats.length, d = drawVals(), {cx,cy,R,zmax} = DRG, sc = dSc(), ex = drawExcl();
+  const ang = i => -Math.PI/2 + i*2*Math.PI/n;
+  const rad = z => (Math.min(Math.max(z,-zmax),zmax)+zmax)/(2*zmax)*R;
+  const pt = (i,z)=> [cx+Math.cos(ang(i))*rad(z), cy+Math.sin(ang(i))*rad(z)];
+  const poly = zs => zs.map((z,i)=>pt(i,z).map(v=>v.toFixed(1)).join(",")).join(" ");
+  let h = "", xmin = 0, xmax = 380;
+  const lw = [];   // 축 이름 폭(글자 상자 추정)
+  for (const z of [-2,-1,1,2]) h += `<polygon class="grid" points="${poly(feats.map(()=>z))}"/>`;
+  h += `<polygon class="rd-zero" points="${poly(feats.map(()=>0))}"/>`;
+  feats.forEach((f,i)=>{
+    const x = cx+Math.cos(ang(i))*R, y = cy+Math.sin(ang(i))*R, c = Math.cos(ang(i));
+    h += `<line class="grid" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+    const lx = cx+Math.cos(ang(i))*(R+10), ly = cy+Math.sin(ang(i))*(R+10)+4, lab = labO(role,f,sc), anchor = Math.abs(c)<0.2?"middle":c>0?"start":"end";
+    const w = [...lab].reduce((a,ch)=> a + (ch.charCodeAt(0)>255 ? 13 : 7.5), 0); lw[i] = w;
+    xmin = Math.min(xmin, (anchor==="end"?lx-w:anchor==="start"?lx:lx-w/2)-6); xmax = Math.max(xmax, (anchor==="end"?lx:anchor==="start"?lx+w:lx+w/2)+6);
+    const off = ex.has(f), rx = anchor==="end" ? lx-w : anchor==="start" ? lx : lx-w/2;
+    h += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="12" text-anchor="${anchor}"${off?' opacity=".38" text-decoration="line-through"':""}>${esc(lab)}</text>`;
+    h += `<rect data-ex="${i}" x="${(rx-3).toFixed(1)}" y="${(ly-14).toFixed(1)}" width="${(w+6).toFixed(1)}" height="19" fill="transparent" style="cursor:pointer"><title>${off?"눌러서 이 지표를 다시 넣기":"눌러서 이 지표를 빼고 찾기"}</title></rect>`;
+  });
+  h += `<polygon class="rd-a" points="${poly(feats.map(f=>ex.has(f)?0:d[f]))}" pointer-events="none"/>`;
+  feats.forEach((f,i)=>{
+    if (ex.has(f)){ const [ux,uy] = pt(i,0); h += `<circle cx="${ux.toFixed(1)}" cy="${uy.toFixed(1)}" r="4.5" class="dx" pointer-events="none"/>`; return; }   // 뺀 지표는 평균 위치에 빈 점
+    const [x,y] = pt(i,d[f]), [m,sd] = dScale()[f], val = m + sd*dirOf(role,f,sc)*d[f];
+    /* 값 숫자는 축 이름과 겹치지 않게, 점 옆(축에 수직 방향)에 둔다 */
+    const pvx = -Math.sin(ang(i)), pvy = Math.cos(ang(i)), off = Math.abs(pvx)>0.95 ? Math.max(20, lw[i]/2+8) : 20, ox = x + pvx*off, oy = y + pvy*off + 4;
+    h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7.5" class="dh" pointer-events="none"/>`;
+    const isPct = f==="gs_pct" || /percent|_pct$/.test(f);   // 표시만 현실 범위로(비율·ERA·구속 등은 음수가 없다). 거리 계산은 그린 위치 그대로
+    const shown = f==="launch_angle" ? val : Math.max(0, isPct ? Math.min(100,val) : val);
+    if (!(n>6 && rad(d[f])<40))   // 축이 많은 그래프에서는 중심에 몰린 점의 숫자를 숨긴다(서로 겹치므로)
+      h += `<text class="dv" x="${ox.toFixed(1)}" y="${oy.toFixed(1)}" font-size="11" text-anchor="${pvx>0.3?"start":pvx<-0.3?"end":"middle"}" pointer-events="none">${fF(f,shown)}</text>`;
+  });
+  const hitW = n>6 ? 26 : 34;
+  feats.forEach((f,i)=>{   // 축 위 어디를 눌러도(또는 점을 잡고 끌어도) 그 축의 점이 따라온다
+    if (ex.has(f)) return;
+    const x = cx+Math.cos(ang(i))*(R+6), y = cy+Math.sin(ang(i))*(R+6);
+    h += `<line data-ax="${i}" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="transparent" stroke-width="${hitW}" stroke-linecap="round" pointer-events="stroke" style="cursor:grab"/>`;
+  });
+  svg.setAttribute("viewBox", `${Math.floor(xmin)} 0 ${Math.ceil(xmax-xmin)} 345`);
+  svg.innerHTML = h;
+}
+let drawAx = null, drawRaf = 0;
+function drawFromPointer(e){
+  const svg = $("drawSvg"), feats = dFeats(), n = feats.length, {cx,cy,R,zmax} = DRG, a = -Math.PI/2 + drawAx*2*Math.PI/n;
+  const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(svg.getScreenCTM().inverse());
+  const tt = (q.x-cx)*Math.cos(a) + (q.y-cy)*Math.sin(a);                 // 축 방향으로 얼마나 나갔나
+  const z = clampZ((tt/R)*(2*zmax) - zmax);
+  if (drawVals()[feats[drawAx]] === z) return;
+  drawVals()[feats[drawAx]] = z;
+  if (!drawRaf) drawRaf = requestAnimationFrame(()=>{ drawRaf = 0; renderCands(); });
+}
+(function(){
+  const svg = $("drawSvg");
+  svg.addEventListener("pointerdown", e=>{ const t = e.target.closest("[data-ax]"); if (!t) return; drawAx = +t.dataset.ax; svg.setPointerCapture(e.pointerId); drawFromPointer(e); e.preventDefault(); });
+  svg.addEventListener("pointermove", e=>{ if (drawAx!=null) drawFromPointer(e); });
+  ["pointerup","pointercancel"].forEach(ev=> svg.addEventListener(ev, ()=>{ drawAx = null; }));
+  svg.addEventListener("click", e=>{   // 축 이름을 누르면 그 지표를 빼거나 다시 넣는다(최소 3개는 남긴다)
+    const r = e.target.closest("[data-ex]"); if (!r) return;
+    const f = dFeats()[+r.dataset.ex], ex = drawExcl();
+    if (ex.has(f)) ex.delete(f); else if (dFeats().length - ex.size > 3) ex.add(f); else return;
+    renderCands();
+  });
+  $("drawAvg").onclick = ()=>{ DRAW[role+":"+drawSet] = null; renderCands(); };
+  $("drawSucc").onclick = ()=>{
+    const S = pastRows().filter(isSuccess).filter(r=> !dSc() || r.sc); if (!S.length) return;
+    const d = drawVals();
+    dFeats().forEach(f=>{
+      const a = S.map(r=> dSc() ? r.sc[f] : r[f]).filter(x=>x!=null); if (!a.length) return;
+      const mean = a.reduce((t,x)=>t+x,0)/a.length, [m,sd] = dScale()[f];
+      d[f] = clampZ(dirOf(role,f,dSc())*(mean-m)/sd);
+    });
+    renderCands();
+  };
+  document.querySelectorAll("#drawSet button").forEach(b=> b.onclick = ()=>{
+    drawSet = b.dataset.set;
+    document.querySelectorAll("#drawSet button").forEach(x=>{ x.classList.toggle("on", x===b); x.setAttribute("aria-pressed", x===b ? "true" : "false"); });
+    renderCands();
+  });
+})();
+function drawPastList(ref, pool){
+  const P = dSc() ? pool.filter(r=>r.sc) : pool;   // 스탯캐스트 기록이 있는 지난 사례만 비교할 수 있다
+  const top = P.map(p=>({p, dist: dSc() ? distSc(ref.vec, p.sc, ref.skip) : (distance(ref.vec,p,ref.skip)||{}).dist})).filter(x=>x.dist!=null && !isNaN(x.dist)).sort((a,b)=>a.dist-b.dist).slice(0,5);
+  $("drawPast").innerHTML = top.map(n=>`<div class="hrow link" data-kind="past" data-key="${n.p.mykbo_id}" data-role="${role}"><span class="who">${nameHTML(n.p)}</span><span class="what">${n.p["KBO첫해"]} ${esc(teamK(n.p["팀"]))} · ${resultLine(n.p)}</span>${tag(n.p)}<span class="tagk">거리 ${n.dist.toFixed(2)}</span></div>`).join("") || `<p class="note">비교할 지난 사례가 없습니다.</p>`;
+  const far = top.length && top[0].dist > (dSc() ? 1.0 : 0.8);
+  $("drawWarn").textContent = (dSc() ? `지난 사례 ${P.length}명 중 비교. ` : "") + (far ? "비슷한 선수가 드뭅니다." : "");
+}
+
+function renderCands(){
+  const isDraw = $("refSel").value==="__draw";
+  $("drawBox").hidden = !isDraw;
+  if (isDraw) paintDraw();
+  const ref = refVector();
+  if (!ref){ $("candTable").innerHTML=""; $("candNote").textContent="기준으로 쓸 선수가 없습니다. 성공 기준이나 입단 연도 범위를 바꿔 보세요."; return; }
+  const q = plain($("q").value.trim()), ageMax = +$("ageMax").value;
+  const pool = pastRows();
+  if (isDraw) drawPastList(ref, pool);
+  let res = [];
+  for (const c of D.cands[role]){
+    if (q){ if (!plain(flip(c.player_name)+" "+(c["한글명"]||"")).includes(q)) continue; }
+    else {
+      if ($("noKbo").checked && c["KBO경력"]) continue;
+      if ($("lvSel").value && c["소속"]!==$("lvSel").value) continue;
+      if ($("typSel").value!=="" && typOf(c)!==+$("typSel").value) continue;
+      if (!passRf(c)) continue;
+      if (c["출생연도"]!=null && BASE-c["출생연도"]>ageMax) continue;
+    }
+    let dd = null;
+    if (ref.draw && dSc()) dd = distSc(ref.vec, c.sc, ref.skip); else { const x = distance(c, ref.vec, ref.skip); dd = x ? x.dist : null; }
+    if (dd!=null) res.push({c, dist:dd});
+  }
+  res.sort((a,b)=>a.dist-b.dist);
+  const top = res.slice(0, q?15:10);
+  const LVS = {"AAA·MLB 오감":"AAA↔MLB","AAA만":"AAA","MLB만":"MLB"};
+  let h = `<thead><tr><th class="l">#</th><th class="l">선수</th>${role==="타자"?'<th class="l">포지션</th><th class="l">타</th>':""}<th class="l">2026 소속</th><th class="l">유형</th><th>나이</th><th>거리</th><th>최근 5년 표본</th><th>MLB%</th><th class="l">가장 닮은 지난 사례</th></tr></thead><tbody>`;
+  top.forEach((t,i)=>{
+    const c=t.c, nn = nearest(c, pool, 1)[0];
+    h += `<tr class="clickable" data-kind="cand" data-key="${c.player_id}"><td class="l">${i+1}</td>
+      <td class="l">${nameHTML(c)}${awardBadges(c)}${c["KBO경력"]?' <span class="tag warn" title="이름이 MyKBO 외국인 명단에 있음(동명이인일 수 있음)">KBO경력 의심</span>':""}</td>
+      ${role==="타자"?`<td class="l">${bioPos(c)}</td><td class="l">${bioBat(c)}</td>`:""}<td class="l">${LVS[c["소속"]]||c["소속"]}</td><td class="l"><span class="note" style="white-space:nowrap">${esc(typName(c))}</span></td>
+      <td>${c["출생연도"]!=null? BASE-c["출생연도"] : "-"}</td><td>${t.dist.toFixed(2)}</td>
+      <td>${volTxt(c)}</td><td>${fmt(c.mlb_share*100,0)}</td>
+      <td class="l">${nn? `${nameHTML(nn.p)} (${nn.p["KBO첫해"]}) ${tag(nn.p)}` : "-"}</td></tr>`;
+  });
+  $("candTable").innerHTML = h + (top.length?"":`<tr><td colspan="11" class="l note">조건에 맞는 선수가 없습니다.</td></tr>`) + "</tbody>";
+  $("candNote").innerHTML = `기준: <b>${esc(ref.name)}</b>${(ref.skip && ref.skip.size) ? ` (뺀 지표: ${[...ref.skip].map(f=>esc(labO(role,f,dSc()))).join(", ")})` : ""}${(!q && rfActive().length)?` · 후보 ${res.length}명`:""}`;
+}
+
+/* ================= 상세 창 ================= */
+let cur = null;
+function openDetail(kind, key){
+  const rec = kind==="past" ? D.past[role].find(r=>String(r.mykbo_id)===String(key)) : D.cands[role].find(c=>String(c.player_id)===String(key));
+  if (!rec) return;
+  cur = {kind, rec};
+  const isPast = kind==="past", pool = pastRows();
+  const age = rec["출생연도"]!=null ? (isPast ? rec["KBO첫해"]-rec["출생연도"] : BASE-rec["출생연도"]) : null;
+  const lvTxt = ({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]] || rec["소속"];
+  const ctx = isPast
+    ? `${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)} · MLB ${fmt(rec.mlb_share*100,0)}%`
+    : `2026 ${lvTxt} · 최근 5년(${rec["창"]}) ${volTxt(rec)} · MLB ${fmt(rec.mlb_share*100,0)}%`;
+  const fid = isPast ? rec.mykbo_id : rec.player_id;
+  const rm = rumorOf(rec, kind);
+  /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
+  const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+  const vq = role==="투수" ? ["pitching","피칭"] : ["batting highlights","타격"];
+  let h = `<div class="dlghead"><div class="dh-main"><h2>${nameHTML(rec)}${awardBadges(rec)} ${isPast?tag(rec):""}</h2>
+    ${factsLine(rec, age, isPast)}
+    <div class="dh-tags"><span class="pill">${esc(typName(rec))}</span>${rm ? `<span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}">Rumor · ${esc(rm.status||"루머")}</span>` : ""}</div>
+    <p class="dh-ctx">${ctx}</p>
+    <p class="dh-links" title="검색 결과로 이동하며, 같은 이름의 다른 선수가 나올 수 있습니다">영상 찾기 ▸ <a href="${yt(enName(rec)+" "+vq[0]+(isPast?"":" 2026"))}" target="_blank" rel="noopener noreferrer">YouTube(영문)</a>${rec["한글명"]?` · <a href="${yt(rec["한글명"]+" "+vq[1])}" target="_blank" rel="noopener noreferrer">YouTube(한글)</a>`:""}</p></div>
+    <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="histBtn" title="경력과 함께 뛴 사람들">History</button><button class="close" id="dlgClose">닫기</button></div></div>`;
+  if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(String(rec["주의"]).replace(/\(일본 등[^)]*\)/,""))}</div>`;
+  if (!isPast && rec["KBO경력"]) h += `<div class="box note">KBO 경력자로 의심(동명이인 가능)</div>`;
+  if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(String(rec["주의"]).replace(/\(일본 등[^)]*\)/,""))}</div>`;
+
+  h += `<h3>입단 전 5년 기록의 모양</h3>
+        <div class="row"><label>비교 대상 <select id="cmpSel"><option value="succ">성공 사례 평균</option><option value="avg">전체 평균</option></select></label></div>
+        <div class="two"><div id="radarBox"></div><div id="radarTbl"></div></div>
+        <p class="note">바깥쪽일수록 좋음</p>`;
+
+  const feat4 = role==="투수" ? ["k_pct","bb_pct","hr_pct","era"] : ["k_pct","bb_pct","iso","avg"];
+  const y0 = isPast ? rec["KBO첫해"]-5 : BASE-4, y1 = isPast ? rec["KBO첫해"]-1 : BASE;
+  h += `<h3>시즌별 추이</h3>
+        <div class="legend">${["MLB","AAA","AA","A+","A","MEX"].map(l=>`<span><i style="background:${LVCOL[l]}"></i>${l==="MEX"?"멕시칸 리그":l}</span>`).join("")}<span>점 크기 = 표본, 점선 = 전체 평균</span></div>
+        <div class="trgrid">${feat4.map(f=>trendSVG(f, rec.hist||[], y0, y1, isPast?rec["KBO첫해"]:null)).join("")}</div>`;
+
+  if (isPast){
+    const kb = rec.kbo||[];
+    h += `<h3>KBO 성적</h3>${kboBarsSVG(kb)}
+          <p class="note">${role==="투수" ? `첫해 ${fmt(rec.KBO_이닝,1)}이닝 ERA ${fmt(rec.KBO_ERA,2)}` : `첫해 ${fmt(rec.KBO_타수,0)}타수 OPS ${fmt(rec.KBO_OPS,3)}`} · 재계약 ${rec.stay_n}년${rec.stay_plus?"+":""}</p>`;
+  }
+
+  h += ilSection(rec, y0, y1);
+  if (rec.ars) h += arsSection(rec);
+  if (rec.sc) h += `<h3>스탯캐스트 보조 지표</h3>
+        <div class="two"><div id="scBox"></div><div id="scTbl"></div></div>
+        `;
+
+  if (isPast){
+    const near = nearest(rec, D.cands[role], 5, c=> $("noKbo").checked && c["KBO경력"]);
+    h += `<h3>이 선수와 닮은 2026 트리플A 선수 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th>나이</th><th>거리</th></tr></thead><tbody>` +
+      near.map(n=>`<tr class="clickable" data-kind="cand" data-key="${n.p.player_id}"><td class="l">${nameHTML(n.p)}</td><td>${n.p["출생연도"]!=null?BASE-n.p["출생연도"]:"-"}</td><td>${n.dist.toFixed(2)}</td></tr>`).join("") + `</tbody></table></div>`;
+  } else {
+    const near = nearest(rec, pool, 5), succ = near.filter(n=>isSuccess(n.p)).length, base = pool.filter(isSuccess).length;
+    h += `<h3>이 선수와 닮은 지난 KBO 사례 TOP5</h3><div class="tablewrap"><table><thead><tr><th class="l">선수</th><th class="l">데뷔</th><th>거리</th><th class="l">판정</th></tr></thead><tbody>` +
+      near.map(n=>`<tr class="clickable" data-kind="past" data-key="${n.p.mykbo_id}"><td class="l">${nameHTML(n.p)}</td><td class="l">${n.p["KBO첫해"]} ${teamK(n.p["팀"])} · ${resultLine(n.p)}</td><td>${n.dist.toFixed(2)}</td><td class="l">${tag(n.p)}</td></tr>`).join("") + `</tbody></table></div>
+      <div class="box">${near.length}명 중 <b>${succ}명</b> 성공 (전체 ${base}/${pool.length})</div>`;
+  }
+  h += reportSection(rec, role, kind, fid);
+  $("dlgBody").innerHTML = h;
+  drawRadar();
+  if (rec.sc) drawSc();
+  $("cmpSel").onchange = ()=>{ drawRadar(); if (cur.rec.sc) drawSc(); };
+  $("dlgClose").onclick = ()=> $("dlg").close();
+  $("histBtn").onclick = ()=> openHistory(kind, fid);
+  $("favBtn").onclick = ()=>{ favToggle(role,kind,fid); $("favBtn").textContent = favHas(role,kind,fid)?"★":"☆"; };
+  $("cmpAdd").onclick = ()=>{ cmpToggle(role,kind,fid); $("cmpAdd").textContent = cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"; };
+  if (!$("dlg").open) $("dlg").showModal();
+  $("dlg").scrollTop = 0;
+}
+function drawRadar(){
+  const rec = cur.rec, cmp = $("cmpSel").value, feats = D.feats[role];
+  const mine = {}; feats.forEach(f=> mine[f]=rec[f]);
+  let other, otherName;
+  if (cmp==="succ"){ const S = pastRows().filter(isSuccess); other = S.length? meanVec(S) : null; otherName="성공 사례 평균"; }
+  else { other = {}; feats.forEach(f=> other[f]=D.scale[role][f][0]); otherName="전체 평균"; }
+  const series = [{name:"이 선수", vec:mine, cls:"rd-a"}]; if (other) series.push({name:otherName, vec:other, cls:"rd-b"});
+  $("radarBox").innerHTML = radarSVG(series, feats, zo, f=>labO(role,f,false));
+  let t = `<table><thead><tr><th class="l">지표</th><th>이 선수</th><th>${otherName}</th><th>편차</th></tr></thead><tbody>`;
+  for (const f of feats){
+    if (mine[f]==null) continue;
+    const z = zo(f,mine[f]);
+    t += `<tr title="${esc(HINT[f]||"")}"><td class="l">${esc(labO(role,f,false))}</td><td>${fF(f,mine[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${z>=0?"+":""}${z.toFixed(2)}</td></tr>`;
+  }
+  $("radarTbl").innerHTML = t + `</tbody></table>`;
+}
+function drawSc(){
+  const sc = cur.rec.sc, feats = D.sfeats[role], cmp = $("cmpSel").value;
+  const zs = (f,x)=>{ const [m,s]=D.sscale[role][f]; return dirOf(role,f,true)*(x-m)/s; };
+  /* 비교 대상: 본 오각형과 같은 선택(성공 사례 평균 / 전체 평균). 스탯캐스트 값이 있는 성공 사례만 평균에 든다 */
+  let other = null, otherName = "", nS = 0;
+  if (cmp==="succ"){
+    const S = pastRows().filter(isSuccess).filter(r=>r.sc); nS = S.length;
+    if (S.length){ other = {}; feats.forEach(f=>{ const a = S.map(r=>r.sc[f]).filter(x=>x!=null); other[f] = a.length ? a.reduce((t,x)=>t+x,0)/a.length : null; }); }
+    otherName = "성공 사례 평균";
+  } else { other = {}; feats.forEach(f=> other[f] = D.sscale[role][f][0]); otherName = "전체 평균"; }
+  const series = [{name:"이 선수", vec:sc, cls:"rd-a"}]; if (other) series.push({name:otherName, vec:other, cls:"rd-b"});
+  $("scBox").innerHTML = radarSVG(series, feats, zs, f=>labO(role,f,true));
+  $("scTbl").innerHTML = `<table><thead><tr><th class="l">지표</th><th>이 선수</th><th>${otherName}</th><th>편차</th></tr></thead><tbody>` +
+    feats.map(f=>{ const z = zs(f,sc[f]); return `<tr><td class="l">${esc(labO(role,f,true))}</td><td>${fF(f,sc[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${(z>=0?"+":"")+z.toFixed(2)}</td></tr>`; }).join("") + `</tbody></table>` +
+    (cmp==="succ" ? `<p class="note">성공 사례 ${nS}명</p>` : "");
+}
+
+/* ================= History: 경력 타임라인 + 함께 뛴 사람들 (docs/careers.js, tools/15_careers.py) ================= */
+/* careers.js 는 커서(수 MB) History 를 처음 열 때만 불러온다 */
+let careersP = null;
+function loadCareers(){
+  if (window.CAREERS) return Promise.resolve(window.CAREERS);
+  if (!careersP) careersP = new Promise(res=>{ const sc = document.createElement("script"); sc.src = "careers.js"; sc.onload = ()=>res(window.CAREERS||null); sc.onerror = ()=>res(null); document.head.appendChild(sc); });
+  return careersP;
+}
+function careerOf(rec){
+  const C = window.CAREERS; if (!C || !C.P) return null;
+  const c = C.P[String(rec.mlbam ?? rec.player_id)]; if (!c) return null;
+  const nm = i => i>=0 ? C.T[i] : "";
+  return {...c, st: c.st.map(([y,ss])=>[y, ss.map(([l,t,p,m,more])=>({lv:C.L[l], team:nm(t), parent:nm(p), mates:(m||[]).map(i=>C.M[i]), more:more||0}))])};
+}
+const lvTag = lv => `<span class="lvtag" style="--c:${LVCOL[lv]||"var(--muted)"}">${esc(lv)}</span>`;
+/* 경력 표 오른쪽에 붙는 아이콘: 태극 = 코리안리거, 야구공 = KBO 외국인(같은 시즌 같은 팀에 기록이 있는 사람) */
+const ICON_TG = `<img class="mi" src="img/taegeuk.png" alt="코리안리거" width="18" height="18">`;
+const ICON_BALL = `<svg class="mi" viewBox="0 0 24 24" role="img" aria-label="KBO 외국인"><circle cx="12" cy="12" r="10.5" fill="#fff" stroke="#2a2720" stroke-width="1.4"/><path d="M6.6 4.4c3.2 2.6 3.2 12.6 0 15.2M17.4 4.4c-3.2 2.6-3.2 12.6 0 15.2" fill="none" stroke="#c62828" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+/* 팀 이름 마우스오버: 한글 발음 + (마이너면) 어느 MLB 구단 산하인지 */
+function teamTip(team, parent, lv){
+  const C = window.CAREERS; if (!C || !C.K) return "";
+  const ix = n => C.T.indexOf(n), k = ix(team); if (k < 0 || !C.K[k]) return "";
+  let h = `<b>${esc(C.K[k])}</b>`;
+  const pk = parent ? ix(parent) : -1;
+  if (lv !== "MLB" && pk >= 0 && C.K[pk]) h += `<br>${esc(C.K[pk])} 산하`;
+  else if (C.KN[k]) h += `<br>${esc(C.KN[k])}`;
+  return h;
+}
+function mateIcon(m, y, team){
+  if (m[0]==="K"){
+    const nm = m[2] ? `${esc(m[2])} <span class="mut">${esc(m[1])}</span>` : esc(m[1]);
+    return `<span class="mate" data-tip="${esc(`<b>${nm}</b><br>코리안리거 · ${y} ${esc(team)}`)}">${ICON_TG}</span>`;
+  }
+  const [, id, role, en, ko, first, last] = m;
+  const kb = `KBO ${first}${last!==first ? "~"+(last>=BASE?"현재":last) : (first>=BASE?"(현재)":"")}`;
+  const nm = `${ko ? esc(ko)+" " : ""}<span class="mut">${esc(en)}</span>`;
+  return `<span class="mate link" data-kind="past" data-key="${esc(id)}" data-role="${esc(role)}" data-tip="${esc(`<b>${nm}</b><br>${kb} · ${y} ${esc(team)}`)}">${ICON_BALL}</span>`;
+}
+function histTimeline(rec, c, isPast){
+  const by = new Map();
+  for (const [y, stints] of (c ? c.st : [])) by.set(y, stints.map(s=>({...s})));
+  if (isPast) for (const k of (rec.kbo||[])) { const a = by.get(k.y) || []; a.push({lv:"KBO", team:teamK(k["팀"]), parent:k["팀"], mates:[], more:0}); by.set(k.y, a); }
+  if (!by.size) return `<p class="note">경력 자료가 없습니다.</p>`;
+  let rows = "";
+  for (const y of [...by.keys()].sort((a,b)=>a-b)){
+    const st = by.get(y);
+    st.forEach((s,i)=>{
+      const mates = s.mates.map(m=>mateIcon(m, y, s.team)).join("") + (s.more ? `<span class="more">+${s.more}</span>` : "");
+      rows += `<tr${s.lv==="KBO"?' class="kbo"':""}>${i===0?`<td class="yr" rowspan="${st.length}">${y}</td>`:""}<td>${s.lv==="KBO"?`<span class="lvtag" style="--c:var(--accent)">KBO</span>`:lvTag(s.lv)}</td><td class="l"${s.lv==="KBO"?"":(tp=>tp?` data-tip="${esc(tp)}"`:"")(teamTip(s.team,s.parent,s.lv))}>${esc(s.team)}${s.parent?` <span class="note">(${esc(s.parent)})</span>`:""}</td><td class="mates">${mates}</td></tr>`;
+    });
+  }
+  return `<div class="tablewrap"><table class="timeline"><thead><tr><th>시즌</th><th>레벨</th><th class="l">소속팀</th><th class="mh" data-tip="${esc("태극 = 코리안리거<br>야구공 = KBO 외국인<br>(같은 시즌 같은 팀)")}">${ICON_TG}${ICON_BALL}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+async function openHistory(kind, fid){
+  const rec = recOf(role, kind, fid); if (!rec) return;
+  if (!window.CAREERS){ $("histBtn").textContent = "불러오는 중…"; await loadCareers(); }
+  const isPast = kind==="past", c = careerOf(rec);
+  const by = rec["출생연도"];
+  const first = c && c.st.length ? c.st[0][0] : null;
+  const facts = [];
+  if (by!=null) facts.push(`${by}년생`);
+  if (first) facts.push(`미국 프로 첫 시즌 ${first}`);
+  if (c && c.md) facts.push(`MLB 데뷔 ${c.md}`);
+  if (isPast) facts.push(`KBO 데뷔 ${rec["KBO첫해"]} ${teamK(rec["팀"])}`);
+  let h = `<div class="dlghead"><div class="dh-main"><h2>${nameHTML(rec)}${awardBadges(rec)} <span class="note">History</span></h2>
+    <p class="dh-facts">${facts.map(x=>`<span>${x}</span>`).join("")}</p></div>
+    <div class="dlgbtns"><button class="close" id="histBack">← 상세로</button><button class="close" id="dlgClose">닫기</button></div></div>`;
+  h += `<h3>경력 타임라인</h3>` + histTimeline(rec, c, isPast);
+  $("dlgBody").innerHTML = h; $("dlg").scrollTop = 0;
+  $("histBack").onclick = ()=> openDetail(kind, fid);
+  $("dlgClose").onclick = ()=> $("dlg").close();
+}
+
+/* ================= 스카우팅 노트(방문자 리포트) ================= */
+/* 폼 연결: Google Form을 만든 뒤 아래 세 값을 채운다. 비어 있으면 버튼이 "준비 중"으로 보인다.
+   url = 폼 주소(…/viewform 앞까지), codeEntry·nameEntry = 사전 입력 링크에서 얻는 entry.숫자 */
+const REPORT_FORM = {url:"", codeEntry:"", nameEntry:""};
+const REPORTS = Array.isArray(window.REPORTS) ? window.REPORTS : [];
+const safeUrl = u => /^https?:\/\//i.test(String(u||"")) ? String(u) : "";
+const repKey = (r0,k,id)=> `${r0}|${k}|${id}`;
+function repCard(x, withWho){
+  const rec = withWho ? recOf(x.role, x.kind, x.id) : null;
+  const who = withWho ? (rec ? nameHTML(rec) : esc(x.name||"")) : "";
+  const link = safeUrl(x.link);
+  const attr = (withWho && rec) ? ` data-kind="${x.kind}" data-key="${esc(x.id)}" data-role="${esc(x.role)}"` : "";
+  return `<div class="rep"${attr}>${withWho?`<div class="who">${who} <span class="note">${esc(x.role)}·${x.kind==="past"?"지난 사례":"2026 후보"}</span><span class="badge-op">사용자 의견</span></div>`:`<span class="badge-op" style="margin:0">사용자 의견</span>`}
+    <p class="one">${esc(x.one||"")}</p>
+    <dl>${x.pro?`<dt>강점</dt><dd>${esc(x.pro)}</dd>`:""}${x.con?`<dt>우려점</dt><dd>${esc(x.con)}</dd>`:""}${link?`<dt>근거</dt><dd><a href="${esc(link)}" target="_blank" rel="noopener noreferrer nofollow">링크 열기</a></dd>`:""}</dl>
+    <div class="by">${esc(x.nick||"익명")}${x.date?` · ${esc(x.date)}`:""}</div></div>`;
+}
+function reportFormUrl(rec, r0, kind, fid){
+  if (!REPORT_FORM.url) return "";
+  const q = [];
+  if (REPORT_FORM.codeEntry) q.push(`${REPORT_FORM.codeEntry}=${encodeURIComponent(repKey(r0,kind,fid))}`);
+  if (REPORT_FORM.nameEntry) q.push(`${REPORT_FORM.nameEntry}=${encodeURIComponent(rec["한글명"]?`${rec["한글명"]} ${enName(rec)}`:enName(rec))}`);
+  return REPORT_FORM.url + (q.length ? (REPORT_FORM.url.includes("?")?"&":"?") + "usp=pp_url&" + q.join("&") : "");
+}
+function reportSection(rec, r0, kind, fid){
+  const mine = REPORTS.filter(x=> repKey(x.role,x.kind,x.id)===repKey(r0,kind,fid));
+  const fu = reportFormUrl(rec, r0, kind, fid);
+  return `<h3>스카우팅 노트</h3>
+    ${mine.length ? `<div class="replist">${mine.map(x=>repCard(x,false)).join("")}</div>` : `<p class="note">아직 없습니다.</p>`}
+    <p>${fu ? `<a class="btn mini repbtn" href="${esc(fu)}" target="_blank" rel="noopener noreferrer">노트 남기기</a>` : `<span class="btn mini repbtn" style="opacity:.5;cursor:default">노트 남기기 (준비 중)</span>`}</p>
+    <p class="note">검수 후 게시됩니다.</p>`;
+}
+function renderReports(){
+  const list = REPORTS.slice().sort((a,b)=> String(b.date||"").localeCompare(String(a.date||"")));
+  $("repList").innerHTML = list.length ? list.map(x=>repCard(x,true)).join("") : `<p class="note">아직 없습니다.</p>`;
+  $("repNote").textContent = list.length ? `${list.length}건` : "";
+}
+
+/* ================= Rumor Player: 입단설이 도는 선수 (docs/rumors.js 에 이름만 추가) ================= */
+const RUMORS = Array.isArray(window.RUMORS) ? window.RUMORS : [];
+const RUM_ST = {"루머":"r0","언론 보도":"r1","공식 발표":"r2"};
+const nkey = x => plain(x).replace(/[^a-z0-9가-힣]/g,"");
+function findRumorRec(name, hint){
+  const k = nkey(name); if (!k) return null;
+  const hit = [];
+  for (const kind of ["cand","past"]) for (const r0 of ["투수","타자"]) {
+    for (const rec of (kind==="cand" ? D.cands[r0] : D.past[r0])) {
+      const keys = [rec["한글명"], enName(rec), rec.player_name].filter(Boolean).map(nkey);
+      if (keys.includes(k)) hit.push({rec, kind, r0});
+    }
+  }
+  if (hint && hint.id){ const h = hit.find(x=> String(x.kind==="cand"?x.rec.player_id:x.rec.mykbo_id)===String(hint.id)); if (h) return h; }
+  const c = hit.filter(x=>x.kind==="cand");
+  return c.length===1 ? c[0] : (c.length===0 && hit.length===1 ? hit[0] : null);
+}
+function rumorOf(rec, kind){
+  const id = String(kind==="cand" ? rec.player_id : rec.mykbo_id);
+  return RUMORS.find(x=>{ const m = findRumorRec(x.name, x); return m && m.kind===kind && String(kind==="cand"?m.rec.player_id:m.rec.mykbo_id)===id; });
+}
+function renderRumors(){
+  const list = RUMORS.slice().sort((a,b)=> String(b.date||"").localeCompare(String(a.date||"")));
+  $("rumList").innerHTML = list.length ? list.map(x=>{
+    const m = findRumorRec(x.name, x), st = x.status||"루머", link = safeUrl(x.src);
+    let meta = "";
+    if (m){
+      const age = m.rec["출생연도"]!=null ? (m.kind==="cand" ? BASE-m.rec["출생연도"] : m.rec["KBO첫해"]-m.rec["출생연도"]) : null;
+      meta = `${m.r0} · ${m.kind==="cand" ? "2026 후보" : "지난 KBO 사례"}${age!=null?` · ${age}세`:""} · 유형 ${esc(typName(m.rec))}`;
+    } else meta = "이 분석의 후보 풀에 없음 (기록 비교 불가)";
+    const attr = m ? ` data-kind="${m.kind}" data-key="${esc(m.kind==="cand"?m.rec.player_id:m.rec.mykbo_id)}" data-role="${m.r0}"` : "";
+    return `<div class="rep"${attr}><div class="who">${m?nameHTML(m.rec):esc(x.name)}<span class="rum-st ${RUM_ST[st]||"r0"}">${esc(st)}</span></div>
+      <div class="meta">${meta}</div>
+      ${x.note?`<p class="one">${esc(x.note)}</p>`:""}
+      <div class="by">${x.team?`${esc(x.team)} · `:""}${x.date?esc(x.date):""}${link?` · <a href="${esc(link)}" target="_blank" rel="noopener noreferrer nofollow">${esc(x.srcName||"출처")}</a>`:""}</div></div>`;
+  }).join("") : `<p class="note">아직 없습니다.</p>`;
+  $("rumNote").textContent = list.length ? `${list.length}명` : "";
+}
+
+/* ================= KBO 시상 이력: 이름 옆 트로피 아이콘 (docs/awards.js) ================= */
+const AWARDS = Array.isArray(window.AWARDS) ? window.AWARDS : [];
+const AW_IDX = new Map(), AW_ID = new Map();
+AWARDS.forEach(a=>{ (a.names||[]).forEach(n=> AW_IDX.set(nkey(n), a)); (a.ids||[]).forEach(i=> AW_ID.set(String(i), a)); });
+function awardOf(rec){
+  const id = String(rec.mlbam ?? rec.player_id ?? "");   // 번호로 지정한 선수(동명이인 구분)
+  return AW_ID.get(id) || AW_IDX.get(nkey(enName(rec))) || (rec.player_name ? AW_IDX.get(nkey(flip(rec.player_name))) : null) || null;
+}
+function awardBadges(rec){
+  const a = awardOf(rec); if (!a) return "";
+  /* 받은 횟수만큼 아이콘을 하나씩 넣는다. 아이콘마다 그 해를 보여 준다. */
+  const each = (img, label, yrs, h) => (yrs||[]).map(y=>
+    `<span class="aw" data-tip="${esc(`<b>${label}</b> ${y}`)}"><img src="img/${img}.png" alt="${label} ${y}" style="height:${h}px"></span>`).join("");
+  return `<span class="awards">${each("mvp","KBO MVP",a.mvp,22)}${each("gg","KBO 골든글러브",a.gg,18)}</span>`;
+}
+
+/* ================= 랜딩(히어로·소개·근거) ================= */
+function renderLanding(){
+  const all = D.past["투수"].concat(D.past["타자"]), ys = all.map(r=>r["KBO첫해"]);
+  $("statPast").textContent = all.length;
+  $("statYears").textContent = Math.max(...ys) - Math.min(...ys) + 1;
+  $("statCand").textContent = (D.cands["투수"].length + D.cands["타자"].length).toLocaleString("en-US");
+}
+
+/* ================= 부상자 명단(IL) 이력 · 구종 구성 (상세 창) ================= */
+function ilSection(rec, y0, y1){
+  const il = rec.il || {n:0,days:0,max:0,tj:0,stints:[]};
+  let h = `<h3>부상자 명단(IL) 이력</h3>`;
+  if (!il.n) return h + `<p class="note">기록 없음</p>`;
+  h += `<p style="margin:4px 0"><b>${il.n}회</b> · 합계 <b>${il.days}일</b> · 최장 ${il.max}일${il.tj?` · <span class="tag warn">토미존 수술 기록</span>`:""}</p>
+    <div class="tablewrap"><table><thead><tr><th class="l">등재~복귀</th><th>일수</th><th>명단</th><th class="l">부상 내용(기록된 것)</th></tr></thead><tbody>` +
+    il.stints.map(s=>`<tr><td class="l">${esc(s.s)} ~ ${esc(s.e)}${s.o?' <span class="note" title="복귀 기록이 없어 시즌 말로 보았습니다">(복귀 미기록)</span>':""}</td><td>${s.d}</td><td>${s.k}일</td><td class="l">${esc(s.t||"내용 없음(마이너 등)")}</td></tr>`).join("") +
+    `</tbody></table></div>`;
+  return h;
+}
+const ARS_NAME = {ff:"포심", si:"싱커", fc:"커터", sl:"슬라이더", ch:"체인지업", cu:"커브", fs:"스플리터", kn:"너클볼", st:"스위퍼", sv:"슬러브"};
+const ARS_COL = ["var(--accent)","var(--mlb)","var(--aa)","var(--ap)","var(--mex)","var(--a)","#6a8fa8","#b08a5a","#8a6a9a","#5a9a8a"];
+function arsSection(rec){
+  const a = rec.ars, keys = Object.keys(a.use).sort((x,y)=>a.use[y]-a.use[x]), tot = keys.reduce((s,k)=>s+a.use[k],0) || 1;
+  const grp = (ks)=> ks.reduce((s,k)=>s+(a.use[k]||0),0);
+  let x = 0, bar = `<svg viewBox="0 0 600 30" role="img" aria-label="구종 구성">`;
+  keys.forEach((k,i)=>{ const w = a.use[k]/tot*600; bar += `<rect x="${x.toFixed(1)}" y="2" width="${w.toFixed(1)}" height="26" fill="${ARS_COL[i%ARS_COL.length]}"><title>${ARS_NAME[k]||k} ${a.use[k]}%</title></rect>`; x += w; });
+  bar += `</svg>`;
+  return `<h3>구종 구성</h3>${bar}
+    <div class="legend" style="margin-top:6px">${keys.map((k,i)=>`<span><i style="background:${ARS_COL[i%ARS_COL.length]}"></i>${ARS_NAME[k]||k} ${a.use[k]}%</span>`).join("")}</div>
+    <p class="note">패스트볼 ${grp(["ff","si","fc"]).toFixed(0)}% · 브레이킹볼 ${grp(["sl","cu","st","sv"]).toFixed(0)}% · 오프스피드 ${grp(["ch","fs","kn"]).toFixed(0)}%</p>`;
+}
+
+/* ================= 관심 선수 (localStorage, 이 브라우저에만 저장) ================= */
+let FAV = [];
+try { FAV = JSON.parse(localStorage.getItem("bk_fav")||"[]"); } catch(e){ FAV = []; }
+const favSave = ()=>{ try { localStorage.setItem("bk_fav", JSON.stringify(FAV)); } catch(e){} };
+const fk = (r0,k,id)=> `${r0}|${k}|${id}`;
+const favHas = (r0,k,id)=> FAV.some(f=>fk(f.r,f.k,f.id)===fk(r0,k,id));
+const recOf = (r0,k,id)=> k==="past" ? D.past[r0].find(x=>String(x.mykbo_id)===String(id)) : D.cands[r0].find(x=>String(x.player_id)===String(id));
+function favToggle(r0,k,id){
+  const i = FAV.findIndex(f=>fk(f.r,f.k,f.id)===fk(r0,k,id));
+  if (i>=0) FAV.splice(i,1); else FAV.push({r:r0,k:k,id:String(id)});
+  favSave(); renderFav();
+}
+function renderFav(){
+  const h = FAV.map(f=>{ const rec = recOf(f.r,f.k,f.id); if (!rec) return "";
+    return `<span class="chip" data-open="${esc(fk(f.r,f.k,f.id))}" title="누르면 상세가 열립니다">★ ${esc(nameTxt(rec))} <span class="note">${f.r}·${f.k==="past"?"지난 사례":"2026 후보"}</span><button class="x" data-unfav="${esc(fk(f.r,f.k,f.id))}" title="빼기">×</button></span>`; }).join("");
+  $("favBox").innerHTML = h || "<p class='note'>아직 없습니다.</p>";
+}
+
+/* ================= 두 선수 비교 ================= */
+let CMP = [];
+const cmpHas = (r0,k,id)=> CMP.some(c=>fk(c.r,c.k,c.id)===fk(r0,k,id));
+function cmpToggle(r0,k,id){
+  const i = CMP.findIndex(c=>fk(c.r,c.k,c.id)===fk(r0,k,id));
+  if (i>=0) CMP.splice(i,1);
+  else { if (CMP.length && CMP[0].r!==r0) CMP = []; if (CMP.length>=2) CMP.shift(); CMP.push({r:r0,k:k,id:String(id)}); }
+  renderCmpBar();
+}
+function renderCmpBar(){
+  $("cmpBar").hidden = !CMP.length;
+  $("cmpItems").innerHTML = CMP.map((c,i)=>{ const rec = recOf(c.r,c.k,c.id); return rec ? `<b style="color:${i?"var(--mlb)":"var(--accent)"}">${i?"B":"A"}</b> ${esc(nameTxt(rec))}` : ""; }).join(" vs ");
+  $("cmpGo").disabled = CMP.length<2;
+}
+function openCompare(){
+  if (CMP.length<2) return;
+  const r0 = CMP[0].r; if (role!==r0) setRole(r0);
+  const A = recOf(r0,CMP[0].k,CMP[0].id), B = recOf(r0,CMP[1].k,CMP[1].id); if (!A || !B) return;
+  const feats = D.feats[r0], d = distance(A,B), isP = x=>x["KBO첫해"]!=null;
+  const yr = x => isP(x) ? [x["KBO첫해"]-5, x["KBO첫해"]-1, x["KBO첫해"]] : [BASE-4, BASE, null];
+  let h = `<div class="dlghead"><div><h2><span style="color:var(--accent)">${nameHTML(A)}</span> vs <span style="color:var(--mlb)">${nameHTML(B)}</span></h2>
+    <p class="sub">${r0} · 거리 ${d?d.dist.toFixed(2):"-"}</p></div><button class="close" id="cmpClose">닫기</button></div>`;
+  h += `<div class="two"><div id="cmpRadar"></div><div><table><thead><tr><th class="l">지표</th><th style="color:var(--accent)">A</th><th style="color:var(--mlb)">B</th><th>차이(편차)</th></tr></thead><tbody>` +
+    feats.map(f=>`<tr><td class="l">${esc(labelFor(r0,f))}</td><td>${A[f]!=null?fF(f,A[f]):"-"}</td><td>${B[f]!=null?fF(f,B[f]):"-"}</td><td>${d&&d.dz[f]!=null?(d.dz[f]>=0?"+":"")+d.dz[f].toFixed(2):"-"}</td></tr>`).join("") +
+    `</tbody></table></div></div>`;
+  const feat4 = r0==="투수" ? ["k_pct","bb_pct","hr_pct","era"] : ["k_pct","bb_pct","iso","avg"];
+  h += `<h3>시즌별 추이</h3><div class="cmpgrid"><div class="cmpcol"><h4 style="color:var(--accent)">A · ${esc(nameTxt(A))}</h4></div><div class="cmpcol"><h4 style="color:var(--mlb)">B · ${esc(nameTxt(B))}</h4></div>`;
+  for (const f of feat4){ const [a0,a1,ak]=yr(A), [b0,b1,bk]=yr(B);
+    h += `<div>${trendSVG(f, A.hist||[], a0, a1, ak)}</div><div>${trendSVG(f, B.hist||[], b0, b1, bk)}</div>`; }
+  h += `</div>`;
+  const ilLine = x => x.il ? ` · IL ${x.il.n}회 ${x.il.days}일${x.il.tj?"(토미존)":""}` : "";
+  const kboLine = x => (isP(x) ? (r0==="투수" ? `첫해 ${fmt(x.KBO_이닝,1)}이닝 ERA ${fmt(x.KBO_ERA,2)}` : `첫해 ${fmt(x.KBO_타수,0)}타수 OPS ${fmt(x.KBO_OPS,3)}`) + ` · 재계약 ${x.stay_n}년${x.stay_plus?"+":""} · ${tag(x).replace(/<[^>]+>/g,"")}` : "2026 MLB·트리플A 후보 (KBO 기록 없음)") + ilLine(x);
+  h += `<p class="note">A: ${kboLine(A)}<br>B: ${kboLine(B)}</p>`;
+  $("cmpBody").innerHTML = h;
+  $("cmpRadar").innerHTML = radarSVG([{name:"A", vec:A, cls:"rd-a"},{name:"B", vec:B, cls:"rd-c"}], feats, zo, f=>labO(r0,f,false));
+  $("cmpClose").onclick = ()=> $("cmpDlg").close();
+  if ($("dlg").open) $("dlg").close();
+  if (!$("cmpDlg").open) $("cmpDlg").showModal();
+  $("cmpDlg").scrollTop = 0;
+}
+
+/* ================= 구단별 스카우팅 성향 ================= */
+const meanOf = a => { const v = a.filter(x=>x!=null && !isNaN(x)); return v.length ? v.reduce((s,x)=>s+x,0)/v.length : null; };
+const sdOf = a => { const v = a.filter(x=>x!=null && !isNaN(x)); if (v.length<2) return null; const m = meanOf(v); return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/(v.length-1)); };
+function renderTeams(){
+  const rows = pastRows(role, true, true), feats = D.feats[role], types = typList();
+  const ageOf = r => r["출생연도"]!=null ? r["KBO첫해"]-r["출생연도"] : null;
+  const M = [["age","입단 때 나이",ageOf,1],["mlb","MLB 비중%",r=>r.mlb_share*100,0]]
+    .concat(feats.map(f=>[f, labelFor(role,f), r=>r[f], decOf(f)])).concat([["il","5년 IL 일수",r=>r.il?r.il.days:0,0]]);
+  const allV = {}; M.forEach(([k,,g])=>{ const v = rows.map(g).filter(x=>x!=null); allV[k] = {m:meanOf(v), s:sdOf(v)}; });
+  const teams = FR_LIST.map(([k,l])=>({k, l, rs: rows.filter(r=>FR[r["팀"]]===k)})).filter(t=>t.rs.length).sort((a,b)=>b.rs.length-a.rs.length);
+  let hl = 0, cells = 0;
+  let h = `<thead><tr><th class="l">구단</th><th>사례</th>${M.map(m=>`<th>${esc(m[1])}</th>`).join("")}<th>성공</th><th class="l">유형 구성</th></tr></thead><tbody>`;
+  for (const t of teams){
+    const n = t.rs.length;
+    h += `<tr class="clickable" data-team="${t.k}" title="누르면 이 구단만 보기${n<8?" (표본 "+n+"명 — 매우 작음)":""}"><td class="l">${esc(t.l)}</td><td>${n}</td>`;
+    for (const [k,,g,d] of M){
+      const v = meanOf(t.rs.map(g)), A = allV[k]; cells++;
+      let mark = "";
+      if (v!=null && A.s && n>=5){ const z = (v-A.m)/(A.s/Math.sqrt(n)); if (Math.abs(z)>=2){ hl++; mark = ` <span style="color:${z>0?"var(--accent)":"var(--bad)"}" title="전체 평균보다 ${z>0?"높음":"낮음"} (표준오차 ${z.toFixed(1)}배)">${z>0?"▲":"▼"}</span>`; } }
+      h += `<td>${v==null?"-":fmt(v,d)}${mark}</td>`;
+    }
+    const sc = t.rs.filter(isSuccess).length;
+    let x = 0, bar = `<svg viewBox="0 0 160 14" width="160" height="14" role="img" aria-label="유형 구성">`;
+    types.forEach((ty,i)=>{ const c = t.rs.filter(r=>typOf(r)===ty.id).length, w = c/n*160; if (c){ bar += `<rect x="${x.toFixed(1)}" y="1" width="${w.toFixed(1)}" height="12" fill="${ARS_COL[i%ARS_COL.length]}"><title>${esc(ty.name)} ${c}명</title></rect>`; x += w; } });
+    h += `<td>${sc}/${n} <span class="note">(${(sc/n*100).toFixed(0)}%)</span></td><td class="l">${bar}</svg></td></tr>`;
+  }
+  const allRow = `<tr style="font-weight:600"><td class="l">전체</td><td>${rows.length}</td>${M.map(([k,,,d])=>`<td>${allV[k].m==null?"-":fmt(allV[k].m,d)}</td>`).join("")}<td>${rows.filter(isSuccess).length}/${rows.length}</td><td></td></tr>`;
+  $("teamTable").innerHTML = h + allRow + "</tbody>";
+  $("teamLegend").innerHTML = types.map((ty,i)=>`<span><i style="background:${ARS_COL[i%ARS_COL.length]}"></i>${esc(ty.name)}</span>`).join("");
+  $("teamNote").innerHTML = `구단별 표본 ${teams.length?Math.min(...teams.map(t=>t.rs.length)):0}~${teams.length?Math.max(...teams.map(t=>t.rs.length)):0}명`;
+}
+
+/* ================= 유형 선택·유형별 성공 비율 ================= */
+let lastTypKey = "";
+function fillTypeSel(){
+  const key = role+"|"+ADJ, sel = $("typSel"), prev = sel.value;
+  sel.innerHTML = `<option value="">전체 유형</option>` + typList().map(t=>`<option value="${t.id}">${esc(t.name)} (${t.size})</option>`).join("");
+  sel.value = (lastTypKey===key && [...sel.options].some(o=>o.value===prev)) ? prev : "";
+  lastTypKey = key;
+}
+function renderTypes(){
+  const rows = pastRows(role, true), cands = D.cands[role], base = rows.length ? rows.filter(isSuccess).length/rows.length*100 : 0;
+  let h = "";
+  for (const t of typList()){
+    const m = rows.filter(r=>typOf(r)===t.id), s = m.filter(isSuccess).length, rate = m.length ? s/m.length*100 : 0, k = cands.filter(c=>typOf(c)===t.id).length;
+    h += `<div class="typrow" data-typ="${t.id}" title="누르면 이 유형만 보기">
+      <span class="tn">${esc(t.name)}</span>
+      <div class="gapbar" style="height:14px"><i style="left:0;width:${Math.min(rate,100).toFixed(1)}%"></i><b style="position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--bad);left:${Math.min(base,100).toFixed(1)}%"></b></div>
+      <span>${s}/${m.length}명 <span class="note">(${m.length?rate.toFixed(0):"-"}%)</span></span><span class="note">2026 후보 ${k}명</span></div>`;
+  }
+  $("typPanel").innerHTML = h || "<p class='note'>유형 정보가 없습니다.</p>";
+  const sils = typList().map(t=>t.sil).filter(x=>x!=null);
+  $("typNote").innerHTML = `붉은 선 = 전체 성공 비율(${base.toFixed(0)}%)`;
+}
+
+/* ================= 4. 검증: 입단 전 지표로 성공을 가려낼 수 있나 ================= */
+function aucBar(auc, lo, hi){
+  const X = v => (v*140).toFixed(1), out = auc > hi;
+  return `<svg viewBox="0 0 140 18" width="140" height="18" role="img" aria-label="AUC ${auc} (무작위 범위 ${lo}~${hi})">
+    <rect x="${X(lo)}" y="4" width="${(((hi-lo)*140)).toFixed(1)}" height="10" rx="3" fill="#3b414e"/>
+    <line x1="70" x2="70" y1="1" y2="17" stroke="var(--muted)" stroke-dasharray="2 2"/>
+    <circle cx="${X(auc)}" cy="9" r="4.5" fill="${out?"var(--good)":"var(--accent)"}"><title>AUC ${auc}, 무작위 범위 ${lo}~${hi}</title></circle></svg>`;
+}
+function renderVal(){
+  const V = (D.validation||[]).filter(v=>v.role===role);
+  let h = `<thead><tr><th class="l">성공 방식</th><th class="l">지표</th><th>표본(성공)</th><th class="l">로지스틱 회귀 AUC</th><th>p</th><th class="l">닮은 사례 5명 AUC</th><th>p</th><th class="l">가장 구분되는 단일 지표</th></tr></thead><tbody>`;
+  let sig = 0, cells = 0, minUni = null;
+  for (const v of V){
+    const fl = v.feat==="adj" ? "환경 보정" : "원본";
+    if (v.lr==null){ h += `<tr><td class="l">${MODE_NOTE[v.crit]}</td><td class="l">${fl}</td><td>${v.n}(${v.pos})</td><td class="l note" colspan="5">성공·비성공 표본이 6명 미만이라 계산하지 않음</td></tr>`; continue; }
+    cells++; if (v.lr_p<0.05) sig++; if (v.knn_p<0.05) sig++;
+    const best = Object.entries(v.uni).sort((a,b)=>a[1][1]-b[1][1])[0];
+    if (!minUni || best[1][1] < minUni.p) minUni = {f:best[0], auc:best[1][0], p:best[1][1], crit:v.crit, feat:fl};
+    h += `<tr><td class="l">${MODE_NOTE[v.crit]}</td><td class="l">${fl}</td><td>${v.n}(${v.pos})</td>
+      <td class="l">${aucBar(v.lr, v.lr_lo, v.lr_hi)} <span class="note">${v.lr.toFixed(2)}</span></td><td>${v.lr_p.toFixed(2)}</td>
+      <td class="l">${aucBar(v.knn, v.knn_lo, v.knn_hi)} <span class="note">${v.knn.toFixed(2)}</span></td><td>${v.knn_p.toFixed(2)}</td>
+      <td class="l">${esc(labelBase(role,best[0]))} <span class="note">AUC ${best[1][0].toFixed(2)}, p=${best[1][1].toFixed(2)}</span></td></tr>`;
+  }
+  $("valTable").innerHTML = h + "</tbody>";
+  $("valNote").innerHTML = V.length ? `p<0.05: <b>${sig}</b> / ${cells*2}개 조합` : "";
+}
+
+/* ================= 이벤트 ================= */
+function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderReports(); renderRumors(); }
+document.addEventListener("click", e=>{
+  const tr = e.target.closest("tr[data-team]");
+  if (tr){ $("teamSel").value = tr.dataset.team; renderAll(); showTab("s1"); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"}); return; }
+  const r = e.target.closest(".typrow"); if (!r) return;
+  $("typSel").value = r.dataset.typ; renderAll();
+  showTab("s1"); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"});
+});
+document.addEventListener("click", e=>{
+  const el = e.target.closest("[data-kind]"); if (!el || e.target.closest("th") || e.target.closest("a")) return;
+  if (el.dataset.role && el.dataset.role!==role) $("roleSeg").querySelector(`button[data-r="${el.dataset.role}"]`).click();
+  openDetail(el.dataset.kind, el.dataset.key);
+});
+$("dlg").addEventListener("click", e=>{ if (e.target===$("dlg")) $("dlg").close(); });
+function setRole(r0){
+  $("roleSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on", x.dataset.r===r0));
+  role = r0; sortKey = null; $("q").value = "";
+  $("critP").hidden = role!=="투수"; $("critB").hidden = role!=="타자";
+  fillScatterSel(); renderAll();
+}
+$("roleSeg").querySelectorAll("button").forEach(b=> b.onclick = ()=> setRole(b.dataset.r));
+$("teamSel").innerHTML = `<option value="">전체 팀</option>` + FR_LIST.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+["pIP","pERA","bAB","bOPS","yFrom","yTo","teamSel","critMode","typSel"].forEach(id=> $(id).oninput = renderAll);
+["xSel","ySel","enough"].forEach(id=> $(id).oninput = renderScatter);
+["refSel","lvSel","ageMax","noKbo","q","rf1Min","rf1Max","rf2Min","rf2Max"].forEach(id=> $(id).oninput = renderCands);
+[1,2].forEach(n=>{
+  $("rf"+n+"Sel").oninput = ()=>{ $("rf"+n+"Min").value=""; $("rf"+n+"Max").value=""; rfHint(n); renderCands(); };
+  $("rf"+n+"Fit").onclick = ()=> rfFit(n);
+});
+/* 환경 보정 토글: 원래 값을 보관해 두고 켜고 끌 때 선수·시즌별 값과 표준화 기준을 통째로 바꾼다 */
+D.scaleRaw = D.scale;
+(function snapshotRaw(){
+  for (const r0 of ["투수","타자"]) for (const rec of D.past[r0].concat(D.cands[r0])) {
+    rec._raw = {}; D.feats[r0].forEach(f=>{ rec._raw[f] = rec[f]; });
+    for (const h of rec.hist||[]) { h._raw = {}; D.feats[r0].forEach(f=>{ h._raw[f] = h[f]; }); }
+  }
+})();
+function applyAdj(on){
+  ADJ = on;
+  for (const r0 of ["투수","타자"]) for (const rec of D.past[r0].concat(D.cands[r0])) {
+    D.feats[r0].forEach(f=>{ rec[f] = on ? ((rec.adj && rec.adj[f]!=null) ? rec.adj[f] : null) : rec._raw[f]; });
+    for (const h of rec.hist||[]) D.feats[r0].forEach(f=>{ h[f] = on ? ((h.adj && h.adj[f]!=null) ? h.adj[f] : null) : h._raw[f]; });
+  }
+  D.scale = on ? D.scaleAdj : D.scaleRaw;
+}
+$("adjOn").oninput = ()=>{
+  applyAdj($("adjOn").checked);
+  [1,2].forEach(n=>{ $("rf"+n+"Sel").value=""; $("rf"+n+"Min").value=""; $("rf"+n+"Max").value=""; });
+  sortKey = null; fillScatterSel(); renderAll();
+};
+fillScatterSel(); renderAll(); renderLanding();
+
+/* ================= 디자인 전환 (Paper ↔ Classic). 선택은 이 브라우저에 저장 ================= */
+function paintThemeBtn(){
+  const dark = document.documentElement.dataset.theme !== "paper";   // LIGHT = paper, DARK = classic
+  const b = $("themeBtn");
+  b.setAttribute("aria-checked", dark ? "true" : "false");
+  b.setAttribute("aria-label", dark ? "다크 모드 (누르면 라이트)" : "라이트 모드 (누르면 다크)");
+}
+$("themeBtn").addEventListener("click", ()=>{
+  const next = document.documentElement.dataset.theme==="paper" ? "classic" : "paper";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("bk_theme", next); } catch(e){}
+  paintThemeBtn();
+});
+paintThemeBtn();
+
+/* ================= 앱형: 하단 탭 · 하단 시트 ================= */
+const CHAPTERS = ["s1","s2","s6","s3","s4","s8","s7"];
+const MAIN_TABS = ["s1","s2","s3","s8"];
+CHAPTERS.forEach(id=> $(id).classList.add("chapter"));
+function showTab(id, scroll){
+  if (!CHAPTERS.includes(id)) id = "s1";
+  CHAPTERS.forEach(c=> $(c).hidden = c!==id);
+  document.querySelectorAll("#bnav button").forEach(b=>{
+    const on = b.dataset.tab===id || (b.dataset.tab==="more" && !MAIN_TABS.includes(id));
+    b.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  if (scroll) scrollTo({top:0, behavior:"instant"});
+  try { history.replaceState(null, "", "#"+id); } catch(e){}
+}
+document.addEventListener("click", e=>{
+  const a = e.target.closest('a[href^="#s"]'); if (!a) return;
+  const id = a.getAttribute("href").slice(1);
+  if (CHAPTERS.includes(id)){ e.preventDefault(); showTab(id, true); }
+});
+const h0 = location.hash.slice(1); showTab(CHAPTERS.includes(h0) ? h0 : "s1", false);
+
+/* 하단 시트: 열고 닫기. 열린 창(dialog) 위에도 보이게 호스트 안으로 옮긴다 */
+function wrapOpen(el, host){
+  if (host && el.parentNode !== host) host.appendChild(el);
+  el.hidden = false; void el.offsetWidth; el.classList.add("on");
+  document.documentElement.classList.add("noscroll");
+}
+function wrapClose(el){
+  el.classList.remove("on");
+  setTimeout(()=>{ if (!el.classList.contains("on")) el.hidden = true; if (!document.querySelector(".sheetwrap.on")) document.documentElement.classList.remove("noscroll"); }, 220);
+}
+document.addEventListener("click", e=>{
+  if (e.target.closest("[data-close]")){ const w = e.target.closest(".sheetwrap"); if (w) wrapClose(w); return; }
+  const go = e.target.closest("[data-go]"); if (go){ wrapClose($("moreSheet")); showTab(go.dataset.go, true); return; }
+  if (e.target.closest(".sheetpanel .go")){ const w = e.target.closest(".sheetwrap"); if (w) wrapClose(w); }
+});
+document.addEventListener("keydown", e=>{ if (e.key==="Escape"){ const w = [...document.querySelectorAll(".sheetwrap.on")].pop(); if (w) wrapClose(w); } });
+$("bnav").addEventListener("click", e=>{
+  const b = e.target.closest("button[data-tab]"); if (!b) return;
+  if (b.dataset.tab==="more") wrapOpen($("moreSheet")); else showTab(b.dataset.tab, true);
+});
+$("setBtn").addEventListener("click", ()=> wrapOpen($("setSheet")));
+/* 아래로 끌어내려 닫기(머리 부분에서만) */
+document.querySelectorAll(".sheetwrap").forEach(w=>{
+  const p = w.querySelector(".sheetpanel"), hd = w.querySelector(".sheethead"); let y0 = null, dy = 0;
+  hd.addEventListener("touchstart", e=>{ y0 = e.touches[0].clientY; dy = 0; }, {passive:true});
+  hd.addEventListener("touchmove", e=>{ if (y0==null) return; dy = e.touches[0].clientY - y0; if (dy>0) p.style.transform = `translateY(${dy}px)`; }, {passive:true});
+  hd.addEventListener("touchend", ()=>{ if (y0==null) return; p.style.transform = ""; if (dy>80) wrapClose(w); y0 = null; });
+});
+
+/* 마우스오버 정보(data-tip)는 눌러서 하단 시트로 본다 */
+function openTip(t){
+  const host = t.closest("dialog") || document.body;
+  let h = `<div class="sheettip">${t.dataset.tip}</div>`;
+  if (t.dataset.kind && t.dataset.key){
+    h += `<button type="button" class="btn go" data-kind="${esc(t.dataset.kind)}" data-key="${esc(t.dataset.key)}" data-role="${esc(t.dataset.role||"")}">상세 보기</button>`;
+  }
+  $("sheetBody").innerHTML = h;
+  wrapOpen($("sheet"), host);
+}
+document.addEventListener("click", e=>{
+  const t = e.target.closest && e.target.closest("[data-tip]"); if (!t) return;
+  if (t.closest("thead") && !t.closest(".timeline")) return;   // 정렬용 표 머리는 정렬 동작을 유지
+  e.preventDefault(); e.stopPropagation(); openTip(t);
+}, true);
+
+/* 관심 선수 · 비교 연결 */
+renderFav(); renderCmpBar();
+$("cmpGo").onclick = openCompare;
+$("cmpClear").onclick = ()=>{ CMP = []; renderCmpBar(); };
+document.addEventListener("click", e=>{
+  const un = e.target.closest("[data-unfav]");
+  if (un){ const [r0,k,id] = un.dataset.unfav.split("|"); favToggle(r0,k,id); e.stopPropagation(); return; }
+  const op = e.target.closest("[data-open]");
+  if (op){ const [r0,k,id] = op.dataset.open.split("|"); if (r0!==role) setRole(r0); openDetail(k,id); }
+});
+</script>
+<script>if ("serviceWorker" in navigator && location.protocol !== "file:") addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
+</body>
+</html>
