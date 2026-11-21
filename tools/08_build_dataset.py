@@ -379,6 +379,14 @@ def _succ(rec, crit, p_ip=144, p_era=3.5, b_ab=446, b_ops=0.85):
         return r.get("KBO_타수") is not None and r.get("KBO_OPS") is not None and r["KBO_타수"] >= b_ab and r["KBO_OPS"] >= b_ops
     if crit == "first":
         return first(rec)
+    if crit == "career":  # 커리어하이 시즌: KBO 시즌 중 한 시즌이라도 기준을 넘으면 성공(2026 진행 중 시즌 포함)
+        for x in rec.get("kbo") or []:
+            if role == "투수":
+                if x.get("IP") is not None and x.get("ERA") is not None and x["IP"] >= p_ip and x["ERA"] <= p_era:
+                    return True
+            elif x.get("AB") is not None and x.get("OPS") is not None and x["AB"] >= b_ab and x["OPS"] >= b_ops:
+                return True
+        return False
     if y >= POOL_YEAR:
         return None  # 2026 입단자는 다음 해 기록이 없어 제외
     if crit == "stay":
@@ -439,7 +447,7 @@ def run_validation(past, scale, scale_adj):
         for mode in ("raw", "adj"):
             sc = scale_adj[role] if mode == "adj" else scale[role]
             recs = [r for r in past if r["역할"] == role]
-            for crit in ("first", "stay", "first+stay", "two"):
+            for crit in ("first", "stay", "first+stay", "two", "career"):
                 rows = [(r, _succ(r, crit)) for r in recs]
                 rows = [(r, int(bool(s))) for r, s in rows if s is not None]
                 y = np.array([s for _, s in rows])
