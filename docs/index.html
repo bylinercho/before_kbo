@@ -55,6 +55,18 @@ h3{font-size:15px;margin:20px 0 6px}
 .themebtn{font:inherit;font-size:12px;letter-spacing:.06em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:3px 12px;cursor:pointer;align-self:center}
 .themebtn:hover{color:var(--ink);border-color:var(--ink)}
 nav{align-items:center}
+/* 상세 창 머리: 이름 → 기본 정보 → 유형·배지 → 보조 설명 → 영상 */
+.dlgin:focus{outline:none}
+.dh-main h2{margin:0 0 8px}
+.dh-facts{display:flex;flex-wrap:wrap;gap:4px 0;margin:0;font-size:14px;color:var(--ink)}
+.dh-facts span+span::before{content:"·";margin:0 9px;color:var(--muted)}
+.dh-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0}
+.dh-tags .rum-st{margin:0}
+.pill{display:inline-block;padding:2px 13px;border:1px solid var(--line);border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,255,255,.04)}
+.dh-ctx{margin:12px 0 0;font-size:12.5px;color:var(--muted)}
+.dh-links{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.dh-links a{color:var(--muted)}
+.dh-links a:hover{color:var(--ink)}
 .bio{margin:6px 0 0;font-size:13.5px;color:var(--ink);letter-spacing:.01em}
 .awards{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}
 .aw{display:inline-flex;align-items:center;cursor:help}
@@ -519,7 +531,7 @@ dialog{overscroll-behavior:contain}
   </div>
 </footer>
 
-<dialog id="dlg"><div class="dlgin" id="dlgBody"></div></dialog>
+<dialog id="dlg"><div class="dlgin" id="dlgBody" tabindex="-1" autofocus></div></dialog>
 <dialog id="cmpDlg"><div class="dlgin" id="cmpBody"></div></dialog>
 <div id="cmpBar" hidden>비교: <span id="cmpItems"></span> <button class="btn mini" id="cmpGo" type="button">비교 보기</button> <button class="btn mini" id="cmpClear" type="button">비우기</button></div>
 
@@ -784,6 +796,15 @@ function bioLine(rec){
   if (b.ht) p.push(`${b.ht}cm${b.wt?` ${b.wt}kg`:""}`);
   return p.length ? `<p class="bio">${p.join(" · ")}</p>` : "";
 }
+function factsLine(rec, age, isPast){
+  const b = rec.bio || {}, p = [role];
+  if (b.pos && b.pos!=="P") p.push(`${POS_KO[b.pos]||b.pos}(${b.pos})`);
+  if (b.thr || b.bat) p.push(`${b.thr?HAND[b.thr]+"투":""}${b.bat?HAND[b.bat]+"타":""}`);
+  if (b.ctry) p.push(esc(b.ctry));
+  if (b.ht) p.push(`${b.ht}cm${b.wt?` ${b.wt}kg`:""}`);
+  if (age!=null) p.push(isPast ? `입단 때 ${age}세` : `${age}세`);
+  return `<p class="dh-facts">${p.map(x=>`<span>${x}</span>`).join("")}</p>`;
+}
 function renderPast(){
   const rows = pastRows();
   $("nPast").textContent = D.past["투수"].length + D.past["타자"].length;
@@ -943,16 +964,21 @@ function openDetail(kind, key){
   cur = {kind, rec};
   const isPast = kind==="past", pool = pastRows();
   const age = rec["출생연도"]!=null ? (isPast ? rec["KBO첫해"]-rec["출생연도"] : BASE-rec["출생연도"]) : null;
-  const head = isPast
-    ? `${role} · ${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 때 만 나이 약 ${age??"-"}세 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`
-    : `${role} · 2026 ${({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]]||rec["소속"]} (스탯캐스트 합산 ${role==="투수"?"공 "+rec.total_pitches+"개":rec.pa26+"타석"}) · 나이 ${age??"-"}세 · 최근 5년(${rec["창"]}) ${volTxt(rec)}, MLB ${fmt(rec.mlb_share*100,0)}%`;
+  const lvTxt = ({"AAA·MLB 오감":"트리플A·MLB 오감","AAA만":"트리플A","MLB만":"MLB"})[rec["소속"]] || rec["소속"];
+  const ctx = isPast
+    ? `${rec["KBO첫해"]} ${teamK(rec["팀"])} 입단 · 입단 전 5년(${rec["창"]}) ${volTxt(rec)} · MLB ${fmt(rec.mlb_share*100,0)}%`
+    : `2026 ${lvTxt} · 최근 5년(${rec["창"]}) ${volTxt(rec)} · MLB ${fmt(rec.mlb_share*100,0)}%`;
   const fid = isPast ? rec.mykbo_id : rec.player_id;
-  let h = `<div class="dlghead"><div><h2>${nameHTML(rec)}${awardBadges(rec)} ${isPast?tag(rec):""}</h2><p class="sub">${head}</p>${bioLine(rec)}<p class="note" style="margin:2px 0 0">유형: <b>${esc(typName(rec))}</b>${(()=>{ const rm = rumorOf(rec, kind); return rm ? ` <span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}" style="margin-left:2px">Rumor · ${esc(rm.status||"루머")}</span>` : ""; })()}</p></div>
-    <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="dlgClose">닫기</button></div></div>`;
+  const rm = rumorOf(rec, kind);
   /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
   const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
   const vq = role==="투수" ? ["pitching","피칭"] : ["batting highlights","타격"];
-  h += `<p class="note">영상 찾기: <a href="${yt(enName(rec)+" "+vq[0]+(isPast?"":" 2026"))}" target="_blank" rel="noopener noreferrer">YouTube(영문)</a>${rec["한글명"]?` · <a href="${yt(rec["한글명"]+" "+vq[1])}" target="_blank" rel="noopener noreferrer">YouTube(한글)</a>`:""} — 검색 결과로 이동하며, 같은 이름의 다른 선수가 나올 수 있습니다.</p>`;
+  let h = `<div class="dlghead"><div class="dh-main"><h2>${nameHTML(rec)}${awardBadges(rec)} ${isPast?tag(rec):""}</h2>
+    ${factsLine(rec, age, isPast)}
+    <div class="dh-tags"><span class="pill">${esc(typName(rec))}</span>${rm ? `<span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}">Rumor · ${esc(rm.status||"루머")}</span>` : ""}</div>
+    <p class="dh-ctx">${ctx}</p>
+    <p class="dh-links" title="검색 결과로 이동하며, 같은 이름의 다른 선수가 나올 수 있습니다">영상 찾기 ▸ <a href="${yt(enName(rec)+" "+vq[0]+(isPast?"":" 2026"))}" target="_blank" rel="noopener noreferrer">YouTube(영문)</a>${rec["한글명"]?` · <a href="${yt(rec["한글명"]+" "+vq[1])}" target="_blank" rel="noopener noreferrer">YouTube(한글)</a>`:""}</p></div>
+    <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="dlgClose">닫기</button></div></div>`;
   if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
   if (!isPast && rec["KBO경력"]) h += `<div class="box note">이름이 KBO 외국인 명단과 같아 경력자로 의심됩니다(동명이인일 수 있음).</div>`;
   if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
