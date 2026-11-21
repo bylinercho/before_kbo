@@ -255,9 +255,16 @@ def main():
             "md": (pr["mlbDebutDate"] if pr is not None and isinstance(pr["mlbDebutDate"], str) else ""),
             "st": st,
         }
+    # 팀 이름의 한글 발음(data/team_names_ko.csv, 16번이 만든다). T 와 같은 순서
+    ko = {}
+    if os.path.exists("data/team_names_ko.csv"):
+        ko = {r["영문명"]: (r["한글 발음"], r["비고"]) for r in pd.read_csv("data/team_names_ko.csv", encoding="utf-8-sig", dtype=str).fillna("").to_dict("records")}
+    TK = [ko.get(n, ("", ""))[0] for n in TN]
+    TKN = [ko.get(n, ("", ""))[1] for n in TN]
+    print("한글 발음이 없는 팀 이름:", [n for n, k in zip(TN, TK) if not k])
     with open("docs/careers.js", "w", encoding="utf-8") as f:
-        f.write("// tools/15_careers.py 가 만든 파일. 직접 고치지 않는다. T=팀 이름, L=레벨 이름, M=함께 뛴 사람, P=선수번호별 자료(st의 [레벨, 팀, 모구단, 함께 뛴 사람 번호들, 더 있는 수]는 번호)\nwindow.CAREERS = ")
-        json.dump({"T": TN, "L": LVN, "M": MP, "P": out}, f, ensure_ascii=False, separators=(",", ":"))
+        f.write("// tools/15_careers.py 가 만든 파일. 직접 고치지 않는다. T=팀 이름, K=한글 발음, KN=비고, L=레벨 이름, M=함께 뛴 사람, P=선수번호별 자료(st의 [레벨, 팀, 모구단, 함께 뛴 사람 번호들, 더 있는 수]는 번호)\nwindow.CAREERS = ")
+        json.dump({"T": TN, "K": TK, "KN": TKN, "L": LVN, "M": MP, "P": out}, f, ensure_ascii=False, separators=(",", ":"))
         f.write(";\n")
     print(f"docs/careers.js: 선수 {len(out)}명, 함께 뛴 사람이 있는 선수 {n_with}명, 행에 붙은 표시 {n_refs}개, 사람 목록 {len(MP)}명,",
           os.path.getsize("docs/careers.js"), "바이트")
