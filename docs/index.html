@@ -52,6 +52,17 @@ h3{font-size:15px;margin:20px 0 6px}
 .tablewrap td:not(:first-child),.tablewrap th:not(:first-child){text-align:center}
 .tablewrap .tag{line-height:1.25;vertical-align:middle}
 /* History 보기 */
+/* 직접 그리기 */
+.drawbox{margin:6px 0 14px;padding:14px 16px;border:1px solid var(--line);border-radius:12px}
+.drawgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:center}
+.drawsvg svg{width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.drawbtns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 6px}
+.drawside h4{margin:14px 0 6px;font-size:13.5px}
+.drawside .hrow{margin:6px 0;padding:8px 12px}
+.drawside .hrow .who{min-width:0}
+.dh{fill:var(--accent);stroke:#fff;stroke-width:2;cursor:grab}
+.dv{fill:var(--ink);font-weight:700;paint-order:stroke;stroke:var(--bg);stroke-width:3px}
+@media (max-width:820px){.drawgrid{grid-template-columns:1fr}}
 .lvtag{display:inline-block;min-width:36px;text-align:center;padding:0 8px;border:1px solid var(--c,var(--line));color:var(--c,var(--muted));border-radius:999px;font-size:11.5px;font-weight:700;line-height:1.5}
 .tablewrap table.timeline td.l{text-align:left}
 .tablewrap table.timeline td.yr{font-weight:700;vertical-align:top;padding-top:11px}
@@ -495,6 +506,18 @@ dialog{overscroll-behavior:contain}
       <label title="번호로 확인된 선수 + MyKBO 외국인 명단(2010~)과 이름이 같은 선수. 이름만 같은 다른 사람이 빠질 수 있음"><input type="checkbox" id="noKbo" checked> KBO 경력(이름 기준 의심 포함) 선수 빼기</label>
       <label>이름 검색 <input type="search" id="q" placeholder="예: Sabato, 치리노스"></label>
     </div>
+    <div class="drawbox" id="drawBox" hidden>
+      <div class="drawgrid">
+        <div class="drawsvg"><svg id="drawSvg" viewBox="0 0 380 345" role="img" aria-label="직접 그리는 레이더 그래프"></svg></div>
+        <div class="drawside">
+          <p class="note">점을 끌어서 모양을 그리세요. 바깥쪽일수록 평균보다 좋은 쪽이고, 안쪽 점선 오각형이 평균입니다.</p>
+          <div class="drawbtns"><button class="btn mini" id="drawAvg" type="button">평균으로</button><button class="btn mini" id="drawSucc" type="button">성공 사례 평균으로</button></div>
+          <h4>내 모양과 닮은 지난 KBO 사례 TOP5</h4>
+          <div id="drawPast"></div>
+          <p class="note" id="drawWarn"></p>
+        </div>
+      </div>
+    </div>
     <div class="row rf">
       <span class="note">기록 수준 범위 필터</span>
       <label>1 <select id="rf1Sel"></select> <input type="number" id="rf1Min" placeholder="하한" step="any"> ~ <input type="number" id="rf1Max" placeholder="상한" step="any"></label>
@@ -937,20 +960,98 @@ function rfActive(){
 /* ================= 3. 닮은 후보 ================= */
 function fillRefs(){
   const sel = $("refSel"), prev = sel.value, rows = pastRows().slice().sort((a,b)=>b["KBO첫해"]-a["KBO첫해"]||String(a["영문명"]).localeCompare(b["영문명"]));
-  let h = `<option value="__succ">성공 사례 평균 (${rows.filter(isSuccess).length}명)</option>`;
+  let h = `<option value="__succ">성공 사례 평균 (${rows.filter(isSuccess).length}명)</option><option value="__draw">직접 그리기</option>`;
   rows.forEach(r=>{ h += `<option value="${r.mykbo_id}">${r["KBO첫해"]} ${esc(nameTxt(r))} (${teamK(r["팀"])}${isSuccess(r)?", 성공":""})</option>`; });
   sel.innerHTML = h; if ([...sel.options].some(o=>o.value===prev)) sel.value = prev;
 }
 function refVector(){
   const v = $("refSel").value, rows = pastRows();
   if (v==="__succ"){ const S = rows.filter(isSuccess); return S.length ? {name:"성공 사례 평균", vec:meanVec(S)} : null; }
+  if (v==="__draw") return {name:"내가 그린 모양", vec:drawVec(), draw:true};
   const r = rows.find(x=>String(x.mykbo_id)===v); return r ? {name:nameTxt(r), vec:r} : null;
 }
+/* ================= 직접 그리기: 오각형을 그려서 닮은 선수 찾기 ================= */
+/* 그리는 값은 "오각형 값"(바깥쪽 = 좋음)이다. 계산에 쓸 때는 원래 방향(zf)으로 되돌려 지표값으로 바꾼다(거리 계산은 기존 방식 그대로). */
+const DRAW = {};
+const drawVals = ()=>{ if (!DRAW[role]) DRAW[role] = Object.fromEntries(D.feats[role].map(f=>[f,0])); return DRAW[role]; };
+function drawVec(){   // 그린 모양 → 지표값(평균 + 표준편차 × 원래 방향의 편차)
+  const v = {}, d = drawVals();
+  D.feats[role].forEach(f=>{ const [m,sd] = D.scale[role][f]; v[f] = m + sd * dirOf(role,f,false) * d[f]; });
+  return v;
+}
+const DRG = {cx:190, cy:170, R:120, zmax:2.5};
+function paintDraw(){
+  const svg = $("drawSvg"), feats = D.feats[role], n = feats.length, d = drawVals(), {cx,cy,R,zmax} = DRG;
+  const ang = i => -Math.PI/2 + i*2*Math.PI/n;
+  const rad = z => (Math.min(Math.max(z,-zmax),zmax)+zmax)/(2*zmax)*R;
+  const pt = (i,z)=> [cx+Math.cos(ang(i))*rad(z), cy+Math.sin(ang(i))*rad(z)];
+  const poly = zs => zs.map((z,i)=>pt(i,z).map(v=>v.toFixed(1)).join(",")).join(" ");
+  let h = "", xmin = 0, xmax = 380;
+  const lw = [];   // 축 이름 폭(글자 상자 추정)
+  for (const z of [-2,-1,1,2]) h += `<polygon class="grid" points="${poly(feats.map(()=>z))}"/>`;
+  h += `<polygon class="rd-zero" points="${poly(feats.map(()=>0))}"/>`;
+  feats.forEach((f,i)=>{
+    const x = cx+Math.cos(ang(i))*R, y = cy+Math.sin(ang(i))*R, c = Math.cos(ang(i));
+    h += `<line class="grid" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+    const lx = cx+Math.cos(ang(i))*(R+10), ly = cy+Math.sin(ang(i))*(R+10)+4, lab = labO(role,f,false), anchor = Math.abs(c)<0.2?"middle":c>0?"start":"end";
+    const w = [...lab].reduce((a,ch)=> a + (ch.charCodeAt(0)>255 ? 13 : 7.5), 0); lw[i] = w;
+    xmin = Math.min(xmin, (anchor==="end"?lx-w:anchor==="start"?lx:lx-w/2)-6); xmax = Math.max(xmax, (anchor==="end"?lx:anchor==="start"?lx+w:lx+w/2)+6);
+    h += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="12" text-anchor="${anchor}">${esc(lab)}</text>`;
+  });
+  h += `<polygon class="rd-a" points="${poly(feats.map(f=>d[f]))}" pointer-events="none"/>`;
+  feats.forEach((f,i)=>{
+    const [x,y] = pt(i,d[f]), [m,sd] = D.scale[role][f], val = m + sd*dirOf(role,f,false)*d[f];
+    /* 값 숫자는 축 이름과 겹치지 않게, 점 옆(축에 수직 방향)에 둔다 */
+    const pvx = -Math.sin(ang(i)), pvy = Math.cos(ang(i)), off = Math.abs(pvx)>0.95 ? Math.max(20, lw[i]/2+8) : 20, ox = x + pvx*off, oy = y + pvy*off + 4;
+    h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7.5" class="dh" pointer-events="none"/>`;
+    const shown = Math.max(0, f==="gs_pct" ? Math.min(100,val) : val);   // 표시만 현실 범위로(비율·ERA 등은 음수가 없다). 거리 계산은 그린 위치 그대로
+    h += `<text class="dv" x="${ox.toFixed(1)}" y="${oy.toFixed(1)}" font-size="11" text-anchor="${pvx>0.3?"start":pvx<-0.3?"end":"middle"}" pointer-events="none">${fF(f,shown)}</text>`;
+  });
+  feats.forEach((f,i)=>{   // 축 위 어디를 눌러도(또는 점을 잡고 끌어도) 그 축의 점이 따라온다
+    const x = cx+Math.cos(ang(i))*(R+6), y = cy+Math.sin(ang(i))*(R+6);
+    h += `<line data-ax="${i}" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="transparent" stroke-width="34" stroke-linecap="round" pointer-events="stroke" style="cursor:grab"/>`;
+  });
+  svg.setAttribute("viewBox", `${Math.floor(xmin)} 0 ${Math.ceil(xmax-xmin)} 345`);
+  svg.innerHTML = h;
+}
+let drawAx = null, drawRaf = 0;
+function drawFromPointer(e){
+  const svg = $("drawSvg"), feats = D.feats[role], n = feats.length, {cx,cy,R,zmax} = DRG, a = -Math.PI/2 + drawAx*2*Math.PI/n;
+  const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(svg.getScreenCTM().inverse());
+  const tt = (q.x-cx)*Math.cos(a) + (q.y-cy)*Math.sin(a);                 // 축 방향으로 얼마나 나갔나
+  let z = (tt/R)*(2*zmax) - zmax; z = Math.round(Math.max(-zmax,Math.min(zmax,z))*10)/10;
+  if (drawVals()[feats[drawAx]] === z) return;
+  drawVals()[feats[drawAx]] = z;
+  if (!drawRaf) drawRaf = requestAnimationFrame(()=>{ drawRaf = 0; renderCands(); });
+}
+(function(){
+  const svg = $("drawSvg");
+  svg.addEventListener("pointerdown", e=>{ const t = e.target.closest("[data-ax]"); if (!t) return; drawAx = +t.dataset.ax; svg.setPointerCapture(e.pointerId); drawFromPointer(e); e.preventDefault(); });
+  svg.addEventListener("pointermove", e=>{ if (drawAx!=null) drawFromPointer(e); });
+  ["pointerup","pointercancel"].forEach(ev=> svg.addEventListener(ev, ()=>{ drawAx = null; }));
+  $("drawAvg").onclick = ()=>{ DRAW[role] = null; renderCands(); };
+  $("drawSucc").onclick = ()=>{
+    const S = pastRows().filter(isSuccess); if (!S.length) return;
+    const m = meanVec(S), d = drawVals();
+    D.feats[role].forEach(f=>{ if (m[f]!=null) d[f] = Math.round(Math.max(-DRG.zmax,Math.min(DRG.zmax,zo(f,m[f])))*10)/10; });
+    renderCands();
+  };
+})();
+function drawPastList(ref, pool){
+  const top = nearest(ref.vec, pool, 5);
+  $("drawPast").innerHTML = top.map(n=>`<div class="hrow link" data-kind="past" data-key="${n.p.mykbo_id}" data-role="${role}"><span class="who">${nameHTML(n.p)}</span><span class="what">${n.p["KBO첫해"]} ${esc(teamK(n.p["팀"]))} · ${resultLine(n.p)}</span>${tag(n.p)}<span class="tagk">거리 ${n.dist.toFixed(2)}</span></div>`).join("") || `<p class="note">비교할 지난 사례가 없습니다.</p>`;
+  $("drawWarn").textContent = (top.length && top[0].dist > 0.8) ? "이 모양과 비슷한 선수는 드뭅니다. 가장 가까운 선수도 꽤 차이가 납니다(거리 0.8 이상)." : "";
+}
+
 function renderCands(){
+  const isDraw = $("refSel").value==="__draw";
+  $("drawBox").hidden = !isDraw;
+  if (isDraw) paintDraw();
   const ref = refVector();
   if (!ref){ $("candTable").innerHTML=""; $("candNote").textContent="기준으로 쓸 선수가 없습니다. 성공 기준이나 입단 연도 범위를 바꿔 보세요."; return; }
   const q = plain($("q").value.trim()), ageMax = +$("ageMax").value;
   const pool = pastRows();
+  if (isDraw) drawPastList(ref, pool);
   let res = [];
   for (const c of D.cands[role]){
     if (q){ if (!plain(flip(c.player_name)+" "+(c["한글명"]||"")).includes(q)) continue; }
