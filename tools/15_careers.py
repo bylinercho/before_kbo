@@ -14,7 +14,6 @@
 2. 겹침(재미 요소): "같은 시즌에 같은 팀(팀 번호가 같음)에서 기록이 있는" 사람을 찾는다.
    - KBO 외국인: data/kbo_cohort.csv 에서 미국 기록과 연결된 선수(2015~2026 입단) 가운데 겹치는 사람.
    - 코리안리거: 한국에서 태어난 MLB·마이너 선수.
-   - KBO 같은 팀: 같은 해 KBO 같은 구단에 있던 외국인.
    "함께 뛰었다"는 같은 시즌 같은 팀에 이름이 있다는 뜻이다. 같은 날 같이 로스터에 있었는지는 알 수 없다.
 
 주의
@@ -238,36 +237,19 @@ def main():
             kl.append({"id": o, "en": kr_name.get(o, ""), "ko": kn.get(o, ""), "ty": ty, "n": n, "last": last})
         kl.sort(key=lambda x: (-x["n"], -x["last"]))
 
-        # KBO에서 같은 해 같은 구단이던 외국인
-        kt = []
-        if pid in F:
-            mine = set(kbo_by_myk.get(F[pid]["myk"], []))
-            seen = defaultdict(set)
-            for o, f in F.items():
-                if o == pid:
-                    continue
-                for yt in kbo_by_myk.get(f["myk"], []):
-                    if yt in mine:
-                        seen[o].add(yt)
-            for o, ys in seen.items():
-                f = F[o]
-                kt.append({"id": f["myk"], "role": f["role"], "en": f["en"], "ko": f["ko"], "yt": sorted(ys)})
-            kt.sort(key=lambda x: (-len(x["yt"]), x["yt"][-1]))
-
         pr = ppl.loc[pid] if pid in ppl.index else None
         out[str(pid)] = {
             "md": (pr["mlbDebutDate"] if pr is not None and isinstance(pr["mlbDebutDate"], str) else ""),
             "st": st,
             "fk": fk[:MAX_LIST], "nfk": len(fk),
             "kl": kl[:MAX_LIST], "nkl": len(kl),
-            "kt": kt[:MAX_LIST],
         }
     with open("docs/careers.js", "w", encoding="utf-8") as f:
         f.write("// tools/15_careers.py 가 만든 파일. 직접 고치지 않는다. T=팀 이름 목록, L=레벨 이름, P=선수번호별 자료(st 안의 [레벨, 팀, 모구단]은 번호)\nwindow.CAREERS = ")
         json.dump({"T": TN, "L": LVN, "P": out}, f, ensure_ascii=False, separators=(",", ":"))
         f.write(";\n")
-    n_fk = sum(1 for v in out.values() if v["fk"]); n_kl = sum(1 for v in out.values() if v["kl"]); n_kt = sum(1 for v in out.values() if v["kt"])
-    print(f"docs/careers.js: 선수 {len(out)}명, KBO 외국인 겹침 {n_fk}명, 코리안리거 겹침 {n_kl}명, KBO 같은 팀 {n_kt}명,",
+    n_fk = sum(1 for v in out.values() if v["fk"]); n_kl = sum(1 for v in out.values() if v["kl"])
+    print(f"docs/careers.js: 선수 {len(out)}명, KBO 외국인 겹침 {n_fk}명, 코리안리거 겹침 {n_kl}명,",
           os.path.getsize("docs/careers.js"), "바이트")
 
 

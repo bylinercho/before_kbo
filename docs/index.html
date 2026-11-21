@@ -1133,10 +1133,6 @@ function histFun(rec, c, isPast){
   h += c.kl.length ? c.kl.map(k=>hRow(k, `<span class="who">${k.ko?esc(k.ko)+" ":""}<span class="en">${esc(k.en)}</span></span><span class="what">${tyTxt(k.ty)}</span>`, false)).join("")
                    + (c.nkl>c.kl.length ? `<p class="note">외 ${c.nkl-c.kl.length}명</p>` : "")
                    : `<p class="note">겹치는 기록이 없습니다.</p>`;
-  if (isPast && c.kt && c.kt.length){
-    h += `<h3>KBO에서 같은 팀이던 외국인 <span class="note">— 같은 해, 같은 구단</span></h3>`;
-    h += c.kt.map(f=>hRow(f, `<span class="who">${kName(f)}</span><span class="what">${f.yt.map(yt=>yt[0]+" "+esc(teamK(yt[1]))).join(", ")}</span>`, true)).join("");
-  }
   return h + `<p class="note">"함께 뛰었다"는 같은 시즌 같은 팀에 기록이 있다는 뜻입니다. 같은 시기에 함께 로스터에 있었는지는 확인하지 않았습니다.</p>`;
 }
 async function openHistory(kind, fid){
