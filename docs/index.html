@@ -51,6 +51,17 @@ h3{font-size:15px;margin:20px 0 6px}
 .tablewrap td{height:42px;padding-top:0;padding-bottom:0;vertical-align:middle}
 .tablewrap td:not(:first-child),.tablewrap th:not(:first-child){text-align:center}
 .tablewrap .tag{line-height:1.25;vertical-align:middle}
+/* History 보기 */
+.lvtag{display:inline-block;min-width:36px;text-align:center;padding:0 8px;border:1px solid var(--c,var(--line));color:var(--c,var(--muted));border-radius:999px;font-size:11.5px;font-weight:700;line-height:1.5}
+.tablewrap table.timeline td.l{text-align:left}
+.tablewrap table.timeline td.yr{font-weight:700;vertical-align:top;padding-top:11px}
+.timeline tr.kbo td{background:rgba(255,122,69,.07)}
+.hrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding:10px 14px;margin:8px 0;border:1px solid var(--line);border-radius:10px}
+.hrow.link{cursor:pointer}
+.hrow.link:hover{border-color:var(--accent)}
+.hrow .who{font-weight:700;min-width:160px}
+.hrow .what{color:var(--muted);font-size:13px}
+.hrow .tagk{margin-left:auto;font-size:12px;color:var(--accent);border:1px solid var(--accent);padding:0 9px;border-radius:999px}
 .stamp{display:none}
 .themebtn{font:inherit;font-size:12px;letter-spacing:.06em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:3px 12px;cursor:pointer;align-self:center}
 .themebtn:hover{color:var(--ink);border-color:var(--ink)}
@@ -540,8 +551,7 @@ dialog{overscroll-behavior:contain}
 <script src="data.js"></script>
 <script src="reports.js" onerror="void 0"></script>
 <script src="rumors.js" onerror="void 0"></script>
-<script src="awards.js" onerror="void 0"></script>
-<script>
+<script src="awards.js" onerror="void 0"></script><script>
 "use strict";
 const D = window.DATA;
 const LABEL = {
@@ -678,11 +688,16 @@ function radarSVG(series, feats, zfun, labfun){
   let h = `<svg viewBox="0 0 380 345" role="img" aria-label="지표별 편차 레이더 그래프">`;
   for (const z of [-2,-1,1,2]) h += `<polygon class="grid" points="${poly(feats.map(()=>z))}"/>`;
   h += `<polygon class="rd-zero" points="${poly(feats.map(()=>0))}"/>`;
+  let xmin = 0, xmax = 380;   // 긴 축 이름이 잘리지 않도록 그림 영역을 필요한 만큼만 넓힌다
   feats.forEach((f,i)=>{
     const x=cx+Math.cos(ang(i))*R, y=cy+Math.sin(ang(i))*R, c=Math.cos(ang(i));
     h += `<line class="grid" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
     const lx=cx+Math.cos(ang(i))*(R+10), ly=cy+Math.sin(ang(i))*(R+10)+4;
-    h += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="12" text-anchor="${Math.abs(c)<0.2?"middle":c>0?"start":"end"}">${esc(labfun(f))}</text>`;
+    const lab = labfun(f), anchor = Math.abs(c)<0.2?"middle":c>0?"start":"end";
+    const w = [...lab].reduce((a,ch)=> a + (ch.charCodeAt(0)>255 ? 13 : 7.5), 0);
+    const left = anchor==="end" ? lx-w : anchor==="start" ? lx : lx-w/2, right = anchor==="end" ? lx : anchor==="start" ? lx+w : lx+w/2;
+    xmin = Math.min(xmin, left-6); xmax = Math.max(xmax, right+6);
+    h += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="12" text-anchor="${anchor}">${esc(lab)}</text>`;
   });
   series.slice().reverse().forEach(s=>{ h += `<polygon class="${s.cls}" points="${poly(feats.map(f=>zfun(f,s.vec[f])))}"/>`; });
   series.forEach(s=>{ feats.forEach((f,i)=>{ const [x,y]=pt(i,zfun(f,s.vec[f])); h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.6" fill="${dotCol(s.cls)}" pointer-events="none"/>`; }); });
@@ -694,7 +709,7 @@ function radarSVG(series, feats, zfun, labfun){
       h += `<circle data-tip="${esc(tip)}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="transparent"/>`;
     });
   });
-  return h + `</svg>`;
+  return h.replace('viewBox="0 0 380 345"', `viewBox="${Math.floor(xmin)} 0 ${Math.ceil(xmax-xmin)} 345"`) + `</svg>`;
 }
 function trendSVG(f, hist, y0, y1, kboYear){
   const W=340,H=178,L=48,Rr=14,T=24,B=26;
@@ -983,7 +998,7 @@ function openDetail(kind, key){
     <div class="dh-tags"><span class="pill">${esc(typName(rec))}</span>${rm ? `<span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}">Rumor · ${esc(rm.status||"루머")}</span>` : ""}</div>
     <p class="dh-ctx">${ctx}</p>
     <p class="dh-links" title="검색 결과로 이동하며, 같은 이름의 다른 선수가 나올 수 있습니다">영상 찾기 ▸ <a href="${yt(enName(rec)+" "+vq[0]+(isPast?"":" 2026"))}" target="_blank" rel="noopener noreferrer">YouTube(영문)</a>${rec["한글명"]?` · <a href="${yt(rec["한글명"]+" "+vq[1])}" target="_blank" rel="noopener noreferrer">YouTube(한글)</a>`:""}</p></div>
-    <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="dlgClose">닫기</button></div></div>`;
+    <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="histBtn" title="경력과 함께 뛴 사람들">History</button><button class="close" id="dlgClose">닫기</button></div></div>`;
   if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
   if (!isPast && rec["KBO경력"]) h += `<div class="box note">이름이 KBO 외국인 명단과 같아 경력자로 의심됩니다(동명이인일 수 있음).</div>`;
   if (!isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(rec["주의"])}</div>`;
@@ -1029,8 +1044,9 @@ function openDetail(kind, key){
   $("dlgBody").innerHTML = h;
   drawRadar();
   if (rec.sc) drawSc();
-  $("cmpSel").onchange = drawRadar;
+  $("cmpSel").onchange = ()=>{ drawRadar(); if (cur.rec.sc) drawSc(); };
   $("dlgClose").onclick = ()=> $("dlg").close();
+  $("histBtn").onclick = ()=> openHistory(kind, fid);
   $("favBtn").onclick = ()=>{ favToggle(role,kind,fid); $("favBtn").textContent = favHas(role,kind,fid)?"★":"☆"; };
   $("cmpAdd").onclick = ()=>{ cmpToggle(role,kind,fid); $("cmpAdd").textContent = cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"; };
   if (!$("dlg").open) $("dlg").showModal();
@@ -1053,10 +1069,95 @@ function drawRadar(){
   $("radarTbl").innerHTML = t + `</tbody></table><p class="note">편차 = (값 − 전체 평균) ÷ 표준편차, 좋은 쪽이 +입니다(낮을수록 좋은 지표는 부호를 뒤집었습니다).</p>`;
 }
 function drawSc(){
-  const sc = cur.rec.sc, feats = D.sfeats[role], zs = (f,x)=>{ const [m,s]=D.sscale[role][f]; return dirOf(role,f,true)*(x-m)/s; };
-  $("scBox").innerHTML = radarSVG([{name:"이 선수", vec:sc, cls:"rd-a"}], feats, zs, f=>labO(role,f,true));
-  $("scTbl").innerHTML = `<table><thead><tr><th class="l">지표</th><th>값</th><th>편차</th></tr></thead><tbody>` +
-    feats.map(f=>`<tr><td class="l">${esc(labO(role,f,true))}</td><td>${fF(f,sc[f])}</td><td>${(zs(f,sc[f])>=0?"+":"")+zs(f,sc[f]).toFixed(2)}</td></tr>`).join("") + `</tbody></table>`;
+  const sc = cur.rec.sc, feats = D.sfeats[role], cmp = $("cmpSel").value;
+  const zs = (f,x)=>{ const [m,s]=D.sscale[role][f]; return dirOf(role,f,true)*(x-m)/s; };
+  /* 비교 대상: 본 오각형과 같은 선택(성공 사례 평균 / 전체 평균). 스탯캐스트 값이 있는 성공 사례만 평균에 든다 */
+  let other = null, otherName = "", nS = 0;
+  if (cmp==="succ"){
+    const S = pastRows().filter(isSuccess).filter(r=>r.sc); nS = S.length;
+    if (S.length){ other = {}; feats.forEach(f=>{ const a = S.map(r=>r.sc[f]).filter(x=>x!=null); other[f] = a.length ? a.reduce((t,x)=>t+x,0)/a.length : null; }); }
+    otherName = "성공 사례 평균";
+  } else { other = {}; feats.forEach(f=> other[f] = D.sscale[role][f][0]); otherName = "전체 평균"; }
+  const series = [{name:"이 선수", vec:sc, cls:"rd-a"}]; if (other) series.push({name:otherName, vec:other, cls:"rd-b"});
+  $("scBox").innerHTML = radarSVG(series, feats, zs, f=>labO(role,f,true));
+  $("scTbl").innerHTML = `<table><thead><tr><th class="l">지표</th><th>이 선수</th><th>${otherName}</th><th>편차</th></tr></thead><tbody>` +
+    feats.map(f=>{ const z = zs(f,sc[f]); return `<tr><td class="l">${esc(labO(role,f,true))}</td><td>${fF(f,sc[f])}</td><td>${other&&other[f]!=null?fF(f,other[f]):"-"}</td><td>${(z>=0?"+":"")+z.toFixed(2)}</td></tr>`; }).join("") + `</tbody></table>` +
+    (cmp==="succ" ? `<p class="note">성공 사례 평균은 스탯캐스트 기록이 있는 성공 사례 ${nS}명 기준입니다.</p>` : "");
+}
+
+/* ================= History: 경력 타임라인 + 함께 뛴 사람들 (docs/careers.js, tools/15_careers.py) ================= */
+/* careers.js 는 커서(수 MB) History 를 처음 열 때만 불러온다 */
+let careersP = null;
+function loadCareers(){
+  if (window.CAREERS) return Promise.resolve(window.CAREERS);
+  if (!careersP) careersP = new Promise(res=>{ const sc = document.createElement("script"); sc.src = "careers.js"; sc.onload = ()=>res(window.CAREERS||null); sc.onerror = ()=>res(null); document.head.appendChild(sc); });
+  return careersP;
+}
+function careerOf(rec){
+  const C = window.CAREERS; if (!C || !C.P) return null;
+  const c = C.P[String(rec.mlbam ?? rec.player_id)]; if (!c) return null;
+  const nm = i => i>=0 ? C.T[i] : "";
+  return {...c, st: c.st.map(([y,ss])=>[y, ss.map(([l,t,p])=>[C.L[l], nm(t), nm(p)])])};
+}
+const lvTag = lv => `<span class="lvtag" style="--c:${LVCOL[lv]||"var(--muted)"}">${esc(lv)}</span>`;
+const kName = x => `${x.ko ? esc(x.ko)+" " : ""}<span class="en">${esc(x.en)}</span>`;
+const yrsTxt = ys => ys.length>2 ? `${ys[0]}~${ys[ys.length-1]}` : ys.join("·");
+function histTimeline(rec, c, isPast){
+  const by = new Map();
+  for (const [y, stints] of (c ? c.st : [])) by.set(y, stints.map(s=>({lv:s[0], team:s[1], parent:s[2]})));
+  if (isPast) for (const k of (rec.kbo||[])) { const a = by.get(k.y) || []; a.push({lv:"KBO", team:teamK(k["팀"]), parent:k["팀"]}); by.set(k.y, a); }
+  if (!by.size) return `<p class="note">경력 자료가 없습니다.</p>`;
+  let rows = "";
+  for (const y of [...by.keys()].sort((a,b)=>a-b)){
+    const st = by.get(y);
+    st.forEach((s,i)=>{
+      rows += `<tr${s.lv==="KBO"?' class="kbo"':""}>${i===0?`<td class="yr" rowspan="${st.length}">${y}</td>`:""}<td>${s.lv==="KBO"?`<span class="lvtag" style="--c:var(--accent)">KBO</span>`:lvTag(s.lv)}</td><td class="l">${esc(s.team)}${s.parent?` <span class="note">(${esc(s.parent)})</span>`:""}</td></tr>`;
+    });
+  }
+  return `<div class="tablewrap"><table class="timeline"><thead><tr><th>시즌</th><th>레벨</th><th class="l">소속팀</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function hRow(x, body, link){
+  const attr = link ? ` data-kind="past" data-key="${esc(x.id)}" data-role="${esc(x.role)}"` : "";
+  return `<div class="hrow${link?" link":""}"${attr}>${body}</div>`;
+}
+const tyTxt = ty => ty.slice(0,2).map(([t,ys])=>`${yrsTxt(ys)} ${esc(t)}`).join(" · ") + (ty.length>2 ? " 외" : "");
+function histFun(rec, c, isPast){
+  if (!c) return "";
+  let h = "";
+  const kboSpan = f => `KBO ${f.kbo[0]}${f.kbo[1]!==f.kbo[0] ? "~"+(f.kbo[1]>=BASE?"현재":f.kbo[1]) : (f.kbo[0]>=BASE?"(현재)":"")}`;
+  h += `<h3>KBO 외국인 선수와 겹친 경력 <span class="note">— 같은 시즌, 같은 팀에 이름이 있던 사람</span></h3>`;
+  h += c.fk.length ? c.fk.map(f=>hRow(f, `<span class="who">${kName(f)}</span><span class="what">${tyTxt(f.ty)}</span><span class="tagk">${kboSpan(f)}</span>`, true)).join("")
+                   + (c.nfk>c.fk.length ? `<p class="note">외 ${c.nfk-c.fk.length}명</p>` : "")
+                   : `<p class="note">겹치는 기록이 없습니다. (이 사이트에 있는 KBO 외국인 270명 기준)</p>`;
+  h += `<h3>코리안리거와 함께 뛴 기록 <span class="note">— 한국에서 태어난 MLB·마이너 선수</span></h3>`;
+  h += c.kl.length ? c.kl.map(k=>hRow(k, `<span class="who">${k.ko?esc(k.ko)+" ":""}<span class="en">${esc(k.en)}</span></span><span class="what">${tyTxt(k.ty)}</span>`, false)).join("")
+                   + (c.nkl>c.kl.length ? `<p class="note">외 ${c.nkl-c.kl.length}명</p>` : "")
+                   : `<p class="note">겹치는 기록이 없습니다.</p>`;
+  if (isPast && c.kt && c.kt.length){
+    h += `<h3>KBO에서 같은 팀이던 외국인 <span class="note">— 같은 해, 같은 구단</span></h3>`;
+    h += c.kt.map(f=>hRow(f, `<span class="who">${kName(f)}</span><span class="what">${f.yt.map(yt=>yt[0]+" "+esc(teamK(yt[1]))).join(", ")}</span>`, true)).join("");
+  }
+  return h + `<p class="note">"함께 뛰었다"는 같은 시즌 같은 팀에 기록이 있다는 뜻입니다. 같은 시기에 함께 로스터에 있었는지는 확인하지 않았습니다.</p>`;
+}
+async function openHistory(kind, fid){
+  const rec = recOf(role, kind, fid); if (!rec) return;
+  if (!window.CAREERS){ $("histBtn").textContent = "불러오는 중…"; await loadCareers(); }
+  const isPast = kind==="past", c = careerOf(rec);
+  const by = rec["출생연도"];
+  const first = c && c.st.length ? c.st[0][0] : null;
+  const facts = [];
+  if (by!=null) facts.push(`${by}년생`);
+  if (first) facts.push(`미국 프로 첫 시즌 ${first}`);
+  if (c && c.md) facts.push(`MLB 데뷔 ${c.md}`);
+  if (isPast) facts.push(`KBO 데뷔 ${rec["KBO첫해"]} ${teamK(rec["팀"])}`);
+  let h = `<div class="dlghead"><div class="dh-main"><h2>${nameHTML(rec)}${awardBadges(rec)} <span class="note">History</span></h2>
+    <p class="dh-facts">${facts.map(x=>`<span>${x}</span>`).join("")}</p></div>
+    <div class="dlgbtns"><button class="close" id="histBack">← 상세로</button><button class="close" id="dlgClose">닫기</button></div></div>`;
+  h += `<h3>경력 타임라인 <span class="note">— MLB 공식 기록의 소속팀${isPast?" + KBO":""}</span></h3>` + histTimeline(rec, c, isPast);
+  h += histFun(rec, c, isPast);
+  $("dlgBody").innerHTML = h; $("dlg").scrollTop = 0;
+  $("histBack").onclick = ()=> openDetail(kind, fid);
+  $("dlgClose").onclick = ()=> $("dlg").close();
 }
 
 /* ================= 스카우팅 노트(방문자 리포트) ================= */

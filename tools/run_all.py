@@ -38,6 +38,7 @@ STEPS = [
     ("11", "11_waivers.py", "웨이버 공시·방출 사례(기사 확인분)"),
     ("12", "12_pitch_arsenal.py", "MLB 투수 구종 사용 비율"),
     ("13", "13_injuries.py", "부상자 명단 이력"),
+    ("15", "15_careers.py", "경력·함께 뛴 사람 (docs/careers.js)"),
     ("08", "08_build_dataset.py", "프로필·군집·검증 계산 + docs/data.js"),
 ]
 
