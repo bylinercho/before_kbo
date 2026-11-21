@@ -410,14 +410,12 @@ html[data-theme="paper"] .setbtn{border:2px solid var(--rule);border-radius:0}
 .top .setpanel .wrap{height:auto;display:block;padding-top:18px;padding-bottom:16px}
 .setpanel .row{margin-top:0}
 html[data-theme] main.tools{padding-bottom:70px}
-html[data-theme] main.tools .tool{background:transparent;border:0;border-radius:0;box-shadow:none;padding:60px 0 6px;margin:0;border-top:1px solid var(--line);scroll-margin-top:112px}
-html[data-theme] main.tools .tool:first-child{border-top:0;padding-top:48px}
-html[data-theme] main.tools .tool::before,html[data-theme] main.tools .tool::after{display:none}
+html[data-theme] main.tools .tool{scroll-margin-top:112px;margin:28px 0}
 html[data-theme] main.tools .tool>h2{font-size:clamp(22px,3vw,30px);margin:0 0 6px;letter-spacing:-.01em}
 html[data-theme] main.tools .tool>.eyebrow{margin-bottom:8px}
 @media (max-width:820px){
   .top .wrap nav{gap:8px;flex-wrap:wrap;justify-content:center}
-  html[data-theme] main.tools .tool{padding-top:44px;scroll-margin-top:150px}
+  html[data-theme] main.tools .tool{scroll-margin-top:150px}
 }
 </style>
 </head>
@@ -489,6 +487,7 @@ html[data-theme] main.tools .tool>.eyebrow{margin-bottom:8px}
   <div class="tool" id="s1">
     <p class="eyebrow">01 · Past Cases</p>
     <h2>입단 전 5년 기록과 KBO 첫해 성적</h2>
+    <p class="sub">선수를 누르면 상세 기록과 History를 봅니다.</p>
     <div class="tablewrap tall" style="margin-top:12px"><table id="pastTable"></table></div>
     <details style="margin-top:10px"><summary>비교에서 빠진 선수 보기</summary><div class="note" id="excluded"></div></details>
   </div>
@@ -496,6 +495,7 @@ html[data-theme] main.tools .tool>.eyebrow{margin-bottom:8px}
   <div class="tool" id="s2">
     <p class="eyebrow">02 · Key Metrics</p>
     <h2>성공한 선수와 아닌 선수는 어디서 갈렸나</h2>
+    <p class="sub">입단 전 지표에서 성공과 실패가 갈리는 지점입니다.</p>
     <div id="gap" style="margin-top:12px"></div>
     <p class="note" id="gapNote"></p>
 
@@ -516,6 +516,7 @@ html[data-theme] main.tools .tool>.eyebrow{margin-bottom:8px}
   <div class="tool" id="s6">
     <p class="eyebrow">03 · By Team</p>
     <h2>구단은 어떤 외국인을 데려왔나</h2>
+    <p class="sub">구단별 외국인 성공 비율입니다.</p>
     <div class="tablewrap" style="margin-top:10px"><table id="teamTable"></table></div>
     <div class="legend" id="teamLegend" style="margin-top:6px"></div>
     <p class="note" id="teamNote"></p>
@@ -524,6 +525,7 @@ html[data-theme] main.tools .tool>.eyebrow{margin-bottom:8px}
   <div class="tool" id="s3">
     <p class="eyebrow">04 · Similar Types</p>
     <h2>지금 닮은 유형은? (2026 MLB·트리플A 선수 중)</h2>
+    <p class="sub">지난 사례와 기록이 닮은 2026 후보를 찾습니다.</p>
     <div class="row">
       <label>기준 <select id="refSel"></select></label>
       <label>소속 <select id="lvSel"><option value="">전체</option><option value="AAA·MLB 오감">트리플A·MLB 오가는 선수</option><option value="AAA만">트리플A만</option><option value="MLB만">MLB만</option></select></label>
@@ -573,6 +575,7 @@ html[data-theme] main.tools .tool>.eyebrow{margin-bottom:8px}
   <div class="tool" id="s8">
     <p class="eyebrow">06 · Rumor Player</p>
     <h2>KBO 입단설이 도는 선수</h2>
+    <p class="sub">입단설이 도는 선수를 모았습니다.</p>
     <div id="rumList" class="replist"></div>
     <p class="note" id="rumNote"></p>
   </div>
@@ -580,6 +583,7 @@ html[data-theme] main.tools .tool>.eyebrow{margin-bottom:8px}
   <div class="tool" id="s7">
     <p class="eyebrow">07 · Reports</p>
     <h2>스카우팅 노트</h2>
+    <p class="sub">방문자가 남긴 스카우팅 리포트입니다.</p>
     <div id="repList" class="replist"></div>
     <p class="note" id="repNote"></p>
   </div>
