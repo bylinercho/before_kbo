@@ -678,13 +678,13 @@ const zf = (f,x)=>{ const [m,s]=D.scale[role][f]; return (x-m)/s; };
 /* 오각형은 "바깥쪽 = 평균보다 좋음"으로 그린다. 낮을수록 좋은 지표(-1)는 부호를 뒤집는다. 0은 좋고 나쁨이 없는 지표(값이 클수록 바깥).
    거리·닮은 사례 계산(zf)에는 영향이 없고 그림과 편차 표시에만 쓴다. */
 const GOOD = {"투수":{k_pct:1,bb_pct:-1,hr_pct:-1,era:-1,gs_pct:0}, "타자":{k_pct:-1,bb_pct:1,hr_pct:1,iso:1,avg:1}};
-const SGOOD = {"투수":{velocity:1,k_percent:1,bb_percent:-1,swing_miss_percent:1,hardhit_percent:-1,xwoba:-1,launch_angle:0,release_extension:1,arm_angle:0},
+const SGOOD = {"투수":{velocity:1,k_percent:1,bb_percent:-1,swing_miss_percent:1,hardhit_percent:-1,xwoba:-1,launch_angle:-1,release_extension:1,arm_angle:0},
                "타자":{launch_speed:1,hardhit_percent:1,barrels_per_bbe_percent:1,xwoba:1,k_percent:-1,bb_percent:1,swing_miss_percent:-1,launch_angle:0}};
 const dirOf = (r0,f,sc)=> (((sc?SGOOD:GOOD)[r0]||{})[f]===-1) ? -1 : 1;
 const zo = (f,x)=> dirOf(role,f,false) * zf(f,x);
 /* 오각형 축 이름: 뒤집은(낮을수록 좋은) 지표는 "억제·회피"처럼 높을수록 좋은 말로 바꾼다. 화살표는 쓰지 않는다 */
 const RADAR_NAME = {"투수":{bb_pct:"볼넷 억제",hr_pct:"홈런 억제"}, "타자":{k_pct:"삼진 회피"}};
-const SRADAR_NAME = {"투수":{bb_percent:"볼넷 억제",hardhit_percent:"강한 타구 억제",xwoba:"xwOBA 억제"}, "타자":{k_percent:"삼진 회피",swing_miss_percent:"헛스윙 회피"}};
+const SRADAR_NAME = {"투수":{bb_percent:"볼넷 억제",hardhit_percent:"강한 타구 억제",xwoba:"xwOBA 억제",launch_angle:"발사각 억제"}, "타자":{k_percent:"삼진 회피",swing_miss_percent:"헛스윙 회피"}};
 const labO = (r0,f,sc)=>{
   const nm = ((sc?SRADAR_NAME:RADAR_NAME)[r0]||{})[f];
   return nm ? nm + (!sc && ADJ && ADJF.has(f) ? " 지수" : "") : labelFor(r0,f);
