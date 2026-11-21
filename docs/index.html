@@ -434,11 +434,6 @@ dialog{overscroll-behavior:contain}
       </span>
     </div>
     <p class="note" id="critNote"></p>
-    <div class="row">
-      <button class="btn mini" id="shareBtn" type="button" title="현재 설정과 선택(필터·기준 선수·관심 선수)을 담은 주소를 복사합니다">현재 보기 링크 복사</button>
-      <input type="text" id="shareUrl" readonly hidden style="width:min(560px,100%)">
-      <span class="note" id="shareMsg"></span>
-    </div>
   </div>
 
   <div class="tabs" id="tabs" role="tablist" aria-label="챕터">
@@ -447,7 +442,6 @@ dialog{overscroll-behavior:contain}
     <button type="button" role="tab" data-tab="s6">By Team</button>
     <button type="button" role="tab" data-tab="s3">Similar Types</button>
     <button type="button" role="tab" data-tab="s4">Validation</button>
-    <button type="button" role="tab" data-tab="s5">Others</button>
     <button type="button" role="tab" data-tab="s8">Rumor Player</button>
     <button type="button" role="tab" data-tab="s7">Reports</button>
   </div>
@@ -527,13 +521,6 @@ dialog{overscroll-behavior:contain}
     <p class="note" id="valNote"></p>
   </div>
 
-  <div class="tool" id="s5">
-    <p class="eyebrow">05 · Others</p>
-    <h2>웨이버 공시·방출 사례</h2>
-    <p class="sub">기사에서 직접 확인한 사례만 모았습니다. <b>전체 목록이 아니며</b>, 목록에 없다고 공시되지 않았다는 뜻이 아닙니다. 선수를 누르면 상세가 열립니다.</p>
-    <div class="tablewrap" style="margin-top:10px"><table id="etcTable"></table></div>
-    <p class="note" id="etcNote"></p>
-  </div>
   <div class="tool" id="s7">
     <p class="eyebrow">07 · Reports</p>
     <h2>스카우팅 노트</h2>
@@ -1038,7 +1025,7 @@ function openDetail(kind, key){
           <p class="note">${role==="투수"
             ? `첫해 ${fmt(rec.KBO_이닝,1)}이닝, ${rec.KBO_승??"-"}승 ${rec.KBO_패??"-"}패, ERA ${fmt(rec.KBO_ERA,2)}, WHIP ${fmt(rec.KBO_WHIP,2)}, 삼진 ${rec.KBO_삼진??"-"}개, 볼넷 ${rec.KBO_볼넷??"-"}개.`
             : `첫해 ${fmt(rec.KBO_타수,0)}타수, 타율 ${fmt(rec.KBO_타율,3)}, OPS ${fmt(rec.KBO_OPS,3)}, 홈런 ${rec.KBO_홈런??"-"}개, 볼넷 ${rec.KBO_볼넷??"-"}개, 삼진 ${rec.KBO_삼진??"-"}개.`}
-            재계약: KBO 연속 ${rec.stay_n}년${rec.stay_plus?"+(2026년 진행 중)":""}.${wvOf(rec.mykbo_id).length?` 웨이버·방출 기록: ${esc(wvText(rec.mykbo_id))} (기타 구역 참고).`:""}</p>`;
+            재계약: KBO 연속 ${rec.stay_n}년${rec.stay_plus?"+(2026년 진행 중)":""}.${wvOf(rec.mykbo_id).length?` 웨이버·방출 기록: ${esc(wvText(rec.mykbo_id))}.`:""}</p>`;
   }
 
   h += ilSection(rec, y0, y1);
@@ -1274,26 +1261,6 @@ function renderLanding(){
   $("statCand").textContent = (D.cands["투수"].length + D.cands["타자"].length).toLocaleString("en-US");
 }
 
-/* ================= 4. 기타: 웨이버 공시·방출 ================= */
-function renderEtc(){
-  const all = D.past["투수"].concat(D.past["타자"]), byId = {}; all.forEach(r=>{ byId[String(r.mykbo_id)] = r; });
-  const ev = (D.waivers||[]).slice().sort((a,b)=>String(b["일자"]).localeCompare(String(a["일자"])));
-  let h = `<thead><tr><th class="l">일자</th><th class="l">선수</th><th>역할</th><th class="l">데뷔·팀</th><th class="l">당시 구단</th><th class="l">구분</th><th class="l">일자 정확도</th><th>첫해 판정</th><th>재계약</th><th class="l">출처</th></tr></thead><tbody>`;
-  for (const w of ev){
-    const r = byId[String(w.mykbo_id)];
-    const nm = r ? nameHTML(r) : `${esc(w["한국등록명"]||"")} <span class="en">${esc(w["영문명"])}</span>`;
-    h += `<tr ${r?`class="clickable" data-kind="past" data-role="${r["역할"]}" data-key="${r.mykbo_id}"`:""} title="${esc(w["비고"]||"")}">
-      <td class="l">${esc(w["일자"])}</td><td class="l">${nm}</td><td>${r?r["역할"]:"-"}</td>
-      <td class="l">${r?`${r["KBO첫해"]} ${teamK(r["팀"])}`:"-"}</td><td class="l">${esc(w["당시구단"])}</td>
-      <td class="l">${w["구분"]==="웨이버 공시"?'<span class="tag warn">웨이버 공시</span>':'<span class="tag bad">방출·퇴출</span>'}</td>
-      <td class="l">${esc(w["일자정확도"])}</td><td>${r?tag(r):"-"}</td><td>${r?`${r.stay_n}년${r.stay_plus?"+":""}`:"-"}</td>
-      <td class="l"><a href="${esc(w["출처"])}" target="_blank" rel="noopener noreferrer">기사</a></td></tr>`;
-  }
-  $("etcTable").innerHTML = h + (ev.length?"":`<tr><td colspan="10" class="l note">확인된 사례가 아직 없습니다.</td></tr>`) + "</tbody>";
-  const ex = ev.filter(w=>w["구분"]==="웨이버 공시").length;
-  $("etcNote").innerHTML = `${ev.length}건(선수 ${new Set(ev.map(w=>w.mykbo_id)).size}명, 웨이버 공시 명시 ${ex}건). "방출·퇴출"은 기사에 웨이버 표현이 없던 경우입니다. 줄에 마우스를 올리면 비고가 보입니다. 원 자료는 KBO 공식 사이트(자동 수집 금지)라 쓰지 못했습니다.`;
-}
-
 /* ================= 부상자 명단(IL) 이력 · 구종 구성 (상세 창) ================= */
 function ilSection(rec, y0, y1){
   const il = rec.il || {n:0,days:0,max:0,tj:0,stints:[]};
@@ -1375,30 +1342,6 @@ function openCompare(){
   if ($("dlg").open) $("dlg").close();
   if (!$("cmpDlg").open) $("cmpDlg").showModal();
   $("cmpDlg").scrollTop = 0;
-}
-
-/* ================= 링크 공유 (현재 보기 상태를 주소에 담기) ================= */
-const SIMPLE_IDS = ["yFrom","yTo","teamSel","critMode","pIP","pERA","bAB","bOPS","ageMax","lvSel"];
-function getState(){
-  const s = {r:role, adj:ADJ?1:0, nk:$("noKbo").checked?1:0, typ:$("typSel").value, ref:$("refSel").value, q:$("q").value,
-             rf:[1,2].map(n=>[$("rf"+n+"Sel").value,$("rf"+n+"Min").value,$("rf"+n+"Max").value]), fav:FAV};
-  SIMPLE_IDS.forEach(id=>{ s[id] = $(id).value; });
-  return s;
-}
-const shareLink = ()=> location.href.split("#")[0] + "#s=" + encodeURIComponent(JSON.stringify(getState()));
-function applyState(s){
-  if (!s || typeof s!=="object") return;
-  if (s.adj){ $("adjOn").checked = true; applyAdj(true); }
-  SIMPLE_IDS.forEach(id=>{ if (s[id]!=null) $(id).value = s[id]; });
-  $("noKbo").checked = !!s.nk;
-  setRole(s.r==="타자" ? "타자" : "투수");
-  if (s.typ!=null) $("typSel").value = s.typ;
-  if (s.ref) $("refSel").value = s.ref;
-  (s.rf||[]).forEach((x,i)=>{ if (!x) return; $("rf"+(i+1)+"Sel").value = x[0]||""; $("rf"+(i+1)+"Min").value = x[1]||""; $("rf"+(i+1)+"Max").value = x[2]||""; });
-  $("q").value = s.q||"";
-  (s.fav||[]).forEach(f=>{ if (f && f.r && f.k && f.id && !favHas(f.r,f.k,f.id)) FAV.push({r:f.r,k:f.k,id:String(f.id)}); });
-  favSave();
-  renderAll(); renderFav();
 }
 
 /* ================= 구단별 스카우팅 성향 ================= */
@@ -1485,7 +1428,7 @@ function renderVal(){
 }
 
 /* ================= 이벤트 ================= */
-function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderEtc(); renderReports(); renderRumors(); }
+function renderAll(){ fillTypeSel(); renderPast(); renderGap(); renderScatter(); renderTypes(); renderTeams(); fillRefs(); fillRf(); renderCands(); renderVal(); renderReports(); renderRumors(); }
 document.addEventListener("click", e=>{
   const tr = e.target.closest("tr[data-team]");
   if (tr){ $("teamSel").value = tr.dataset.team; renderAll(); showTab("s1"); document.getElementById("s1").scrollIntoView({behavior:"smooth", block:"start"}); return; }
@@ -1574,7 +1517,7 @@ $("themeBtn").addEventListener("click", ()=>{
 paintThemeBtn();
 
 /* ================= 챕터 탭 ================= */
-const CHAPTERS = ["s1","s2","s6","s3","s4","s5","s8","s7"];
+const CHAPTERS = ["s1","s2","s6","s3","s4","s8","s7"];
 CHAPTERS.forEach(id=> $(id).classList.add("chapter"));
 function showTab(id, scroll){
   if (!CHAPTERS.includes(id)) id = "s1";
@@ -1591,24 +1534,16 @@ document.addEventListener("click", e=>{
 });
 showTab("s1", false);
 
-/* 관심 선수 · 비교 · 링크 공유 연결 */
+/* 관심 선수 · 비교 연결 */
 renderFav(); renderCmpBar();
 $("cmpGo").onclick = openCompare;
 $("cmpClear").onclick = ()=>{ CMP = []; renderCmpBar(); };
-$("shareBtn").onclick = async ()=>{
-  const u = shareLink(), inp = $("shareUrl"); inp.value = u; inp.hidden = false; $("shareMsg").textContent = "링크를 만들었습니다.";
-  let ok = false;
-  try { await Promise.race([navigator.clipboard.writeText(u), new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),1500))]); ok = true; } catch(e){}
-  $("shareMsg").textContent = ok ? "복사했습니다. 이 주소를 열면 같은 설정으로 보입니다." : "자동 복사가 안 되어 아래 주소를 직접 복사해 주세요.";
-  if (!ok){ inp.focus(); inp.select(); }
-};
 document.addEventListener("click", e=>{
   const un = e.target.closest("[data-unfav]");
   if (un){ const [r0,k,id] = un.dataset.unfav.split("|"); favToggle(r0,k,id); e.stopPropagation(); return; }
   const op = e.target.closest("[data-open]");
   if (op){ const [r0,k,id] = op.dataset.open.split("|"); if (r0!==role) setRole(r0); openDetail(k,id); }
 });
-if (location.hash.startsWith("#s=")) { try { applyState(JSON.parse(decodeURIComponent(location.hash.slice(3)))); } catch(e){} }
 </script>
 </body>
 </html>
