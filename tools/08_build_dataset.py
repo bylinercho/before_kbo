@@ -371,7 +371,7 @@ def make_types(role, recs, use_adj, sc):
 
 
 # ---------------------------------------------------------------- 검증 (교차검증)
-def _succ(rec, crit, p_ip=100, p_era=4.0, b_ab=300, b_ops=0.8):
+def _succ(rec, crit, p_ip=144, p_era=3.5, b_ab=446, b_ops=0.85):
     role, y = rec["역할"], rec["KBO첫해"]
     def first(r):
         if role == "투수":
