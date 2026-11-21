@@ -457,7 +457,14 @@ tr.clickable td,.rep,.hrow{min-height:44px}
   html[data-theme="paper"] .tool{padding:18px 12px 18px 28px;margin:14px 0}
   html[data-theme="paper"] .tool::before,html[data-theme="paper"] .tool::after{left:8px;width:13px;height:13px}
   .tablewrap.tall{max-height:none !important}
-  .tool .row select,.tool .row input[type=search]{max-width:calc(100vw - 110px);min-width:0}
+  .tool .row select,.tool .row input[type=search]{max-width:100%;min-width:0}
+  /* 글자를 확 줄인다: 본문·상세 창·시트 안쪽만 78%로(상단 바·하단 탭은 그대로) */
+  main.tools,.dlgin,.sheetbody{zoom:.78}
+  th,td{padding:6px 5px}
+  th{font-size:11px;letter-spacing:0}
+  .tablewrap td:first-child{white-space:nowrap;min-width:0}
+  .tablewrap td:first-child .en{display:block;font-size:10.5px}
+  .tablewrap td:first-child span[style*="cursor:help"]{display:none}   /* 눌러도 안 열리는 ⓘ(마우스오버용) */
 }
 @media (min-width:821px){ body{padding-bottom:0} .bnav{display:none} .top .wrap{max-width:1080px} .sheetwrap{align-items:center} .sheetpanel{border-radius:14px;border-bottom:2px solid var(--rule,var(--line));max-height:80dvh} }
 </style>
