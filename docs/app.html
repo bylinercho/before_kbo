@@ -216,7 +216,10 @@ tr.clickable:hover td{background:var(--band)}
 .gapbar i.neg{background:var(--bar2)}
 .gapsum{font-size:15.5px;line-height:1.65;margin:8px 0 14px}
 .gaphead{font-size:11.5px;color:var(--muted);margin-bottom:2px}
-.gap.gv{grid-template-columns:130px 1fr 150px;padding:5px 0;border-bottom:1px dotted var(--line)}
+.gap.gv{grid-template-columns:120px 1fr 130px 140px;padding:5px 0;border-bottom:1px dotted var(--line)}
+.gap.gm .gapbar i{background:var(--good)}
+.gap.gm .gapbar i.neg{background:var(--bad)}
+.gapaxis{display:flex;justify-content:space-between}
 .gchip{justify-self:start;display:inline-block;padding:2px 9px;border:1px solid var(--muted);color:var(--muted);font-size:12px;white-space:nowrap}
 .gchip.g1,.gchip.g2{border-color:var(--good);color:var(--good)}
 .gchip.b1,.gchip.b2{border-color:var(--bad);color:var(--bad)}
@@ -262,7 +265,8 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
   .cards{grid-template-columns:1fr;gap:20px}
   .card .img{aspect-ratio:16/9}
   .card .img svg{width:34%}
-  .gap,.gap.gv{grid-template-columns:96px 1fr 128px}
+  .gap{grid-template-columns:96px 1fr 120px}
+  .gap.gv{grid-template-columns:84px 1fr 74px 112px;gap:6px}
   .two{grid-template-columns:1fr}
   input[type=search]{width:140px}
   footer .cols{grid-template-columns:1fr;text-align:center}
@@ -1031,10 +1035,11 @@ function renderGap(){
   let sum = (up.length ? `성공한 ${who}는 ${nm(up)}에서 앞섰습니다.` : `성공한 ${who}가 앞선 지표는 없습니다.`) + (down.length ? ` ${nm(down)}는 오히려 뒤졌습니다.` : "");
   if (!up.length && !down.length) sum = `성공한 ${who}와 그 외 선수 사이에 뚜렷한 차이가 없습니다.`;
   const verdict = d => d>=0.3 ? ["성공이 훨씬 좋음","g2"] : d>=0.1 ? ["성공이 조금 좋음","g1"] : d>-0.1 ? ["비슷","g0"] : d>-0.3 ? ["성공이 조금 나쁨","b1"] : ["성공이 훨씬 나쁨","b2"];
-  let h = `<p class="gapsum">${sum}</p><div class="gap gaphead"><span></span><span>성공 · 그 외 (평균)</span><span></span></div>`;
+  let h = `<p class="gapsum">${sum}</p><div class="gap gv gaphead"><span></span><div class="gapaxis"><span>← 성공 쪽이 나쁨</span><span>성공 쪽이 좋음 →</span></div><span>성공 · 그 외</span><span></span></div>`;
   for (const x of items){
     const [txt,cls] = verdict(x.d);
-    h += `<div class="gap gv" title="${esc(x.hint)}"><span>${x.lab}</span><span><b>${x.sv}</b> <span class="note">· ${x.nv}</span></span><span class="gchip ${cls}">${txt}</span></div>`;
+    const w = Math.min(Math.abs(x.d),1)*50;
+    h += `<div class="gap gv gm" title="${esc(x.hint)}"><span>${x.lab}</span><div class="gapbar"><i class="${x.d<0?"neg":""}" style="${x.d>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div><span><b>${x.sv}</b> <span class="note">· ${x.nv}</span></span><span class="gchip ${cls}">${txt}</span></div>`;
   }
   $("gap").innerHTML = h;
 }
