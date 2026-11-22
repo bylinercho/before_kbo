@@ -215,6 +215,7 @@ tr.clickable:hover td{background:var(--band)}
 .gap.gm .gapbar i{background:var(--good)}
 .gap.gm .gapbar i.neg{background:var(--bad)}
 .gapaxis{display:flex;justify-content:space-between}
+.gway{display:block;font-size:11px}
 .gchip{justify-self:start;display:inline-block;padding:2px 9px;border:1px solid var(--muted);color:var(--muted);font-size:12px;white-space:nowrap}
 .gchip.g1,.gchip.g2{border-color:var(--good);color:var(--good)}
 .gchip.b1,.gchip.b2{border-color:var(--bad);color:var(--bad)}
@@ -943,20 +944,22 @@ function renderPast(){
 }
 
 /* ================= 2. 갈린 지표 ================= */
+const RAW_GAP = {"투수":{bb_pct:"볼넷 허용%",hr_pct:"홈런 허용%"}};   // 이 차트의 줄 이름: 오른쪽 숫자(실제 비율)가 뜻하는 대로
 function renderGap(){
   const rows = pastRows(), S = rows.filter(isSuccess), N = rows.filter(r=>!isSuccess(r));
   const ms = meanVec(S), mn = meanVec(N), items = [];
   /* d = (성공 평균 − 그 외 평균)을 표준편차로 나눈 값. 낮을수록 좋은 지표는 부호를 뒤집어 "+ = 성공한 선수가 더 좋음"으로 통일 */
   for (const f of D.feats[role]){
     if (ms[f]==null || mn[f]==null) continue;
-    items.push({lab:labO(role,f,false), hint:HINT[f]||"", d:dirOf(role,f,false)*(ms[f]-mn[f])/D.scale[role][f][1], sv:fF(f,ms[f]), nv:fF(f,mn[f])});
+    const raw = ((RAW_GAP[role]||{})[f] || labelBase(role,f)) + (ADJ && ADJF.has(f) ? " 지수" : ""), gd = (GOOD[role]||{})[f];
+    items.push({lab:labO(role,f,false), row:raw, way:gd===-1?"낮을수록 좋음":gd===1?"높을수록 좋음":"", hint:HINT[f]||"", d:dirOf(role,f,false)*(ms[f]-mn[f])/D.scale[role][f][1], sv:fF(f,ms[f]), nv:fF(f,mn[f])});
   }
   /* 부상 이력(5년 IL 일수): 지난 사례+후보 전체의 표준편차로 같은 눈금에 올린다. 적을수록 좋은 쪽 */
   if (S.length && N.length){
     const all = D.past[role].concat(D.cands[role]).map(r=>r.il?r.il.days:0), mu = all.reduce((a,b)=>a+b,0)/all.length;
     const sd = Math.sqrt(all.reduce((a,b)=>a+(b-mu)**2,0)/(all.length-1)) || 1, av = a=>a.reduce((s,x)=>s+x,0)/a.length;
     const ms2 = av(S.map(r=>r.il?r.il.days:0)), mn2 = av(N.map(r=>r.il?r.il.days:0));
-    items.push({lab:"부상 적음", hint:"입단 전 5년 동안 부상자 명단에 있던 일수(MLB 이동 기록 기준). 적을수록 좋은 쪽", d:-(ms2-mn2)/sd, sv:`${ms2.toFixed(0)}일`, nv:`${mn2.toFixed(0)}일`});
+    items.push({lab:"부상 적음", row:"IL 일수", way:"적을수록 좋음", hint:"입단 전 5년 동안 부상자 명단에 있던 일수(MLB 이동 기록 기준). 적을수록 좋은 쪽", d:-(ms2-mn2)/sd, sv:`${ms2.toFixed(0)}일`, nv:`${mn2.toFixed(0)}일`});
   }
   $("gapNote").innerHTML = `성공 ${S.length}명 · 그 외 ${N.length}명`;
   if (!items.length){ $("gap").innerHTML = "<p class='note'>성공 또는 비성공 선수가 없어 비교할 수 없습니다. 기준을 바꿔 보세요.</p>"; return; }
@@ -970,7 +973,7 @@ function renderGap(){
   for (const x of items){
     const [txt,cls] = verdict(x.d);
     const w = Math.min(Math.abs(x.d),1)*50;
-    h += `<div class="gap gv gm" title="${esc(x.hint)}"><span>${x.lab}</span><div class="gapbar"><i class="${x.d<0?"neg":""}" style="${x.d>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div><span><b>${x.sv}</b> <span class="note">· ${x.nv}</span></span><span class="gchip ${cls}">${txt}</span></div>`;
+    h += `<div class="gap gv gm" title="${esc(x.hint)}"><span>${x.row}${x.way?`<small class="note gway">${x.way}</small>`:""}</span><div class="gapbar"><i class="${x.d<0?"neg":""}" style="${x.d>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div><span><b>${x.sv}</b> <span class="note">· ${x.nv}</span></span><span class="gchip ${cls}">${txt}</span></div>`;
   }
   $("gap").innerHTML = h;
 }
