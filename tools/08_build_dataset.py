@@ -302,12 +302,12 @@ def _type_name(role, z, gs_raw):
         if zz["avg"] <= -.4: cand.append((abs(zz["avg"]), "타율 낮은"))
         tail = "타자"
     cand.sort(reverse=True)
-    traits = "·".join(t for _, t in cand[:2])
+    traits = "·".join(t for _, t in cand[:1])   # 이름은 가장 눈에 띄는 특징 하나만(길고 세분화돼 보이지 않게)
     return (traits + " " + tail) if traits else ("평균적인 " + tail)
 
 
 def make_types_pitcher(recs, use_adj):
-    """투수: 선발(등판 중 선발 비율 50% 이상)과 불펜을 먼저 나누고, 각 그룹 안에서 삼진%·볼넷%·홈런%의 모양으로 3개씩 묶는다.
+    """투수: 선발(등판 중 선발 비율 50% 이상)과 불펜을 먼저 나누고, 각 그룹 안에서 삼진%·볼넷%·홈런%의 모양으로 2개씩 묶는다(투수 4유형).
     z 값과 이름은 같은 그룹 안에서의 상대 위치(예: '선발 중에서 삼진이 많은')다."""
     F = ["k_pct", "bb_pct", "hr_pct"]
     labels, types, used = [None] * len(recs), [], {}
@@ -317,7 +317,7 @@ def make_types_pitcher(recs, use_adj):
         M = np.where(np.isnan(M), np.nanmean(M, axis=0), M)
         mu, sd = M.mean(axis=0), M.std(axis=0, ddof=1)
         Z = (M - mu) / sd
-        km = KMeans(n_clusters=3, n_init=10, random_state=0).fit(Z)
+        km = KMeans(n_clusters=2, n_init=10, random_state=0).fit(Z)   # 선발·불펜 각 2개 = 투수 4유형(세분화를 줄임)
         sil = silhouette_score(Z, km.labels_)
         order = np.argsort(-np.bincount(km.labels_))
         for rank, old in enumerate(order):
