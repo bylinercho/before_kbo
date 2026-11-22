@@ -936,8 +936,8 @@ function renderGap(){
   const ms = meanVec(S), mn = meanVec(N); let h = "";
   for (const f of D.feats[role]){
     if (ms[f]==null || mn[f]==null) continue;
-    const sd = D.scale[role][f][1], d = (ms[f]-mn[f])/sd, w = Math.min(Math.abs(d),1)*50;
-    h += `<div class="gap" title="${esc(HINT[f]||"")}"><span>${labelFor(role,f)}</span>
+    const sd = D.scale[role][f][1], d = dirOf(role,f,false)*(ms[f]-mn[f])/sd, w = Math.min(Math.abs(d),1)*50;   // 낮을수록 좋은 지표는 부호를 뒤집어 "오른쪽 = 성공 쪽이 더 좋음"으로 통일
+    h += `<div class="gap" title="${esc(HINT[f]||"")}"><span>${labO(role,f,false)}</span>
       <div class="gapbar"><i class="${d<0?"neg":""}" style="${d>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div>
       <span>${d>=0?"+":""}${d.toFixed(2)} <span class="note">(${fF(f,ms[f])} vs ${fF(f,mn[f])})</span></span></div>`;
   }
