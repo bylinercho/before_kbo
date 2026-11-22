@@ -16,5 +16,7 @@ window.RUMORS = [
   {date:"2026-11-16", name:"John Rave", status:"루머"},
   {date:"2026-11-16", name:"Zac Gallen", status:"루머"},
   {date:"2026-11-16", name:"Bryse Wilson", status:"루머"},
-  {date:"2026-11-16", name:"Jack Suwinski", status:"루머"}
+  {date:"2026-11-16", name:"Jack Suwinski", status:"루머"},
+  {date:"2026-11-22", name:"Jesse Scholtens", status:"루머"},
+  {date:"2026-11-22", name:"José Suarez", status:"루머"}
 ];
