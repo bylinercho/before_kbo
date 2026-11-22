@@ -675,7 +675,8 @@ tr.clickable td,.rep,.hrow{min-height:44px}
 <script src="data.js"></script>
 <script src="reports.js" onerror="void 0"></script>
 <script src="rumors.js" onerror="void 0"></script>
-<script src="awards.js" onerror="void 0"></script><script>
+<script src="awards.js" onerror="void 0"></script>
+<script src="videos.js" onerror="void 0"></script><script>
 "use strict";
 const D = window.DATA;
 const LABEL = {
@@ -1240,14 +1241,15 @@ function openDetail(kind, key){
     : `2026 ${lvTxt} · 최근 5년(${rec["창"]}) ${volTxt(rec)} · MLB ${fmt(rec.mlb_share*100,0)}%`;
   const fid = isPast ? rec.mykbo_id : rec.player_id;
   const rm = rumorOf(rec, kind);
-  /* 영상 찾기: 이름으로 유튜브 검색 링크만 만든다(클릭해야 이동, 영상 주소를 가져오지 않음) */
+  /* 영상: 고른 대표 영상(videos.js)이 있으면 그 영상 링크, 없으면 이름으로 유튜브 검색 링크 */
+  const vid = (window.VIDEOS||{})[String(enName(rec)).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")];   // 악센트(José)는 빼고 찾는다
   const yt = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
   const vq = role==="투수" ? ["pitching","피칭"] : ["batting highlights","타격"];
   let h = `<div class="dlghead"><div class="dh-main"><h2>${nameHTML(rec)}${awardBadges(rec)} ${isPast?tag(rec):""}</h2>
     ${factsLine(rec, age, isPast)}
     <div class="dh-tags"><span class="pill">${esc(typName(rec))}</span>${rm ? `<span class="rum-st ${RUM_ST[rm.status||"루머"]||"r0"}">Rumor · ${esc(rm.status||"루머")}</span>` : ""}</div>
     <p class="dh-ctx">${ctx}</p>
-    <p class="dh-links" title="검색 결과로 이동하며, 같은 이름의 다른 선수가 나올 수 있습니다">영상 찾기 ▸ <a href="${yt(enName(rec)+" "+vq[0]+(isPast?"":" 2026"))}" target="_blank" rel="noopener noreferrer">YouTube(영문)</a>${rec["한글명"]?` · <a href="${yt(rec["한글명"]+" "+vq[1])}" target="_blank" rel="noopener noreferrer">YouTube(한글)</a>`:""}</p></div>
+    <p class="dh-links" title="검색 결과로 이동하며, 같은 이름의 다른 선수가 나올 수 있습니다">${vid ? `영상 ▸ <a href="https://www.youtube.com/watch?v=${esc(vid.id)}" target="_blank" rel="noopener noreferrer">${esc(vid.t)}</a> <span class="mut">${esc(vid.ch)}</span> · ` : "영상 찾기 ▸ "}<a href="${yt(enName(rec)+" "+vq[0]+(isPast?"":" 2026"))}" target="_blank" rel="noopener noreferrer">YouTube(영문)</a>${rec["한글명"]?` · <a href="${yt(rec["한글명"]+" "+vq[1])}" target="_blank" rel="noopener noreferrer">YouTube(한글)</a>`:""}</p></div>
     <div class="dlgbtns"><button class="close" id="favBtn" title="관심 선수에 담기">${favHas(role,kind,fid)?"★":"☆"}</button><button class="close" id="cmpAdd">${cmpHas(role,kind,fid)?"비교에서 빼기":"비교에 담기"}</button><button class="close" id="histBtn" title="경력과 함께 뛴 사람들">History</button><button class="close" id="dlgClose">닫기</button></div></div>`;
   if (isPast && rec["주의"]) h += `<div class="box note">주의: ${esc(String(rec["주의"]).replace(/\(일본 등[^)]*\)/,""))}</div>`;
   if (!isPast && rec["KBO경력"]) h += `<div class="box note">KBO 경력자로 의심(동명이인 가능)</div>`;
