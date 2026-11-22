@@ -209,6 +209,10 @@ tr.clickable:hover td{background:var(--band)}
 .gapbar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
 .gapbar i{position:absolute;top:2px;bottom:2px;background:var(--bar)}
 .gapbar i.neg{background:var(--bar2)}
+.gap.gm .gapbar i{background:var(--good)}
+.gap.gm .gapbar i.neg{background:var(--bad)}
+.gaphead{font-size:11.5px;color:var(--muted);margin-bottom:2px}
+.gapaxis{display:flex;justify-content:space-between}
 svg{max-width:100%;height:auto;display:block}
 svg text{fill:var(--ink);font-family:inherit}
 svg .m{fill:var(--muted)}
@@ -908,22 +912,24 @@ function renderPast(){
 /* ================= 2. 갈린 지표 ================= */
 function renderGap(){
   const rows = pastRows(), S = rows.filter(isSuccess), N = rows.filter(r=>!isSuccess(r));
-  const ms = meanVec(S), mn = meanVec(N); let h = "";
+  const ms = meanVec(S), mn = meanVec(N);
+  /* 위 안내: 막대가 오른쪽(초록)이면 성공한 선수 쪽이 더 좋았던 지표, 왼쪽(빨강)이면 더 나빴던 지표 */
+  let h = `<div class="gap gaphead"><span></span><div class="gapaxis"><span>← 성공 쪽이 더 나쁨</span><span>성공 쪽이 더 좋음 →</span></div><span>성공 · 그 외</span></div>`;
   for (const f of D.feats[role]){
     if (ms[f]==null || mn[f]==null) continue;
     const sd = D.scale[role][f][1], d = dirOf(role,f,false)*(ms[f]-mn[f])/sd, w = Math.min(Math.abs(d),1)*50;   // 낮을수록 좋은 지표는 부호를 뒤집어 "오른쪽 = 성공 쪽이 더 좋음"으로 통일
-    h += `<div class="gap" title="${esc(HINT[f]||"")}"><span>${labO(role,f,false)}</span>
+    h += `<div class="gap gm" title="${esc(HINT[f]||"")}"><span>${labO(role,f,false)}</span>
       <div class="gapbar"><i class="${d<0?"neg":""}" style="${d>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div>
-      <span>${d>=0?"+":""}${d.toFixed(2)} <span class="note">(${fF(f,ms[f])} vs ${fF(f,mn[f])})</span></span></div>`;
+      <span>${fF(f,ms[f])} <span class="note">· ${fF(f,mn[f])}</span></span></div>`;
   }
   /* 부상 이력(5년 IL 일수): 지난 사례+후보 전체의 표준편차로 같은 눈금에 올린다 */
   if (S.length && N.length){
     const all = D.past[role].concat(D.cands[role]).map(r=>r.il?r.il.days:0), mu = all.reduce((a,b)=>a+b,0)/all.length;
     const sd = Math.sqrt(all.reduce((a,b)=>a+(b-mu)**2,0)/(all.length-1)) || 1, av = a=>a.reduce((s,x)=>s+x,0)/a.length;
-    const ms2 = av(S.map(r=>r.il?r.il.days:0)), mn2 = av(N.map(r=>r.il?r.il.days:0)), d2 = (ms2-mn2)/sd, w2 = Math.min(Math.abs(d2),1)*50;
-    h += `<div class="gap" title="입단 전 5년 동안 부상자 명단에 있던 일수(MLB 이동 기록 기준)"><span>5년 IL 일수</span>
+    const ms2 = av(S.map(r=>r.il?r.il.days:0)), mn2 = av(N.map(r=>r.il?r.il.days:0)), d2 = -(ms2-mn2)/sd, w2 = Math.min(Math.abs(d2),1)*50;
+    h += `<div class="gap gm" title="입단 전 5년 동안 부상자 명단에 있던 일수(MLB 이동 기록 기준). 적을수록 좋은 쪽"><span>부상 적음</span>
       <div class="gapbar"><i class="${d2<0?"neg":""}" style="${d2>=0?`left:50%;width:${w2}%`:`right:50%;width:${w2}%`}"></i></div>
-      <span>${d2>=0?"+":""}${d2.toFixed(2)} <span class="note">(${ms2.toFixed(0)}일 vs ${mn2.toFixed(0)}일)</span></span></div>`;
+      <span>${ms2.toFixed(0)}일 <span class="note">· ${mn2.toFixed(0)}일</span></span></div>`;
   }
   $("gap").innerHTML = h || "<p class='note'>성공 또는 비성공 선수가 없어 비교할 수 없습니다. 기준을 바꿔 보세요.</p>";
   $("gapNote").innerHTML = `성공 ${S.length}명 · 그 외 ${N.length}명`;
